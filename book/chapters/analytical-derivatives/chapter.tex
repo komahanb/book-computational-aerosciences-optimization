@@ -1,0 +1,321 @@
+%% \chapter{Semianalytial Sensitivities}
+%%
+%% %\epigraph{If we know \emph{an end} we can find \emph{a path} that
+%% %  takes us there. If we know \emph{a path} we can find \emph{an
+%% %    end}.}{}
+%%
+%% \paragraph*{Introduction.}
+%% This chapter is devoted to the exploration mathematical formalisms in
+%% obtaining first, second or higher-order derivatives of functionals
+%% with respect to independent parameters $x$. These functionals are, in
+%% general, constrained to the solution of another functional $R$. In
+%% other words, the evaluation of $F$ and its derivatives require the
+%% solution of $R$ as a first step. It turns out that these constraints
+%% $R$ can themselves be nonlinear analytical equations, first, second,
+%% or higher-order ordinary (or partial) differential equations. Since it
+%% is possible to convert higher-order partial differential equations to
+%% ordinary differential equations using spatial discretization
+%% techiniques which was the subject of pervious Chapter, we shall devote
+%% our discussion only to ordinary differential equations. Therefore, in
+%% this analysis we consider $R$ to be ranging from zeroth-order to
+%% higher-order ordinary differential equations. This exploration span a
+%% two-dimensional space spanned by the $F$ and $R$ (see Figure~\ref{}).
+%%
+%% Most of the literature on analytical derivatives is limited to the
+%% upto second-order differential systems and upto second-order parameter
+%% derivatives. There has not been any effort in the exploration of these
+%% techniques outside the realm of what is necessary to solve applied
+%% problems in engineering and physics. Even for these trivial cases,
+%% time dependent methods have not been reported for second-order
+%% differential systems, under the premise that all second-order systems
+%% can be converted to first-order systems, and therefore recommending
+%% the application of first-order techniques.
+%%
+%% Use calculus of variation techniques to derive first-order and second
+%% order optimality conditions.
+%%
+%\cite{Papadimitriou2008}
+%%
+%% Consider a system $a x = b$, where $a$ is a characteristic parameter
+%% and $b$ is some paramter. If one intends to change the value of $a$
+%% the results is a different design, whereas if one intends to change
+%% $b$ to achieve a goal it results in an optimal control problem.
+%%
+%% Let $\xi$ be the design variable when whose values change the system
+%% changes, therefore we get a new response, to leverage design purposes.
+%%
+\chapter{Semianalytical Sensitivities for Stationary Systems}
+\label{chapter:semianalytical-stationary}
+\epigraph{\textit{... the idea of enlarging reality by including ``tentative''
+  possibilities and then selecting one of these by the condition that
+  it minimizes a certain quantity, seems to bring purpose to
+  the flow of natural events.}}{\textit{Cornelius Lanczos [1893--1974]}}
+
+\paragraph*{Introduction.}
+Let us use the term \emph{zeroth-order systems} to denote physical processes that lack time derivative (or derivative in corresponding independent variable).
+The equations governing zeroth-order systems are thus algebraic in nature, as opposed to first and second-order processes modeled as differential equations.
+An example of zeroth-order system can be a body at rest responding instantaneously to an external stimulus modeled as an algebraic equation.
+%These are systems that only react to the external agent acting upon them without any inherent resistance/compliance to the forcing agent.
+%These systems lack exponential growth/decay and oscillations, that are respectively characteristics of first and second-order systems modeled by \underline{differential equations}.
+In this chapter let us consider semianalytical methods for sensitivity analysis of systems modeled by algebraic equations.
+This will provide sufficient basis and intuition for the derivation of these equations in the context of second-order differential equations in Chapter~\ref{chapter:adjoint-ode}.
+%Let us study the analytical methods for obtaining derivative of a function with respect to some variables that can be tuned/designed in the system.
+
+\section{Solution of Zeroth-Order Systems}
+Consider a system of nonlinear equations $R = R(q(\xi),\xi)$, where $\xi$ are design variables and $q = q(\xi)$ are the state variables which are an implicit function of the design variables $\xi$ via the governing nonlinear equations.
+As a general procedure, the state variables $q(\xi)$ are found by solving the nonlinear system $R = 0$ using an iterative scheme such as Newton-Raphson method.
+Although well established, the mathematical details of linearization and iteration are described next, for a self-contained discussion.
+First, we obtain a series expansion of the nonlinear function $R$ about the current iterate $q_k$:
+\begin{equation}\label{eqn:series_expansion_governing_eqn}
+  R\left(q_k + \Delta q_k, \xi\right) = R\left(q_k, \xi \right) + \pd{R}{q}\left(q_k, \xi\right) \Delta q_k + \frac{1}{2} \pdt{R}{q} \left(q_k, \xi\right) {\Delta q_k}^2 + \ldots \le \epsilon_R
+\end{equation}
+which is required to be zero upto some tolerance, to consider the nonlinear system solved.
+Consider only upto the linear part of the expansion~\eqref{eqn:series_expansion_governing_eqn} (since we are interested in repeatedly solving linear systems) and rewrite as follows:
+\begin{equation}\label{eqn:linearized_governing_eqn}
+  \pd{R}{q}\left(q_k, \xi\right) \Delta q_k = - R(q_k,\xi)
+\end{equation}
+which is solved for $\Delta q_k$ using some suitable method for the solution of linear system.
+This enables us to find a new linearization point $q_{k+1} = q_k + \Delta q_k$.
+The linearization and linear system solve for update, are continued until some suitable criteria is satisfied.
+As a subtle but important detail, in the above iterative procedure the design variables $\xi$ are known and therefore it was not necessary to carry out an expansion of $R$ about $\xi$.
+
+\section{Methods for Obtaining First Derivative (Gradient)}
+We are interested in some abstract function $F = F(q(\xi),\xi)$, that is a function of the state variables that were just determined and design variables that are known.
+In many applications such as optimal design and optimal control, we require the first-order and second-order dependence of this function $F$ on the design variables $\xi$: the gradient $\td{F}{\xi}$ and Hessian $\tdt{F}{\xi}$.
+% This naturally, occurs in cases where
+%one asks the question, ``how much does my design perform better, if I
+%change the perturb the design by $\Delta \xi$''.
+
+\subsection{Obtaining First Derivative (Gradient)}
+If the implicit dependence of $q$ on $\xi$ is known, then this merely amounts to assembling terms in chain rule of differentiation as:
+\begin{equation}\label{eqn:basic_first_derivative_of_functional}
+  \td{F}{\xi} = \pd{F}{q}\underbrace{\td{q}{\xi}}_{\mathrm{implicit}} + \pd{F}{\xi}
+\end{equation}
+However, in general, the implicit dependence $\td{q}{\xi}$ is not known.
+Thus we need to resort to some sophisticated technique to obtain this information, in order to construct the derivative \eqref{eqn:basic_first_derivative_of_functional}.
+Above all, we do not have a governing system of equations for $\td{q}{\xi}$, \emph{i.e.,} we lack a direct set of relations to solve.
+%We only use them to evaluate derivatives via~\eqref{eqn:basic_first_derivative_of_functional}.
+This motivates the need for development of such equations through mathematical techniques.
+%% Other
+%% possibilities can arise if one would like to set $\inner{\pd{F}{q}}{
+%%   \td{q}{x} } = 0$, of which three cases arise:
+%% \begin{enumrate}
+%%   \item The case where $\pd{F}{q}=0$ refers to a trivial scenario
+%%     where the functional is not dependent on the state variables
+%%     themselves, i.e. $F = F(x)$, whose derivative is simply
+%%     $\pd{F}{x}$
+%%   \item The case where
+%% \end{enumerate}
+%%
+For this purpose we define a new functional, called the Lagrangian as follows:
+\begin{equation}\label{eqn:lagrangian_functional}
+  {{\cal{L}}(q(\xi), \lambda(\xi), \xi)} = F(q(\xi), \xi) + \lambda(\xi) R(q(\xi), \xi).
+\end{equation}
+We have introduced a new unknown function $\lambda(\xi)$, referred to as the \underline{Lagrange multiplier}, which is used to form a linear combination of the two functionals $F$ and $R$.
+The domain of the Lagrangian ${\cal{L}}$ is bigger than the domain of the function of interest $F$ and the governing physical equations $R$.
+% Equation~\ref{eqn:lagrangian-def} is a hypothetical view of Lagrange of
+% This procedure is attributed to Lagrange.
+
+\paragraph*{Equivalence of ${\cal{L}}$ and  ${\cal{F}}$}
+We shall first explore the conditions under which the new function~\eqref{eqn:lagrangian_functional} and the function of interest $F$ are identical.
+Noting that we solve for the nonlinear equations using Newton's method such that $R \le \epsilon_R$. Therefore,
+\begin{equation}
+  {\cal{L}}(q(\xi), \lambda(\xi), \xi) = F(q(\xi), \xi) + \lambda(\xi) \epsilon_R.
+\end{equation}
+As long as $\epsilon_R \rightarrow 0$, it is trivial to see that one recovers the identity relation between between ${\cal{L}}$ and $F$.
+Therefore, the two functionals ${\cal{L}}$ and ${\cal{F}}$ are identical except for the existence of an additional dimension ${\cal{\lambda}}$ in ${\cal{L}}$, and provided that the governing equations are solved to a tight tolerance.
+
+\paragraph*{Differentiating the Lagrangian}
+Now we shall continue exploring the flexibility that the auxiliary
+variable $\lambda(\xi)$ offers to address the problem of unknown dependence
+$\td{q}{\xi}$. Note that, $(i)$ capturing the dependence or $(ii)$ being
+orthogonal to the dependence are the solutions one can expect. Recall that the
+derivative of the original function is given by
+~\eqref{eqn:basic_first_derivative_of_functional}. Now, differentiating the Lagrangian~\eqref{eqn:lagrangian_functional} with respect to $\xi$, we get
+\begin{equation}\label{eqn:first_derivative_of_lagrangian}
+  \begin{aligned}
+    \td{ {\cal{L}}  }{\xi} ( q(\xi), \lambda(\xi), \xi)  & = \td{F}{\xi} (q(\xi), \xi) + \td{ }{\xi} \left( \lambda(\xi) R (q(\xi), \xi) \right) \\
+    &  = \td{F}{\xi} (q(\xi), \xi) + \td{ \lambda(\xi) }{\xi} \cancelto{0}{R (q(\xi), \xi)} +  \lambda(\xi) \td{R }{\xi} (q(\xi), \xi) \\
+    &  = \left( \pd{F}{q} \td{q}{\xi} + \pd{F}{\xi}\right)  + \lambda(\xi) \left( \pd{R }{q} \td{q}{\xi} + \pd{R}{\xi}\right) \\
+    \end{aligned}
+\end{equation}
+We anticipate that $\td{{\cal{L}}}{\xi} = \td{F}{\xi}$, since ${\cal{L}}$ and ${\cal{F}}$ are identical.
+Therefore, the following inner product ought to vanish, for equivalence of derivatives:
+\begin{equation}\label{eqn:inner_product_direct}
+  \inner{\lambda(\xi)}{ \left( \pd{R }{q} \td{q}{\xi} + \pd{R}{\xi}\right)} = 0.
+\end{equation}
+This relation is indeed the mathematical flexibility that the Lagrange Multipliers offer
+to solve the problem of unknown $q$ dependence of $\xi$.
+
+\subsection{A Direct Method}
+Out of the many possibilities where the inner product is zero, the trivial solution where:
+\begin{equation}\label{eqn:direct_sensitivity_condition}
+  \pd{R }{q} \td{q}{\xi} + \pd{R}{\xi} = 0
+\end{equation}
+is known as the method of \emph{direct sensitivities}.
+This linear system can be solved for the unknown $\td{q}{x}$, and can be used to evaluate the total derivative of the Lagrangian which is identical to the total derivative of the functional when $R \le \epsilon_R \approx 0$.
+This is called the \emph{direct method} as we determine the implicit dependence directly by solving a linear system of equations.
+
+\subsection{An Indirect (Adjoint) Method}
+We shall now explore what other options we have from \eqref{eqn:first_derivative_of_lagrangian}.
+Suppose if we regroup terms in \eqref{eqn:first_derivative_of_lagrangian} as follows:
+\begin{equation}
+  \td{{\cal{L}}}{\xi} = \left( \pd{F}{q} + \lambda \pd{R}{q} \right) \td{q}{\xi} + \left( \pd{F}{\xi} + \lambda \pd{R}{\xi} \right)
+\end{equation}
+By the same token as before, the following condition is another set of mathematical possibilities that we get by introducing Lagrange multipliers:
+\begin{equation}\label{eqn:inner_product_adjoint}
+  \inner{ \left( \pd{F}{q} + \lambda \pd{R}{q} \right)}{\td{q}{\xi}} = 0
+\end{equation}
+The trivial case where
+\begin{equation}\label{eqn:adjoint_sensitivity_condition}
+  \pd{F}{q} + \lambda \pd{R}{q} = 0
+\end{equation}
+yields us the condition that is used to solve for the Lagrange multiplier $\lambda$, and is referred to as the \emph{adjoint method}.
+
+\subsection{An Illustrative Example}
+We consider a system governed by linear algebraic equation.
+A spring with stiffness constant $\xi$ responds to an external stimulus $b$ and displaces by an amount $q$, is modeled as:
+$$R := R(q(\xi), \xi) = \xi q - b$$
+Let us define a quantity of interest
+$$F := F(q(\xi), \xi) = \frac{1}{2} \xi q^2.$$
+Also, let the spring stiffness $\xi$ be the variable subject to design.
+The known partial derivatives are:
+$$\pd{F}{\xi} = \frac{1}{2}q^2, \pd{R}{\xi} = q, \pd{F}{q} = \xi q~\mathrm{and}~\pd{R}{q}=\xi.$$
+
+\paragraph*{1. Exact Derivative:}
+For this simple system the implicit derivative is known as
+$$\td{q}{\xi} = -\dfrac{b}{\xi^2} = -\dfrac{q}{\xi}$$ which can be used directly assemble the exact analytical derivative using chain rule as follows
+$$\td{F}{\xi} = \pd{F}{\xi} + \pd{F}{q}\td{q}{\xi} = \frac{1}{2}q^2 + (\xi q) \left(-\frac{q}{\xi}\right)  = -\frac{1}{2}q^2.$$
+Often, the implicit dependence is not known and thus we work with the assumption that it is not readily available.
+
+\paragraph*{2. Direct Method:}
+In the case of the direct method, the implicit derivative is directly computed by means of solving the linear system
+$$\td{q}{\xi} = -\pd{R}{\xi}\Bigg/\pd{R}{q} = - \dfrac{q}{\xi}.$$
+This implicit derivative can be used to assemble the first derivative as
+$$
+\td{{\cal{L}}}{\xi} = \pd{F}{\xi} + \pd{F}{q} \td{q}{\xi} = \dfrac{1}{2} q^2  + (\xi q ) \left(- \dfrac{q}{\xi} \right) = -\dfrac{1}{2}q^2.
+$$
+
+\paragraph*{3. Adjoint Method:}
+Using the adjoint method we find the adjoint variable by solving a linear system
+$$ \lambda = - \pd{F}{q}\Bigg/\pd{R}{q} = - q,$$
+which can be used to assemble the required derivative as
+$$
+\td{{\cal{L}}}{\xi} = \pd{F}{\xi} + \lambda \pd{R}{\xi} = \dfrac{1}{2} q^2 + (-q)(q) = -\dfrac{1}{2}q^2.
+$$
+
+%Pursuing these options (leaving out trivial cases) can lead to other
+%ways of obtaining analytical sensitivities.
+\paragraph*{Summary of obtaining first derivatives.}
+Using abstractions of governing equations and functionals of interest, we derived two established state-of-the-art approaches for obtaining the derivatives of functionals with respect to the independent parameter and outlined other avenues for computing the derivatives.
+It is noted that in all cases, the linear nature of Lagrangian results in linear system solves such as \eqref{eqn:direct_sensitivity_condition} and \eqref{eqn:adjoint_sensitivity_condition}.
+We will explore the time dependent adjoint sensitivity analysis details using similar abstractions and principles in Chapter~\ref{chapter:adjoint-ode}.
+
+%We have seen via~\eqref{eqn:inner_product_direct} and
+%~\eqref{eqn:inner_product_adjoint} are ensured to be zero, implying that the
+%$\lambda(\xi)$ and $\td{q}{\xi}$ are unique upto a scaling factor (which is usually chosen to be 1 for convenience).
+
+%%%
+%%%\section{Methods for Obtaining Second Derivative (Hessian)}
+%%%In the remaining of this chapter, we take a short glance at extending the techniques discussed so far to obtain second derivative information $\tdt{F}{\xi}$.
+%%%The second derivatives are useful in Hessian based optimization algorithms; for applications see \citep{Papadimitriou2008,Arian99,Tortorelli94, Rumpfkeil2010b, Rumpfkeil2010c}.
+%%%Although, getting second derivatives is not within the direct scope, it in an interesting mathematical exploration in introducing the extension to higher-order derivatives, since the terminology is in place.
+%%%We start with the first derivative of the Lagrangian ~\eqref{eqn:lagrangian_functional} and take another derivative, which gives us the following expression:
+%%%\begin{equation}
+%%%  \begin{aligned}
+%%%    \tdt{{\cal{L}}}{\xi} & = \td{}{\xi} \left( \td{L}{\xi}\right) \\
+%%% & = \td{}{\xi} \left( \td{F}{\xi} \right) + \td{} {\xi} \left( \lambda(\xi) \td{R}{\xi} (q(\xi), \xi) \right) \\
+%%%  \end{aligned}
+%%%\end{equation}
+%%%Now applying product rule to the second term, we get:
+%%%\begin{equation}
+%%%  \begin{aligned}
+%%%    \tdt{{\cal{L}}}{\xi} & = \tdt{F}{\xi} + \td{\lambda}{\xi} \td{R}{\xi} + \lambda \tdt{R}{\xi}
+%%%  \end{aligned}
+%%%\end{equation}
+%%%Note that this step has introduced an unknown function
+%%%$\td{\lambda(\xi)}{\xi}$. This imposes us to find another set of
+%%%conditions so as to solve for $\td{\lambda}{\xi}$ explicitly. We will
+%%%explore the possibilities shortly. Before, delving into these
+%%%possibilities we first apply the chain rule on the terms on the right
+%%%hand side to fully identify the terms that we know and do
+%%%not know. We get
+%%%\begin{equation}\label{eqn:second_derivative_of_lagrangian}
+%%%  \begin{aligned}
+%%%    \tdt{{\cal{L}}}{\xi} & = \left( \pdt{F}{q}\tdt{q}{\xi} + \pdt{F}{\xi} \right) + \td{\lambda}{\xi} \left( \pd{R}{q}\td{q}{\xi} + \pd{R}{\xi}\right) + \lambda \left( \pdt{R}{q}\tdt{q}{\xi} + \pdt{R}{\xi}\right) \\
+%%%    & =  \left( \pdt{F}{\xi} + \lambda \pdt{R}{\xi} \right) + \td{\lambda}{\xi} \left( \pd{R}{q}\td{q}{\xi} + \pd{R}{\xi}\right) + \left( \pdt{F}{q} +  \lambda \pdt{R}{q} \right) \tdt{q}{\xi}  \\
+%%%  \end{aligned}
+%%%\end{equation}
+%%%By observing the terms that are in the above expression, we note that
+%%%the number of unknown functions for the second-order derivative
+%%%problem is four: $\lambda(\xi)$, $\td{\lambda(\xi)}{\xi}$, $\td{q(\xi)}{\xi}$
+%%%and $\tdt{q(\xi)}{\xi}$. Notice that other partial derivatives in
+%%%the~\eqref{eqn:second_derivative_of_lagrangian} can be readily obtained by straightforward
+%%%differentiation of the $F$ and $R$, as their algebraic forms are
+%%%explicitly known to us, as soon as we have formulated the physical
+%%%system and design objective. We discussed conditions that give us the
+%%%solution of $\lambda(\xi)$ (see Equation \eqref{}) and
+%%%$\td{q(\xi)}{\xi}$ (see Equation \eqref{}) in the previous section on
+%%%obtaining the first-derivatives $\td{{\cal{L}}}{\xi}$. This leaves us
+%%%to find two more conditions to enable us to find the
+%%%second-derivatives. In general, they are
+%%%\begin{equation}
+%%%  \inner{\td{\lambda}{\xi}}{\left( \pd{R}{q}\td{q}{\xi} + \pd{R}{\xi}\right)} = 0,
+%%%\end{equation}
+%%%and
+%%%\begin{equation}
+%%%  \inner{\lambda}{\left( \pdt{R}{q}\tdt{q}{\xi} + \pdt{R}{\xi}\right)} = 0.
+%%%\end{equation}
+%%%\subsection{Semianalytic Approach 1 : Direct-Direct}
+%%%However, it is sufficient for us to use the trivial condition
+%%%\begin{equation}
+%%%  \pd{R}{q}\td{q}{\xi} + \pd{R}{\xi} = 0
+%%%\end{equation}
+%%%to find $\td{q}{\xi}$ and
+%%%\begin{equation}
+%%%  \pdt{F}{q}\tdt{q}{\xi} + \pdt{F}{\xi} = 0
+%%%\end{equation}
+%%%to find $\tdt{q(\xi)}{\xi}$, which can be seen as an extension of direct
+%%%approach that we took for first-order sensitivities.
+%%%
+%%%\subsection{Semianalytic Approach 2 : Adjoint-Adjoint}
+%%%
+%%%
+%%%
+%%%
+%%% Therefore, if one
+%%%were to compute upto second-order derivatives using \emph{direct method},
+%%%the conditions in Table~\ref{tab:direct_sensitivities_conditions} are
+%%%the ones that need to be solved.
+%%%
+%%%\subsection{Semianalytic Approach 2 : }
+%%%\subsection{Semianalytic Approach 3}
+%%%
+%%%
+%%%
+
+%%
+%% \chapter{Sensitivities for Time Dependent Systems}
+%% \paragraph{Introduction.} In this chapter we will derive discrete
+%% adjoint and direct sensitivity equations for obtaining first-order
+%% derivatives of functions of interest.
+%%
+%% \section{First-Order Differential Equations}
+%% \subsection{Backward Differences Formula}
+%% \subsection{Adams Bashforth Moulton}
+%% \subsection{Diagonally Implicit Runge--Kutta Method}
+%%
+%% \section{Second-Order Differential Equations}
+%% \subsection{Backward Differences Formula}
+%% \subsection{Adams Bashforth Moulton}
+%% \subsection{Diagonally Implicit Runge--Kutta Method}
+%% \subsection{Newmark Method}
+%%
+%% \section{Higher-Order Differential Equations}
+%% \subsection{Backward Differences Formula}
+%% \subsection{Adams Bashforth Moulton}
+%% \subsection{Diagonally Implicit Runge--Kutta Method}
+%%
+%% \chapter{Software Architecture for Sensitivity Analysis}
+%%
+%% \chapter{Physics Based Design Optimization Applcations}

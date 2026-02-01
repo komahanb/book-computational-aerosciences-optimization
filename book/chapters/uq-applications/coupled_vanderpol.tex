@@ -1,0 +1,114 @@
+\subsection{Van der Pol Oscillator}
+%The Van der Pol oscillator, is a nonconservative stable oscillator, and was termed as a relaxation oscillator on its discovery. 
+%This oscillator has been frequently employed for the investigation of the properties of nonlinear oscillators and various oscillatory phenomena in physical and biological systems.
+The natural form governing differential equation for Van der Pol oscillator is
+\begin{equation}\label{eqn:vanderpol-natural}
+  {R}(t,{\ddot{u}(t)},{\dot{u}(t)},u(t)) := \ddot{u}(t) -\mu(1-{u(t)}^2) \cdot \dot{u}(t) + u(t) = 0 
+\end{equation}
+which is a scalar nonlinear second-order differential equation where $u(t), \dot{u}(t)$ and $\ddot{u}(t)$ are unknown scalar functions of independent parameter time $t$. 
+%Since the system is autonomous the dependence of $t$ can be omitted without loss of generality. 
+Let the initial conditions be $u(0)=1$ and $\dot{u}(0)=1$. 
+The partial Jacobians required for linearization of~\eqref{eqn:vanderpol-natural} are
+\begin{equation}
+  \pd{R}{\ddot{u}}=1,\quad\pd{R}{\dot{u}} = -\mu \left(1-{u(t)}^2\right)\quad\mathrm{and}\quad\pd{R}{u}=1 + 2\mu u(t)\dot{u}(t).
+\end{equation}
+We consider the case where the oscillator parameter $\mu$ is a function of normally distributed random variable $y \sim {\mathcal{N}}{(1.0,0.25)}$.  
+The stochastic nonlinear ODE is
+\begin{equation}\label{eqn:vanderpol-natural-stochastic}
+  {\mathcal{R}}(t,y,{\ddot{u}(t,y)},{\dot{u}(t,y)},u(t,y)) := \ddot{u}(t,y) -\mu(1-{u(t,y)}^2) \cdot \dot{u}(t,y) + u(t,y) = 0  
+\end{equation}
+The solution of the stochastic ODE using semi-intrusive projection is centered around
+implicitly forming the stochastic residuals, Jacobians and initial conditions as described in Section~\ref{sec:semi-intrusive-sgm}.
+The probabilistic moments determined using semi-intrusive projection are shown in Figures~\ref{fig:vpl-mean-variance} and ~\ref{fig:vpl-mean-std-band}.
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{vpl-galerkin-expectation.pdf}
+  \end{subfigure}
+  \centering
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{vpl-galerkin-variance.pdf}
+  \end{subfigure}
+  \caption{Expectation (left) and variance (right) of solution of Van der Pol oscillator obtained using projection with $7$ terms.}
+  \label{fig:vpl-mean-variance}
+\end{figure}
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{\textwidth}
+    \includegraphics[width=0.32\linewidth]{vpl-galerkin-one-sigma.pdf}
+    \includegraphics[width=0.32\linewidth]{vpl-galerkin-two-sigma.pdf}
+    \includegraphics[width=0.32\linewidth]{vpl-galerkin-three-sigma.pdf}
+  \end{subfigure}
+  \caption{The expected response quantities with overlaid bands of one (left), two (middle) and three (right) standard deviations using projection with $7$ terms.}
+  \label{fig:vpl-mean-std-band}
+\end{figure}
+
+%% 
+%% \clearpage
+%% We consider two degree of freedom Van der Pol oscillator whose governing equations are written as 
+%% \begin{equation}\label{eqn:vanderpol-coupled-residual}
+%%   \begin{aligned}
+%%     \ddot{u}_1 - \mu (1 - u_1^2)  \dot{u}_1 + u_1 & = 0 \\
+%%     \ddot{u}_2 - \mu (1 - u_1^2)  \dot{u}_2 + u_2 & = 0 \\
+%%   \end{aligned}
+%% \end{equation}
+%% In matrix form the residual of the equations are of the abstract form $R(t, \ddot{u}(t), \dot{u}(t),{u}(t))=0$, and can be written as
+%% \begin{equation}
+%%   \begin{aligned}
+%%     \begin{bmatrix}
+%%       1  & 0 \\
+%%       0 & 1 \\
+%%     \end{bmatrix}
+%%     \begin{Bmatrix}
+%%       \ddot{u}_1 \\
+%%       \ddot{u}_2
+%%     \end{Bmatrix} 
+%%      - \mu 
+%%     \begin{bmatrix}
+%%       1 - u_1^2 & 0 \\
+%%       0 & 1 - u_1^2 \\
+%%     \end{bmatrix}
+%%     \begin{Bmatrix}
+%%       \dot{u}_1 \\
+%%       \dot{u}_2
+%%     \end{Bmatrix} 
+%%      +
+%%     \begin{bmatrix}
+%%       1  & 0 \\
+%%       0  & 1 \\
+%%     \end{bmatrix}
+%%     \begin{Bmatrix}
+%%       {u}_1 \\
+%%       {u}_2
+%%     \end{Bmatrix} 
+%%     =
+%%     \begin{Bmatrix}
+%%       0 \\
+%%       0 \\
+%%     \end{Bmatrix} 
+%%   \end{aligned}
+%% \end{equation}
+%% To use the implicit time marching methods reported in Chapter~\ref{chapter:adjoint-ode}, we implement the deterministic Jacobians 
+%% $\pd{R}{\ddot{u}} = 
+%% \begin{bmatrix}
+%%   1  & 0 \\
+%%   0 & 1 \\
+%% \end{bmatrix}$,
+%% $\pd{R}{\dot{u}} = 
+%% \begin{bmatrix}
+%%   - \mu (1 - u_1^2)  & 0 \\
+%%   0 & - \mu (1 - u_1^2) \\
+%% \end{bmatrix}$,
+%% and
+%% $\pd{R}{u} = 
+%% \begin{bmatrix}
+%%   1 + 2 \mu u_1 \dot{u}_1 & 0 \\
+%%   2 \mu u_1 \dot{u}_2   & 1 \\
+%% \end{bmatrix}$.
+%% Let the uncertain parameter $\mu(y) \sim {\cal{E}}(\mu=0,\beta=1)$,
+%% and the states be $u_1 = u_1(t,y)$ and $u_2 = u_2(t,y)$.
+%% 
+%% We are interested in finding the mean and variance of the response due to the exponential distribution of the parameter $\mu$.
+%% The stochastic sampling method to obtain these moments is to solve the deterministic equations~\eqref{eqn:vanderpol-coupled-residual} at sample values $\mu_q$ and computing the statistics.
+%% The stochastic Galerkin method relies on a single time dependent solution of the stochastic governing equations.
+%% Using the semi-intrusive stochastic Galerkin method, the stochastic residuals and Jacobians are formed by decomposing the deterministic residuals and Jacobians in terms of the probabilistic basis functions.

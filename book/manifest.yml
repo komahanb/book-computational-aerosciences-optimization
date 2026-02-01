@@ -1,0 +1,45 @@
+{
+  "parts": [
+    {
+      "title": "Doctoral Research",
+      "chapters": [
+        {"slug": "introduction"},
+        {"slug": "background"},
+        {"slug": "analytical-derivatives"},
+        {"slug": "time-marching-adjoint"},
+        {"slug": "rotorcraft-hub"},
+        {"slug": "uncertainty-quantification"},
+        {"slug": "galerkin-matrices"},
+        {"slug": "stochastic-architecture"},
+        {
+          "slug": "uq-applications",
+          "preamble": "\\paragraph*{The philosophical awe - entropy and order:}\nWe began this Chapter with Thomas Aquinas' quote on philosophy and awe.\nIt appears that we use quadrature approximation of integrals in both sampling and projection methods.\nThe question, out of curiosity, on how two fundamentally different approaches find application in the same context arises with awe.\nThe thoughtful admiration lies in the realization that when we use sampling based approaches, the probabilistic domain {\\cal{Y}} is treated at the end,\nwhereas when we perform projection we are indeed treating the probabilistic domain first and the temporal domain at the end!\nThis simple and naive shuffled treatment of domains leads to remarkably different solution approaches to the problem of UQ.\nThe mathematical trick of ordering has indeed manifested itself before -- the adjoint and direct sensitivity analysis methods are yet another mentionable artifacts in the context of this thesis.\nThis makes oneself humbled in the fact that the discovering new mathematical techniques, often, do not require new formulations, but rather depends on the perspective from which we approach the solution.\nIt seems suitable that \\emph{informal trick of ordering} ought to be elevated to the revered status of being the \\emph{principle of ordering}, alongside the \\emph{principle of superposition} and the \\emph{principle separation of variables} in the context of solving differential equations in probabilistic-space-time."
+        },
+        {"slug": "ouu-phd"},
+        {"slug": "conclusions"}
+      ]
+    },
+    {
+      "title": "Master's Research",
+      "chapters": [
+        {"slug": "ms-introduction"},
+        {"slug": "ms-surrogate"},
+        {"slug": "ms-training"},
+        {"slug": "ms-validation"},
+        {"slug": "ms-dynamic"},
+        {"slug": "ms-rmse"},
+        {"slug": "ms-database"},
+        {"slug": "ms-ouu-framework"},
+        {"slug": "ms-ouu"},
+        {"slug": "ms-conclusion"}
+      ]
+    },
+    {
+      "title": "Appendices",
+      "appendix": true,
+      "chapters": [
+        {"slug": "appendices"}
+      ]
+    }
+  ]
+}

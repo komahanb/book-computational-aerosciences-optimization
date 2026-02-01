@@ -1,0 +1,87 @@
+\clearpage
+\begin{centering}
+\textbf{SUMMARY}\\
+\vspace{\baselineskip}
+\end{centering}
+
+For aerospace structures, failure can occur not only because of static adversities like divergence, but also due to time dependent issues like flutter and large vibrations.
+Therefore, the consideration of time-domain physics becomes essential during design.
+The physics-based design of aerospace systems involves solving partial differential equations to obtain metrics of interest that guide the design process.
+These differential equations contain unknown parameters that are sometimes difficult to be characterized as a deterministic value.
+The uncertainties in input parameters have a direct impact on the output metrics of interest which guide the system design process.
+To this end, optimization under uncertainty has evolved as a field that accounts for the effect of uncertainties, by propagating the effect of uncertainties through physics simulations.
+
+For numerical optimization, the algorithms that do not use gradient information become computationally intractable as the number of design variables increases.
+Moreover, the numerical approximations of the gradients through the finite-difference or the complex-step methods are inefficient, for their lack of scalability with respect to the number of design variables.
+Therefore, efficient gradient evaluation techniques such as the adjoint method are needed for solving large scale optimization problems with practical turnaround times.
+However, because of the inclusion of time dependent physics, the corresponding time dependent adjoint equations needs to be formulated and implemented.
+Furthermore, the uncertainties need to be propagated through the time dependent physics and the adjoint sensitivity analysis framework.
+Due to the inherent complexities in the development of time domain physics and adjoint sensitivities analysis capabilities, the sampling-based methods are widely used for the propagation of uncertainties while the projection-based methods are less used.
+
+This work presents enhanced implicit time marching methods for flexible multibody dynamics, to analyze the time dependent behavior of aerospace structures, and formulates the corresponding time dependent adjoint sensitivity analysis equations, to efficiently optimize designs using gradient based methods.
+The adjoint-based design capabilities are demonstrated with the structural optimization of a rotorcraft hub system.
+A newly developed semi-intrusive approach for projection is shown to fully reuse the underlying time-domain analysis and adjoint sensitivity analysis capabilities, for the projection-based propagation of uncertainties.
+Using this method, the stochastic residuals and Jacobians are formed implicitly from the deterministic counterparts that have been implemented apriori.
+The application of the semi-intrusive projection method is shown using a flexible robotic manipulator system modeled after the Canadarm.
+In the presence of uncertainties in the payloads, the Canadarm system experiences stresses that have a large variability.
+This work demonstrates the use of uncertainty quantification as a valuable tool for assessing the risk associated with such operating conditions.
+
+%% Physics-based design of aerospace systems involves solving partial differential equations to obtain metrics of interest that guide the design process.
+%% These differential equations often contain unknown parameters that are difficult to be characterized as a deterministic value.
+%% The uncertainties in input parameters have a direct impact on the output metrics of interest which guide the system design process.
+%% To this end, optimization under uncertainty has evolved as a field that accounts for the effect of uncertainties, by propagating the effect of uncertainties through physics simulations.
+%% For aerospace structures, failure can occur not only because of static instabilities like divergence, but also due to time dependent issues like flutter and large vibrations.
+%% Therefore, the consideration of uncertainties along with time-domain physics becomes important for robust and reliable design of aerospace systems.
+%% The optimization algorithms that do no use gradient information for design optimization are computationally intractable as the number of design variables increase.
+%% Moreover, the numerical approximation of gradients through finite-difference or complex-step methods are inefficient for their lack of scalability with respect to the number of design variables.
+%% Therefore, efficient gradient evaluation techniques such as the adjoint method is needed for solving large scale optimization problems with practical turnaround times.
+%% However, because of the inclusion of time dependent physics, the corresponding time dependent adjoint equations needs to be formulated and implemented.
+%% Due to the inherent complexities involved in the development of deterministic time dependent physics and adjoint sensitivities analysis capabilities, the sampling-based methods are widely used for uncertainty propagation while projection-based methods are less preferred.
+%% This work address the incorporation of temporal physics of flexible multibody dynamics, with projection-based uncertainty propagation and adjoint sensitivity analysis to form a design optimization under uncertainty framework.
+%% The primary emphasis is on the the modularity of mathematical developments, which allows the reuse of deterministic capabilities for projection-based uncertainty propagation.
+%%
+%%
+%%This work presents the projection based uncertainty propagation
+%%This work considers the propagation aspect of uncertainties through
+%%nonlinear time dependent numerical simulations and adjoint sensitivity
+%%analysis, and present a semi-intrusive approach that is a synthesis of
+%%classical intrusive and non-intrusive approaches.
+%%The stochastic Galerkin method for uncertainty propagation is diffcult to implement and mce
+%%Numerical optimization of large aeromechanical systems require gradient-based optimization techniques that are computationally efficient compared to techniques that do not use higher-order information.
+%%Therefore, an efficient evaluation of gradients is also an important ingredient to the UQ–OUU design process.
+%%The time dependent nature of physical analysis necessitates the development of time dependent sensitivity analysis equations.
+%%Altogether, a need for incorporation of temporal analysis of physics, uncertainty analysis and sensitivity analysis into a common design framework emerges naturally
+%%The optimal design process is usually driven by an underlying physics simulation governed by partial differential equations (PDEs).
+%%The existing methods for uncertainty propagation through PDEs are non-intrusive sampling-based or intrusive projection-based methods.
+%%The sampling-based methods treat the deterministic simulation code as a black-box, but typically require many deterministic simulations for converged statistics.
+%%On the other hand, the projection-based methods can provide more accurate statistics at less computational cost but require explicit source code modifications to perform integration in probabilistic space.
+%%
+%%
+%%
+%%
+%%In this work, we consider
+%%%The projection-based methods of uncertainty propagation for problems involving nonlinearities have not reached a mature stage~\cite{2004-Miguel-Krenk}.
+%%
+%%
+%%When the governing deterministic PDEs take complex, nonlinear, and coupled forms, the explicit derivation of stochastic equations in algebraic (fully discretized) form may not be possible~\cite{Xiu2009Review,2004-Miguel-Krenk}. % or is not the best way
+%%In this work, we propose an implicit formulation of stochastic algebraic equations, which circumvents the need for explicit stochastic equations.
+%%%We find that the explicit equations are not necessary if they can be made an implicit part of computational machinery seeking the solution to stochastic PDEs.
+%%This idea is based on the observation that gradient the solution of an underlying physics can be centered around the formation of residual and Jacobian functions. %, we propose to develop the solution of stochastic PDEs as residuals and Jacobians.
+%%Using our approach the stochastic residuals and Jacobians can be computed on the fly from deterministic residuals and Jacobians, and thus deriving explicit stochastic algebraic equations is simply not required.
+%%Similarly, the stochastic adjoint terms for sensitivity analysis are obtained implicitly from the deterministic adjoint terms, eliminating the need for deriving stochastic adjoint equations. % enabling the reuse of adjoint derivative capabilities of deterministic code base.
+%%In other words, the stochastic quantities are simply a function of the deterministic quantities.
+%%The implicit representation of stochastic residuals, Jacobians and adjoint-terms via deterministic residuals, Jacobians and adjoint-terms enables the reuse existing deterministic capabilities of simulation code.
+%%This approach simplifies the code development necessary for building a stochastic Galerkin simulation framework.
+%%%As an analogy, it is sufficient if one is able to form Jacobian-vector products implicitly to be able to solve a linear system.
+%%%It is sufficient to have deterministic algebraic equations  resulting from the spatial discretization method of choice (finite element or finite volume).
+%%%Secondly, the implementation of stochastic Galerkin method
+%%%We apply this semi-intrusive framework to time dependent simulations of flexible multibody dynamic systems.
+%%Sometimes, the use of time domain simulations poses the additional task of integrating stochastic differential equations in time.
+%%This challenge can also be addressed by extending deterministic time-integration methods to the stochastic differential equations in time, based on the observation that the residuals, Jacobians and adjoint terms are now simply a function of time (\ie, the deterministic quantities vary in time).
+%%%To perform efficient gradient-based optimization, we develop an adjoint method for the stochastic projection-based simulation that leverages the deterministic implementation.
+%%%To demonstrate this entire approach, we extend a deterministic finite element analysis process to a stochastic finite element analysis process by reusing existing deterministic finite element capabilities.
+%%%We demonstrate the semi-intrusive approach by extending the deterministic finite element based multibody dynamics and adjoint capabilities with the TACS framework~\cite{Boopathy2019:Adjoint}, to form a stochastic finite element framework for multibody dynamics with adjoint derivatives for optimization.
+%%We demonstrate our semi-intrusive approach by extending the TACS finite element framework with adjoint capabilities~\cite{Boopathy2019:Adjoint} into a stochastic finite element framework with adjoint capabilities.
+%%
+
+%\pagenumbering{gobble}  %remove page number on summary page

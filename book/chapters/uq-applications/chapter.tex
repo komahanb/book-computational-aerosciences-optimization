@@ -1,0 +1,1476 @@
+\chapter{Uncertainty Propagation and Sensitivity Analysis of Static and Time Dependent Systems}\label{chapter:uq_applications}
+\paragraph*{Introduction.}
+The goal of this chapter is to demonstrate the computation of probabilistic moments and their derivatives using the semi-intrusive SGM, and
+to compare the moments computed to that of sampling-based collocation method.
+We begin with stochastic analysis of a static system, and proceed to the analysis of time dependent first and second-order systems, and finally to flexible multibody dynamics systems.
+
+\section{Static Spring}
+We consider the static deflection of a spring subject to a force $f$ as the physical problem of interest.
+The metric of interest is the potential energy of the system, and the design variable is the stiffness constant $k$, that is $\xi := k$.
+
+\subsection{Deterministic System}
+The system is mathematically modeled as an algebraic equation:
+\begin{empheq}[box=\mymath]{equation*}
+%\begin{equation}
+  \begin{aligned}
+    & \underline{\text{Physical Analysis}} && \\
+    & \underset{u(\xi)}{\text{solve}} &  & R\arg{\xi,u(\xi)} := k \cdot u(\xi) - f = 0 && \text{(residual)} \\
+    & \text{evaluate} &  &   F(\xi,u(\xi)) := \frac{1}{2} k u(\xi)^2  && \text{(metric of interest)} \\
+    & \underline{\text{Sensitivity Analysis}}  && \\
+    & \text{evaluate} & &\td{F(\xi, u(\xi))}{\xi} && \text{(derivative of function)} \\
+  \end{aligned}
+%\end{equation}
+\end{empheq}
+The solution of state variables $u(\xi)$ is obtained solving a linear system as
+\begin{equation}
+  u(\xi) = \frac{f}{k}.
+\end{equation}
+The metric of interest (potential energy) is
+\begin{equation}\label{eqn:spring-metric}
+  \begin{aligned}
+    F(\xi, u(\xi)) & = \frac{1}{2} \times k \times \left(\frac{f}{k}\right)^2  = \frac{1}{2} \frac{f^2}{k} \\
+  \end{aligned}
+\end{equation}
+The derivative of function of interest (energy) with respect to stiffness constant $k$ is
+\begin{equation}\label{eqn:spring-metric-deriv}
+  \begin{aligned}
+    \td{F(\xi, u(\xi))}{\xi} & = -\frac{1}{2}\frac{f^2}{k^2}
+  \end{aligned}
+\end{equation}
+The metric~\eqref{eqn:spring-metric} and its design variable derivative~\eqref{eqn:spring-metric-deriv} can be used to solve optimization problems using gradient-based algorithms, to identify the critical $\xi^{\star}$ that minimizes or maximizes the potential energy.
+For the purposes of demonstration, let the right hand side $f={\pi}$ and stiffness constant $k=\frac{\pi}{2}$ which evaluates to
+\begin{equation}
+  F = \pi  \quad \text{and} \quad  \td{F}{\xi} = -2.
+\end{equation}
+
+\subsection{Stochastic System with Uncertain System Parameter}
+Now let us explore the changes in the metric and its derivative in the presence of uncertainties.
+Let us assume that the stiffness parameter is uncertain and dependent on random variable such that $k := k(y)$, where $y$ is a random variable from stochastic domain ${\mathcal{Y}}$.
+%Essentially we are assuming that, instead of a precise deterministic value, the system has a stiffness that is exponentially distributed as
+%Note that we assume exponential distribution to disallow negative stiffness values that would emerge from Gaussian distribution.
+The random variable adds a stochastic dimension to the \emph{deterministic linear algebraic equation}, which results in a \emph{stochastic linear algebraic equation}. Mathematically, the setup of the stochastic problem we intend to solve is given as follows.
+\begin{empheq}[box=\mymath]{equation*}
+%\begin{equation}\label{eqn:static-spring-stochastic}
+  \begin{aligned}
+    & \underline{\text{Physical Analysis}} && \\
+    & \underset{u(y)}{\text{solve}} &  & {{R}}\arg{y,u(y)} := k(y) \cdot u(y) - f = 0  && \text{(stochastic residual)} \\
+    & \text{evaluate}               &  & \mathbb{E}[{{F}}(y,u(y))]  :=  \mathbb{E}\left[\frac{1}{2}k(y)u(y)^2\right] && \text{(mean)}\\
+    & \text{}                       &  & \mathbb{V}[{{F}}(y,u(y))]  :=  \mathbb{V}\left[\frac{1}{2}k(y)u(y)^2\right] && \text{(variance)} \\
+    & \text{}                       &  & \mathbb{S}[{{F}}(y,u(y))]  :=  ~\mathbb{S}\left[\frac{1}{2}k(y)u(y)^2\right] && \text{(standard~deviation)} \\
+    & \underline{\text{Sensitivity Analysis}} && \\
+    & \text{}                       &  & \td{\mathbb{E}[{{F}}(y(\xi),u(y(\xi)))]}{\xi} && \text{(derivative~of~mean)} \\
+    & \text{}                       &  & \td{\mathbb{V}[{{F}}(y(\xi),u(y(\xi)))]}{\xi} && \text{(derivative~of~variance)} \\
+    & \text{}                       &  & \td{\mathbb{S}[{{F}}(y(\xi),u(y(\xi)))]}{\xi} && \text{(derivative~of~std. dev.)} \\
+  \end{aligned}
+\end{empheq}
+The computation of these quantities allows us to solve an optimization under uncertainty problem, to identify a critical $\xi^{\star}$ that provides robustness and reliability.
+In this stochastic case the design variable $\xi$ is chosen to be the mean stiffness $\mu_k$.
+Let us discuss the computation of the probabilistic moments of the metric and its derivative using sampling and projection.
+%Using the stochastic sampling and projection approaches (see Section~\ref{sec:uncertainty-propagation}),
+% For the purposes of illustration, these equations are recalled in the context of static spring system.
+\paragraph*{(1) Sampling Method:} The first moment and its derivative are computed using sampling as:
+\begin{equation}
+  \mathbb{E}\left[{F(y,u(y))}\right]\approx\sum_{q=1}^Q \alpha_q^y \left(\frac{1}{2}\frac{f^2}{\pre{k}{q}}\right)\quad\text{and}\quad\mathbb{E}\left[\td{F(y,u(y))}{\xi}\right]\approx\sum_{q=1}^Q \alpha_q^y \left(\frac{1}{2}\frac{f^2}{\pre{k}{q}^2}\right).
+\end{equation}
+where $\pre{k}{q}$ is the $q-$th quadrature node whose corresponding weight is $\alpha_q^y$.
+The variance $\mathbb{V}\left[{F(y,u(y))}\right]$ and standard deviation $\mathbb{S}\left[{F(y,u(y))}\right]$ are computed following the steps outlined in Section~\ref{sec:non-intrusive-sampling-details}.
+
+\paragraph*{(2) Projection Method:}
+When we apply the projection method, we expect an expanded \underline{linear system}, featuring bigger matrices and vectors. Using projection method, the $i-$th right hand side is formed as
+\begin{equation}
+  \pre{f}{i} \approx \sum_{q=1}^Q \alpha_q^y \times {\widehat{\psi_i}(\pre{y}{q})} \times {f}
+\end{equation}
+%\begin{equation}
+%  \pre{u}{i} \approx \sum_{q=1}^Q \alpha_q^y \times {\widehat{\psi_i}(\pre{y}{q})} \times {u(\pre{y}{q})}
+%\end{equation}
+and the $(i,j)-th$ Jacobian matrix entries are formed as
+\begin{equation}
+  \begin{aligned}
+    \pre{{\mathcal{J}}}{i,\,j} & \approx \sum_{q=1}^Q \alpha_q^y \times {\widehat{\psi_i}(\pre{y}{q})} \times {J(\pre{y}{q}, u(\pre{y}{q}))} \times {\widehat{\psi_j}(\pre{y}{q})} \\
+    &  = \sum_{q=1}^Q \alpha_q^y \times {\widehat{\psi_i}(\pre{y}{q})} \times \pre{k}{q} \times {\widehat{\psi_j}(\pre{y}{q})}
+\end{aligned}
+\end{equation}
+This results in the linear system
+\begin{equation}\label{eqn:static-spring-projection-system}
+  \begin{bmatrix}
+    \pre{{\mathcal{J}}}{1,\,1} & \pre{{\mathcal{J}}}{1,\,2} & \ldots & \pre{{\mathcal{J}}}{1,\,N}\\
+    \pre{{\mathcal{J}}}{2,\,1} & \pre{{\mathcal{J}}}{2,\,2} & \ldots & \pre{{\mathcal{J}}}{2,\,N}\\
+    {\vdots}               & {\vdots}               & \ddots & {\vdots}              \\
+    \pre{{\mathcal{J}}}{N,\,1} & \pre{{\mathcal{J}}}{N,\,2} & \ldots & \pre{{\mathcal{J}}}{N,\,N}\\
+  \end{bmatrix}
+  \begin{Bmatrix}
+    \pre{u}{1} \\
+    \pre{u}{2} \\
+    \vdots \\
+    \pre{u}{N}
+  \end{Bmatrix} =
+  \begin{Bmatrix}
+    \pre{f}{1} \\
+    \pre{f}{2} \\
+    \vdots \\
+    \pre{f}{N}
+  \end{Bmatrix}
+\end{equation}
+In this case the Jacobian ${\mathcal{J}}$ is a tridiagonal matrix since the polynomial degree of the stiffness parameter is one, giving rise to one band on either side of the diagonal.
+The decomposition coefficients $\pre{u}{i}$ are determined by solving the linear system~\eqref{eqn:static-spring-projection-system}.
+The probabilistic moments of $F$ and its derivatives are obtained using the steps outlined in Section~\ref{sec:semi-intrusive-sgm}.
+
+
+\paragraph*{Complex-step verification of stochastic adjoint derivatives:}
+First, we ensure the consistency of the derivative of moments of $F$ with respect to $\xi=\mu_k$  using the complex step method.
+This test is conducted with normal, exponential and uniform probability distributions of the random variable $y$.
+Table~\ref{tab:spring-case-complex-step} lists the adjoint derivatives computed using projection with that of the complex step method.
+An exact match of values can be noticed, which verifies the validity of the adjoint derivatives computed using the semi-intrusive projection.
+\begin{table}[h]
+  \caption{The complex-step verification of stochastic adjoint derivatives with the number of terms in orthonormal basis $N=7$.}
+  \medskip
+  \centering
+  \scalebox{0.95}{
+    \begin{tabular}{c|cccc}
+      \toprule
+      Distribution & Type & $\td{\mathbb{E}[{{F}}]}{\xi}$ & $\td{\mathbb{V}[{{F}}]}{\xi}$  & $\td{\mathbb{S}[{{F}}]}{\xi}$ \\
+      \midrule
+      Exponential  & adjoint         & -1.68733320815981 & -0.11533024885544 & -0.25255516821879 \\
+      $ {\mathcal{E}}(\frac{\pi}{2}, 0.1 \cdot \frac{\pi}{2})$ & complex         & -1.68733320815981 & -0.11533024885544 & -0.25255516821879 \\
+      \midrule
+      Normal       & adjoint         & -2.06323129529018 & -0.28546603338653 & -0.43563400146749 \\
+      $ {\mathcal{N}}(\frac{\pi}{2}, 0.1 \cdot \frac{\pi}{2})$ & complex         & -2.06323129529018 & -0.28546603338653 & -0.43563400146749 \\
+      \midrule
+      Uniform      & adjoint        & -2.02020202020202 & -0.08564848260089 & -0.23436946202514 \\
+      $ {\mathcal{U}}(0.9\cdot\frac{\pi}{2}, 1.1 \cdot \frac{\pi}{2})$     & complex        & -2.02020202020202 &  -0.08564848260089 & -0.23436946202514 \\
+      \bottomrule
+    \end{tabular}
+  }
+  \label{tab:spring-case-complex-step}
+\end{table}
+
+\paragraph*{Comparison of sampling- and projection-based metrics:}
+Now we compare the metrics and derivatives obtained using the semi-intrusive projection with that of the quadrature sampling.
+The use of more number of quadrature samples (for collocation) and more number of basis terms (for projection) will, in general, produce a better estimate of probabilistic moments and derivatives.
+However, these are not known apriori at the start of stochastic analysis process.
+%Both the sampling and projection based approximation are numerical estimates of the analytical values that are not known.
+%As we increase the number of samples for collocation and number of basis terms for projections, we tend to converge to the analytical values but the rate of convergence differs.
+In this section, a notional comparison is made with the number of samples $Q=15$ and the number of terms in orthonormal basis $N=7$, and the values are listed in Table~\ref{tab:spring-case-moments}.
+We highlight the  mismatching digits between the two methods in boldface font.
+\begin{table}[h]
+  \caption{Probabilistic moments of the energy function and its design variable derivative with the number of samples $Q = 15$ and the number of terms in orthonormal basis $N=7$.}
+  \medskip
+  \centering
+  \scalebox{1.0}{
+    \begin{tabular}{c|cc | cc}
+      \toprule
+          {} & Function & Value & Derivative & Value \\
+          \midrule
+          deterministic & $F$ & $\pi$ & $\td{F}{\xi}$ & -2 \\
+          \midrule
+          sampling      & $\mathbb{E}[{{F}}]$ &  2.87654697\textbf{243427}   & $d{\mathbb{E}[{{F}}]}/d{\xi}$ & -1.6873332\textbf{1204238} \\
+          projection    & $\mathbb{E}[{{F}}]$ &  2.87654697\textbf{182409}   & $d{\mathbb{E}[{{F}}]}/d{\xi}$ & -1.6873332\textbf{0815981} \\
+          \midrule
+          sampling      & $\mathbb{V}[{{F}}]$ &  0.0521331\textbf{6321809}   & ${\mathbb{V}[{{F}}]}/d{\xi}$ & -0.115330\textbf{35551488} \\
+          projection    & $\mathbb{V}[{{F}}]$ &  0.0521331\textbf{4756883}   & $d{\mathbb{V}[{{F}}]}/d{\xi}$ & -0.115330\textbf{24885544} \\
+          \midrule
+          sampling      & $\mathbb{S}[{{F}}]$ &  0.2283268\textbf{7800188}   & $d{\mathbb{S}[{{F}}]}/d{\xi}$ & -0.252555\textbf{36388040} \\
+          projection    & $\mathbb{S}[{{F}}]$ &  0.2283268\textbf{4373246}   & $d{\mathbb{S}[{{F}}]}/d{\xi}$ & -0.252555\textbf{16821879} \\
+          \bottomrule
+    \end{tabular}
+  }
+  \label{tab:spring-case-moments}
+\end{table}
+Recall that for the sampling method we solve the deterministic linear system of size $1 \times 1$, $Q$ times, whereas in the case of the projection a linear system of size $7 \times 7$ is solved.
+Similarly for the adjoint derivatives, a smaller adjoint system is solved $Q$ times with sampling, however a larger adjoint system is solved once with projection.
+
+\section{Linear Time Dependent Systems}
+In this section, we demonstrate the uncertainty propagation using sampling and projection on the following linear time dependent systems:
+% We present the results of semi-intrusive uncertainty propagation and sensitivity analysis for time dependent systems, with application to probabilistic design optimization problems.
+\begin{itemize}
+\item one degree of freedom decay model (first-order ODE)
+\item one degree of freedom spring mass damper system (second-order ODE)
+\item three degrees of freedom spring mass series (second-order ODE)
+% \item forced spring mass damper
+\item two degrees of freedom pitching and plunging airfoil system (second-order ODE)
+\end{itemize}
+
+\subsection{First-Order Decay Model}
+We consider a simple first-order ordinary differential equation (ODE). %, referred to as the ``test equation''.
+The statistical moments (mean and variance) of the solution to the ODE are found using:~{(a)} analytical formulae, {(b)} quadrature sampling and {(c)} projection techniques.
+We study this problem with three distributions types (normal, uniform and exponential) for the decay parameter.
+%The goal of this chapter is to identify the key mathematical details involved in each of these methods for uncertainty quantification, which will lay the platform for extending the application of these methods to complex problems arising in engineering design.
+%The equations necessary to obtain analytical sensitivities are also derived.
+
+\subsubsection{Deterministic and Stochastic Problem Setup}
+Consider the following first-order differential equation with prescribed initial condition $u_0$ and constant decay parameter $\lambda$
+\begin{equation}\label{eqn:test_ode_deterministic}
+\begin{aligned}
+  \td{u(t)}{t} +  \lambda~u(t) & = 0      && \in && {\mathcal{T}} \\
+                          u(0) & = u_0    && \in && {\partial{\mathcal{T}}} \\
+\end{aligned}
+\end{equation}
+The analytical solution to the differential equation is $u(t) = u_0 \,\mathrm{e}^{-\lambda t}$.
+%
+%\subsection{Univariate Stochastic Problem}
+Let us assume that the decay parameter is uncertain  $\lambda: = \lambda(y)$, where $y$ is a random variable from stochastic domain ${\mathcal{Y}}$.
+This adds a stochastic dimension to the differential equation resulting in the stochastic differential equation
+\begin{equation}\label{eqn:test_ode_stochastic}
+\begin{aligned}
+  \td{u(t,y)}{t} +  \lambda(y)~u(t,y) & = 0      && \in && {\mathcal{T}} \otimes {\mathcal{Y}} \\
+                            u(0,y) & = u_0    && \in && {\partial{\mathcal{T}}} \otimes {\mathcal{Y}} \\
+\end{aligned}
+\end{equation}
+Notice the product nature of temporal and stochastic domains forming the stochastic-temporal domain. Rather than individual solutions $u(t,y) = u_0\,\mathrm{e}^{-\lambda(y)t}$ for each realization of the random variable, we are interested in statistical moments of the solution, namely the mean $\mathbb{E}[u(t,y)]$ (first moment) and variance $\mathbb{V}[u(t,y)]$ (second moment).
+%% \subsection{Model Problem}
+%% \subsubsection{Deterministic Problem}
+%% We consider the following first-order differential equation with
+%% prescribed initial condition $u_0$ and constant decay parameter
+%% $\lambda$
+%% \begin{equation}\label{eqn:test_ode_deterministic}
+%% \begin{aligned}
+%%   \td{u(t)}{t} +  \lambda u(t) & = 0      && \in && {\mathcal{T}} \\
+%%                           u(0) & = u_0    && \in && {\partial{\mathcal{T}}} \\
+%% \end{aligned}
+%% \end{equation}
+%% The solution to the differential equation is $u(t) = u_0 \, \mathrm{e}^{-\lambda t}$.
+%%
+%% \subsubsection{Stochastic Problem}
+%% Let us assume that the decay parameter $\lambda: = \lambda(y)$, where
+%% $y$ is a random variable from stochastic domain ${\mathcal{Y}}$. This adds
+%% a stochastic dimension to the differential equation resulting in the
+%%  stochastic differential equation
+%% \begin{equation}\label{eqn:test_ode_stochastic}
+%% \begin{aligned}
+%%   \td{u(t,y)}{t} +  \lambda(y) u(t,y) & = 0      && \in && {\mathcal{T}} \otimes {\mathcal{Y}} \\
+%%                             u(0,y) & = u_0    && \in && {\partial{\mathcal{T}}} \otimes {\mathcal{Y}} \\
+%% \end{aligned}
+%% \end{equation}
+%% Notice the product nature of temporal and stochastic domains forming
+%% the stochatic-temporal domain where the differential equation provides
+%% the pertinent mathematical model.  Instead of individual solutions
+%% $u(t,y) = u_0\,\mathrm{e}^{-\lambda(y) t}$ to the problem, we are usually
+%% interested in moments of the solution, namely the mean
+%% $\mathbb{E}[(u(t,y)]$ and variance $\mathbb{V}[u(t,y)]$.
+%%
+ \subsubsection{Analytical Moments for Gaussian Distribution}
+% The probability distribution of random variable $y$ affects the decay
+% parameter $\lambda$, and thus the solution to the stochastic ODE.
+ Let $y$ be normally distributed with mean $\mu$ and standard deviation $\sigma$ as $y \sim {\mathcal{N}}({\mu,\sigma})$.
+ The mean (first moment) is
+ \begin{equation}
+ \begin{aligned}
+ \mathbb{E}[u(t,y)] & = \int_{-\infty}^{\infty} u(t,y) \underbrace{\frac{\mathrm{e}^{-\frac{1}{2}\left(\frac{y-\mu}{\sigma}\right)^2}}{\sigma \sqrt{2\pi}}}_{\rho_n^y(y)}\,dy 
+ = \int_{-\infty}^{\infty} u_0 \mathrm{e}^{-yt} \frac{\mathrm{e}^{-\frac{1}{2}\left(\frac{y-\mu}{\sigma}\right)^2}}{\sigma \sqrt{2\pi}}\,dy \\
+ & = \exp \left( \frac{1}{2}{\sigma^2t^2 - \mu t} \right) \\
+ \end{aligned}
+ \end{equation}
+ The variance (second moment) is
+ \begin{equation}
+   \begin{aligned}
+     \mathbb{V}[u(t,y)] & = \mathbb{E}[u^2(t,y)] -  \mathbb{E}[u(t,y)]^2 \\
+     & = \exp \left( {2\sigma^2 t^2 - 2 \mu t} \right) - \left(\exp\left({\frac{1}{2}\sigma^2t^2 - \mu t}\right)\right)^2\\
+ %    & = \exp \left( {2\sigma^2 t^2 - 2 \mu t} \right) - \exp\left({\sigma^2t^2 - 2 \mu t}\right)\\
+ \end{aligned}
+ \end{equation}
+
+%% \textcolor{red}{what about $u_0$ dependence}
+%% \subsubsection{Uniform Distribution}
+%% If $y$ is uniformly distributed within the interval $[a,b]$,
+%%  then $\lambda(y) = y \sim {\mathcal{U}}({a,b})$.
+%% and
+%% the
+%% expectation (first moment) of $u(t,y)$ is
+%% \begin{equation}
+%% \begin{aligned}
+%% \mathbb{E}[u(t,y)] & = \int_{a}^{b} u(t,y) \underbrace{\frac{1}{b-a}}_{\rho_u^y(y)}\,dy \\
+%% & = \frac{1}{b-a} \int_{a}^{b} u_0 \, {\exp}({-yt}) \,dy \\
+%% & = \frac{u_0\,\left(\exp \left( -at \right) - \exp \left( -bt \right)\right)}{t(b-a)} \\
+%% \end{aligned}
+%% \end{equation}
+%% The variance (second moment) is
+%% \begin{equation}
+%%   \begin{aligned}
+%%     \mathbb{V}[u(t,y)] & = \mathbb{E}[u^2(t,y)] -  \mathbb{E}[u(t,y)]^2 \\
+%%     & = \frac{u_0^2\,\left(\exp \left( -2at \right) - \exp \left( -2bt \right)\right)}{2t(b-a)} - \frac{u_0\,\left(\exp \left( -at \right) - \exp \left( -bt \right)\right)}{t(b-a)} \\
+%%   \end{aligned}
+%% \end{equation}
+%%
+
+%\section{Univariate Uncertainty Quantification}
+\subsubsection{Stochastic Quadrature Sampling for Normal Distribution}
+Stochastic sampling technique uses repeated solutions of the differential equation~\eqref{eqn:test_ode_stochastic} to perform integration in the stochastic domain.
+The decay parameter value $\pre{\lambda}{q}=\lambda(\pre{y}{q})$ depends on the random variable $\pre{y}{q}$ and its corresponding distribution type.
+The stochastic ODE
+\begin{equation}
+\begin{aligned}
+  \td{u(t,\pre{y}{q})}{t} +  \pre{\lambda}{q} u(t,\pre{y}{q}) & = 0      && \in && {\mathcal{T}} \otimes {\mathcal{Y}} \\
+                            u(0,\pre{y}{q}) & = u_0    && \in && {\partial{\mathcal{T}}} \otimes {\mathcal{Y}} \\
+\end{aligned}
+\end{equation}
+is solved for each $\pre{\lambda}{q} = \lambda(\pre{y}{q})$ and the solutions $u(t,\pre{y}{q})$ are stored.
+The moments of the solution are computed as
+\begin{equation}
+  \begin{aligned}
+    \mathbb{E}[u(t,y)] & = \sum_{q=1}^Q \alpha_q^y u(t,\pre{y}{q}) \\\
+    \mathbb{V}[u(t,y)] & = \sum_{q=1}^Q \alpha_q^y u^2(t,\pre{y}{q}) - \mathbb{E}[u(t,y)]^2 \\
+  \end{aligned}
+\end{equation}
+\begin{figure}[ht]
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{testode_quadrature_mean_mu0_sigma1.pdf}
+ %   \caption{\emph{mean solution}}
+  \end{subfigure}
+  \centering
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{testode_quadrature_var_mu0_sigma1.pdf}
+%    \caption{\emph{variance of solution}}
+  \end{subfigure}
+  \caption{Comparison of the sampling-based mean and variance of the solution with analytical moments for $\mu_\lambda=0$ and $\sigma_\lambda=1$.}
+  \label{fig:tode-quadrature_mean_variance}
+\end{figure}
+Figure~\ref{fig:tode-quadrature_mean_variance} compares mean
+and variance computed using the stochastic sampling method with
+the analytical mean and variance for increasing number of samples from the 
+stochastic domain. It can be seen that the first moment converges faster than the second moment to the analytical value.
+%%Figure~\ref{fig:tode-quadrature_error_convergence} shows the rate of
+%%convergence of mean and variance to exact solutions.
+%%It can be seen that the first moment converges faster than the second moment.
+%%\begin{figure}[ht]
+%%  \centering
+%%  \includegraphics[width=0.6\linewidth]{testode_quadrature_rate_mu0_sigma1.pdf}
+%%  \caption{Error convergence of mean and variance for number of
+%%    samples from stochastic domain.}
+%%  \label{fig:tode-quadrature_error_convergence}
+%%\end{figure}
+%%
+\subsubsection{Stochastic Projection for Normal Distribution}
+Let us explore the solution of the stochastic problem~\eqref{eqn:test_ode_stochastic} applying the principle of projection in stochastic space, with normally distributed decay parameter.
+
+\paragraph*{The representation and decomposition of decay parameter:}
+%% The functional form of the decay parameter is
+%% \begin{equation}\label{eqn:decay-normal-form}
+%%   \lambda :=
+%%   \begin{cases}
+%%     {\lambda}^z(z)  = \mu_{\lambda} + \sigma_{\lambda} z  \quad &\in {\mathcal{Z}}\\
+%%     \lambda^y(y)  = y \quad &\in {\mathcal{Y}} \\
+%%   \end{cases}
+%% \end{equation}
+%% 
+The decay parameter is a function of random variable $y$ and assumes a spectral expansion:
+\begin{equation}
+  \label{eqn:spectral-expansion-decay-parameter-normal}
+  \lambda(y) = \sum_{j=1}^N {\lambda}_{j} {\widehat{\psi}}_j^y(y) \in {\mathcal{Y}}
+\end{equation}
+%where ${\widehat{\psi}}_j^y(y) = \widehat{\psi}_j^z\left(\frac{y-\mu}{\sigma}\right)$ with corresponding weights as $\pre{\lambda}{j}^y$. We can project the basis (orthonormal Hermite) elements of corresponding stochastic space onto the functional form $\lambda(y)$ and determine the coefficients $\pre{\lambda}{j}^y$.
+where the decomposition coefficients are found using projection as follows
+\begin{equation}
+  \begin{aligned}
+    {\lambda}_{j} = \sinner{\lambda(y)}{{\widehat{\psi}}_j^y(y)}_{{\rho}_n^y(y)}^{\mathcal{Y}} , \quad \forall j = 1, \ldots, N.
+    %= \sinner{\lambda^z(z)}{{\widehat{\psi}}_j^z(z)}_{{\rho}_n^z(z)}^{\mathcal{Z}}
+  \end{aligned}
+\end{equation}
+and $\widehat{\psi}_j^y(y)$ refers to the Hermite polynomials $\widehat{H}_{j-1}^y(y)$.
+%Notice that we have used the identities derived for transformation of innerproduct in Section~\ref{} to evaluate in ${\mathcal{Z}}$ space.
+In vector notation, we get:
+\begin{equation}
+  \begin{aligned}
+    \bm{\Lambda}  =
+    \begin{Bmatrix}
+      {\lambda}_{1}  \\
+      {\lambda}_{2}  \\
+      {\lambda}_{3}  \\
+      \vdots \\
+      {\lambda}_{N}  \\
+    \end{Bmatrix}
+    =
+    \begin{Bmatrix}
+      \oinner{\lambda(y)}{{\widehat{\psi}}_1^y(y)}_{\rho_n^y}^{\mathcal{Y}} \\
+      \oinner{\lambda(y)}{{\widehat{\psi}}_2^y(y)}_{\rho_n^y}^{\mathcal{Y}} \\
+      \oinner{\lambda(y)}{{\widehat{\psi}}_3^y(y)}_{\rho_n^y}^{\mathcal{Y}} \\
+      \vdots \\
+      \oinner{\lambda(y)}{{\widehat{\psi}}_N^y(y)}_{\rho_n^y}^{\mathcal{Y}} \\
+    \end{Bmatrix}
+ %%
+ %% begin{Bmatrix}
+ %%  \oinner{\lambda^z(z)}{{\widehat{\psi}}_1^z(z)}_{\rho_n^z}^{\mathcal{Z}} \\
+ %%  \oinner{\lambda^z(z)}{{\widehat{\psi}}_2^z(z)}_{\rho_n^z}^{\mathcal{Z}} \\
+ %%  \oinner{\lambda^z(z)}{{\widehat{\psi}}_3^z(z)}_{\rho_n^z}^{\mathcal{Z}} \\
+ %%  \vdots \\
+ %%  \oinner{\lambda^z(z)}{{\widehat{\psi}}_N^z(z)}_{\rho_n^z}^{\mathcal{Z}} \\
+ %% end{Bmatrix}
+ %%
+=
+    \begin{Bmatrix}
+      \mu_\lambda \\
+      \sigma_\lambda \\
+      0 \\
+      \vdots \\
+      0
+    \end{Bmatrix}
+  \end{aligned}
+\end{equation}
+
+\paragraph{The representation and decomposition of initial conditions:}
+The functional form of the initial conditions in the stochastic ODE~\eqref{eqn:test_ode_stochastic} is
+\begin{equation}
+  \begin{aligned}
+    u(0,y) & = u_0    && \in && {\partial{\mathcal{T}}} \otimes {\mathcal{Y}} \\
+  \end{aligned}
+\end{equation}
+In this case, we have considered a constant $u_0$ as the initial state,
+but it can be a general function of random variable. %, the projection method applies as is without any modifications.
+Let the right hand side of the initial conditions be provided as abstract functions of random variable $y$
+\begin{equation}
+  \begin{aligned}
+    u(0,y) & = g(y)  && \in && {\partial{\mathcal{T}}} \otimes {\mathcal{Y}} \\
+  \end{aligned}
+\end{equation}
+Similar to the stochastic parameter $\lambda(y)$, the initial condition assumes a spectral representation as
+\begin{equation}\label{eqn:spectral-expansion-init-cond-y}
+\begin{aligned}
+  g(y) &= {\sum_{j=1}^N {{g}_{j}} {\widehat{\psi}}_j^y(y)} \in {\mathcal{Y}}\\
+\end{aligned}
+\end{equation}
+where $\pre{g}{j}$ are the coefficients of decomposition of initial condition in corresponding stochastic vector space ${\mathcal{Y}}$ obtained using inner products as
+\begin{equation}
+  {g}_{j} = \sinner{g(y)}{{\widehat{\psi}}_j^y(y)}_{{\rho}_n^y(y)}^{\mathcal{Y}}
+  % = \sinner{g^z(z)}{{\widehat{\psi}}_j^z(z)}_{{\rho}_n^z(z)}^{\mathcal{Z}}
+\end{equation}
+In vector notation,
+\begin{equation}
+  \bm{g} =
+  \begin{Bmatrix}
+    \pre{g}{1}\\
+    \pre{g}{2}\\
+    \vdots \\
+    \pre{g}{N}\\
+  \end{Bmatrix}
+  =
+  \begin{Bmatrix}
+    \oinner{g(y)}{{\widehat{\psi}}_1y(y)}_{\rho_n^y}^{\mathcal{Y}}\\
+    \oinner{g(y)}{{\widehat{\psi}}_2^y(y)}_{\rho_n^y}^{\mathcal{Y}}\\
+    \vdots \\
+    \oinner{g(y)}{{\widehat{\psi}}_N^y(y)}_{\rho_n^y}^{\mathcal{Y}}\\
+  \end{Bmatrix}
+%%   =
+%%   \begin{Bmatrix}
+%%     \oinner{g^z(z)}{{\widehat{\psi}}_1^z(zy}_{\rho_n^z}^{\mathcal{Z}}\\
+%%     \oinner{g^z(z)}{{\widehat{\psi}}_2^z(z)}_{\rho_n^z}^{\mathcal{Z}}\\
+%%     \vdots \\
+%%     \oinner{g^z(z)}{{\widehat{\psi}}_N^z(z)}_{\rho_n^z}^{\mathcal{Z}}\\
+%%   \end{Bmatrix}
+  =
+  \begin{Bmatrix}
+    \oinner{u_0}{{\widehat{\psi}}_1^y(y)}_{\rho_n^y}^{\mathcal{Y}}\\
+    \oinner{u_0}{{\widehat{\psi}}_2^y(y)}_{\rho_n^y}^{\mathcal{Y}}\\
+    \vdots \\
+    \oinner{u_0}{{\widehat{\psi}}_N^y(y)}_{\rho_n^y}^{\mathcal{Y}}\\
+  \end{Bmatrix}
+  =
+  \begin{Bmatrix}
+    u_0 \\
+    0   \\
+    \vdots \\
+    0 \\
+  \end{Bmatrix}
+\end{equation}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                     end initial conditions                          %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\paragraph{The representation and decomposition of the state variables:}
+%Recall that for the decomposition of the decay parameter and the initial conditions, we directly obtained the coefficients by means of evaluating inner products.
+%For the case of state variables, however, these inner products lead to a coupled system of equations that need to be solved simultaneously to determine the coefficients of decomposition of the temporal solution field in stochastic domain.
+%Let us represent the solution field as a linear combination of the orthonormal basis elements, and establish the necessary system of equations for the determination of decomposition coefficients that are time dependent functions.
+The stochastic-temporal field $u(t,y)$ is represented as the following finite spectral summation
+\begin{equation}\label{eqn:solution-expansion}
+  {u}(t,y) = \sum_{i=1}^N \pre{u}{i}(t) {\widehat{\psi}_i^y}(y)\quad\text{and}\quad\dot{u}(t,y) = \sum_{i=1}^N \pre{\dot{u}}{i}(t) {\widehat{\psi}_i^y}(y)
+\end{equation}
+where $\pre{u}{i}(t)$ and $\pre{\dot{u}}{i}(t)$ are the decomposition coefficients that are time dependent functions.
+%The time derivatives take similar form
+%\begin{equation}\label{eqn:time-derivative-solution-expansion}
+%
+%\end{equation}
+
+\paragraph{The stochastic ODE:}
+By applying~\eqref{eqn:solution-expansion} to~\eqref{eqn:test_ode_stochastic} we obtain the stochastic ODE as
+\begin{equation}
+  \begin{aligned}
+    \mathcal{R} := \left(\sum_{i=1}^N \pre{\dot{u}}{i}(t) {\widehat{\psi}_i^y}(y) \right) + \lambda(y) \left(\sum_{i=1}^N \pre{u}{i}(t) {\widehat{\psi}_i^y}(y)\right) & = 0
+  \end{aligned}
+\end{equation}
+%We project the residual $\mathcal{R}$ onto the orthonormal Hermite basis elements $\forall\,j = 1, \ldots, N$ to o
+%The $j-$th component of the stochastic residual $\mathcal{R}_j$ is obtained as
+%\begin{equation}
+%  \begin{aligned}
+%    \mathcal{R}_j =  \inner{\left(\sum_{i=1}^N \pre{\dot{u}(t)}{i} {\widehat{\psi}_i^y}(y) \right) + \lambda(y) \left(\sum_{i=1}^N \pre{u}{i}(t) {\widehat{\psi}_i^y}(y)\right)}{{\widehat{H_j}^y}(y)}_{\rho_n^y}^{\mathcal{Y}}
+%  \end{aligned}
+%\end{equation}
+%% We can transform this as follows
+%% \begin{equation}
+%%   \begin{aligned}
+%%     \inner{\left(\sum_{i=1}^N \pre{\dot{u}}{i}(t) {\widehat{\psi}_i^z}(z) \right) + \lambda^z(z) \left(\sum_{i=1}^N \pre{u}{i}(t) {\widehat{\psi}_i^z}(z)\right)}{{\widehat{H_j}^z}(z)}_{\rho_n^z}^{\mathcal{Z}} = 0
+%%   \end{aligned}
+%% \end{equation}
+%\begin{landscape}
+The stochastic ODE takes the following matrix form written out explicitly
+\begin{small}
+    \begin{equation}
+      \begin{gathered}
+        \begin{bmatrix}
+          \oinner{{\widehat{\psi}}_1^y(y)}{{\widehat{\psi}}_1^y(y)}_{\rho_n^y}^{\mathcal{Y}} & \oinner{{\widehat{\psi}}_1^y(y)}{{\widehat{\psi}}_2^y(y)}_{\rho_n^y}^{\mathcal{Y}} & \ldots & \oinner{{\widehat{\psi}}_1^y(y)}{{\widehat{\psi}}_N^y(y)}_{\rho_n^y}^{\mathcal{Y}} \\
+          \oinner{{\widehat{\psi}}_2^y(y)}{{\widehat{\psi}}_1^y(y)}_{\rho_n^y}^{\mathcal{Y}} & \oinner{{\widehat{\psi}}_2^y(y)}{{\widehat{\psi}}_2^y(y)}_{\rho_n^y}^{\mathcal{Y}} & \ldots & \oinner{{\widehat{\psi}}_2^y(y)}{{\widehat{\psi}}_N^y(y)}_{\rho_n^y}^{\mathcal{Y}} \\
+          \vdots & \vdots & \ddots & \vdots \\
+          \oinner{{\widehat{\psi}}_N^y(y)}{{\widehat{\psi}}_1^y(y)}_{\rho_n^y}^{\mathcal{Y}} & \oinner{{\widehat{\psi}}_N^y(y)}{{\widehat{\psi}}_2^y(y)}_{\rho_n^y}^{\mathcal{Y}} & \ldots & \oinner{{\widehat{\psi}}_N^y(y)}{{\widehat{\psi}}_N^y(y)}_{\rho_n^y}^{\mathcal{Y}} \\
+        \end{bmatrix}
+        \begin{Bmatrix}
+          {\dot{u}_{1}(t)} \\
+          {\dot{u}_{2}(t)} \\
+          \vdots \\
+          {\dot{u}_{N}(t)} \\
+        \end{Bmatrix}
+        \\ +  \\
+        \begin{bmatrix}
+          \otinner{{\widehat{\psi}}_1^y(y)}{\lambda(y)}{{\widehat{\psi}}_1^y(y)}_{\rho_n^y}^{\mathcal{Y}} & \otinner{{\widehat{\psi}}_1^y(y)}{\lambda(y)}{{\widehat{\psi}}_2^y(y)}_{\rho_n^y}^{\mathcal{Y}} & \ldots & \otinner{{\widehat{\psi}}_1^y(y)}{\lambda(y)}{{\widehat{\psi}}_N^y(y)}_{\rho_n^y}^{\mathcal{Y}} \\
+          \otinner{{\widehat{\psi}}_2^y(y)}{\lambda(y)}{{\widehat{\psi}}_1^y(y)}_{\rho_n^y}^{\mathcal{Y}} & \otinner{{\widehat{\psi}}_2^y(y)}{\lambda(y)}{{\widehat{\psi}}_2^y(y)}_{\rho_n^y}^{\mathcal{Y}} & \ldots & \otinner{{\widehat{\psi}}_2^y(y)}{\lambda(y)}{{\widehat{\psi}}_N^y(y)}_{\rho_n^y}^{\mathcal{Y}} \\
+          \vdots & \vdots & \ddots & \vdots \\
+          \otinner{{\widehat{\psi}}_N^y(y)}{\lambda(y)}{{\widehat{\psi}}_1^y(y)}_{\rho_n^y}^{\mathcal{Y}} & \otinner{{\widehat{\psi}}_N^y(y)}{\lambda(y)}{{\widehat{\psi}}_2^y(y)}_{\rho_n^y}^{\mathcal{Y}} & \ldots & \otinner{{\widehat{\psi}}_N^y(y)}{\lambda(y)}{{\widehat{\psi}}_N^y(y)}_{\rho_n^y}^{\mathcal{Y}} \\
+        \end{bmatrix}
+        \begin{Bmatrix}
+          {u_{1}(t)} \\
+          {u_{2}(t)} \\
+          \vdots \\
+          {u_{N}(t)} \\
+        \end{Bmatrix}
+        \\ = \\
+        \begin{Bmatrix}
+          0\\
+          0\\
+          \vdots \\
+          0\\
+        \end{Bmatrix}
+      \end{gathered}
+    \end{equation}
+\end{small}
+%\end{landscape}
+The analytical evaluation of these inner products leads to the stochastic ODE derived in explicit form:
+ % \begin{footnotesize}
+    \begin{equation}
+      \begin{aligned}
+        \begin{bmatrix}
+          1 & 0 & \ldots & 0 & 0 \\
+          0 & 1 & \ldots & 0 & 0 \\
+          \vdots & \vdots & \ddots & \vdots & \vdots \\
+          0 & 0 & \ldots & 1 & 0 \\
+          0 & 0 & \ldots & 0 & 1 \\
+        \end{bmatrix}
+        \begin{Bmatrix}
+          \pre{\dot{u}}{1} \\
+          \pre{\dot{u}}{2} \\
+          \vdots \\
+          \pre{\dot{u}}{N-1} \\
+          \pre{\dot{u}}{N} \\
+        \end{Bmatrix}
+        +
+        \begin{bmatrix}
+          \mu & \sigma\sqrt{1} & \ldots & 0 & 0 \\
+          \sigma\sqrt{1} & \mu & \sigma \sqrt{2} & 0 & 0 \\
+          \vdots & \ddots & \ddots & \ddots & \vdots\\
+          0 & 0 & \sigma\sqrt{N-1} & \mu & \sigma\sqrt{N} \\
+          0 & 0 & \ldots & \sigma \sqrt{N} & \mu \\
+        \end{bmatrix}
+        \begin{Bmatrix}
+          \pre{u}{1} \\
+          \pre{u}{2} \\
+          \vdots \\
+          \pre{u}{N-1} \\
+           \pre{u}{N} \\
+        \end{Bmatrix} =
+        \begin{Bmatrix}
+          0\\
+          0\\
+          \vdots \\
+          0 \\
+          0 \\
+        \end{Bmatrix}
+      \end{aligned}
+    \end{equation}
+%  \end{footnotesize}
+  \paragraph*{Remark on Sparsity.} When $\lambda$ is a constant function of $y$, then the Jacobian is diagonal.
+  If $\lambda$ is a linear function of $y$, then the the Jacobian is tridiagonal (this case).
+  If $\lambda$ is a quadratic function of $y$, then the Jacobian is pentadiagonal.
+%  This  property is due to the fact that ${\widehat{\psi}_j}(y)$ is orthogonal to
+%  any polynomial function $P_i(y)$ where $i<j$. This means that the basis element
+%  ${\widehat{\psi}_j}$ is orthogonal not just to Hermite elements of lower
+%  degree ${\psi}_{j<i}$ but also any polynomial of lower degree
+%  $Q_{i<j}(y)$ (i.e. the entire polynomial space). A non-zero entry in
+%  the Jacobian arises only when the random function ${\lambda}(y)$
+%  elevates the total polynomial degree of the integrand equal or beyond, the degree of Hermite polynomial.
+
+  \paragraph*{Remark on Explicit Stochastic Equations.}
+  For the simple stochastic ODE~\eqref{eqn:test_ode_stochastic}, we
+  are able to derive the explicit form using the aforementioned
+  steps. This is the approach taken for uncertainty propagation via
+  the stochastic Galerkin method. However, when the governing
+  equations take complicated expressions and contain nonlinear terms,
+  the application of these steps become algebraically
+  cumbersome. Krenk and Gutirez~\cite{2004-Miguel-Krenk} point out
+  that the projection-based SGM for problems involving nonlinearities
+  have not yet reached a mature stage. The semi-intrusive stochastic
+  Galerkin method presented in Section~\ref{sec:semi-intrusive-sgm} can be used to address
+  this difficulty.
+
+\paragraph{The evaluation of Statistical moments:}
+The mean of the state variables is
+\begin{equation}
+  \mathbb{E}[u(t,y)] = \pre{u}{1}(t)
+\end{equation}
+and the variance is 
+\begin{equation}
+  \mathbb{V}[u(t,y)] = \sum_{i=2}^N {u}_{i}^2(t)
+\end{equation}
+%\subsubsection{Results}
+%\paragraph*{Parameter values $\mu = 0$ and $\sigma=1$:}
+We use projection method described above for parameter values $\mu_\lambda = 0$ and $\sigma_\lambda=1$.
+Figure~\ref{fig:tode-projection_mean_variance} shows
+the comparison of mean and variance computed using the projection method with
+the analytical moments for increasing number of terms in the spectral
+expansion.
+\begin{figure}[ht]
+  \centering
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{testode_projection_mean_mu0_sigma1.pdf}
+%    \caption{\emph{mean solution}}
+  \end{subfigure}
+  \centering
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{testode_projection_var_mu0_sigma1.pdf}
+ %   \caption{\emph{variance of solution}}
+  \end{subfigure}
+  \caption{Comparison of mean and variance of solution for selected
+    number of terms in polynomial expansion.}
+  \label{fig:tode-projection_mean_variance}
+\end{figure}
+Figure~\ref{fig:tode-projection_error_convergence} shows the rate of
+convergence of mean and variance to analytical solutions.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.75\linewidth]{testode_projection_semilogy_rate_mu0_sigma1.pdf}
+  \caption{The convergence of the mean and variance to the analytical
+    values.}
+  \label{fig:tode-projection_error_convergence}
+\end{figure}
+
+\subsubsection{Verification of Probabilistic Modes (Normal, Uniform and Exponential)}
+%The decay parameter is considered to be a random variable due to the
+%presence of uncertainties.
+Here, we solve the stochastic problem~\eqref{eqn:test_ode_stochastic} with three assumed distributions:~
+\begin{enumerate}
+\item Normal ${{\mathcal{N}}(\mu=0,\sigma=1)}$,
+\item Uniform ${{\mathcal{U}}(a=-1,b=1)}$ and
+\item Exponential ${{\mathcal{E}}(\mu=0,\beta=1)}$.
+\end{enumerate}
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.45\textwidth}
+    \includegraphics[width=\linewidth]{decay-modes-normal.pdf}
+    \caption{${{\mathcal{N}}(\mu=0.0,\sigma=1.0)}$}
+  \end{subfigure}
+  \begin{subfigure}{0.45\textwidth}
+    \includegraphics[width=\linewidth]{decay-modes-uniform.pdf}
+    \caption{${{\mathcal{U}}(a=-1.0,b=1.0)}$}
+  \end{subfigure}
+  \begin{subfigure}{0.45\textwidth}
+    \includegraphics[width=\linewidth]{decay-modes-exponential.pdf}
+    \caption{${{\mathcal{E}}(\mu=0.0,\beta=1.0)}$}
+  \end{subfigure}
+  \caption{The probabilistic modes computed using the stochastic Galerkin method along with the analytical mean and deterministic solutions for different distribution types.}
+  \label{fig:decay-random-modes}
+\end{figure}
+The stochastic Galerkin solution is obtained using a stochastic space spanned by $N=4$ terms in the orthonormal basis set. %, without explicit formation of stochastic equations using the semi-intrusive method described in Section~\ref{sec:semi-intrusive-sgm}.
+Figure~\ref{fig:decay-random-modes} plots the solution of the stochastic ODE and the four probabilistic modes computed, along with deterministic and analytical mean solutions from~\citep{Xiu2009Review}.
+It can be seen that the mean of the solution is different than the deterministic solution in the absence of uncertainties, which shows that the system behavior can be far different than expected in the presence of uncertainties.
+The mean solution computed using SGM is matching with the analytical solution available to this simple benchmark problem reported in~\cite{Xiu2009Review}.
+
+\subsection{Natural Vibration of Spring Mass Damper System}
+%We study the spring mass damper system with uncertain parameters modeled as a second-order differential equation.
+%\subsubsection{Problem Setup}
+We consider the following second-order differential equation with prescribed initial conditions $u_0$, $\dot{u}_0$ and constant system parameters $m$, $c$ and $k$
+\begin{equation}\label{eqn:smd_ode_deterministic}
+\begin{aligned}
+  m \tdt{u(t)}{t} + c \td{u(t)}{t} +  k {u(t)} & = 0 && \in && {\mathcal{T}} \\
+  u(0) & = u_0    && \in && {\partial{\mathcal{T}}} \\
+  \dot{u}(0) & = \dot{u}_0    && \in && {\partial{\mathcal{T}}} \\
+\end{aligned}
+\end{equation}
+%\subsubsection{Trivariate Stochastic Problem}
+Let us assume that the mass $m: = m(y_1)$, damping constant $c:= c(y_2)$ and stiffness constant $k:=k(y_3)$ where $y_1,y_2$ and $y_3$ are independent random variables from three-dimensional stochastic domain ${\mathcal{Y}}^3$.
+This dependence of the system coefficients $m$, $c$ and $k$ on probabilistic random variables results in the stochastic differential equation
+\begin{equation}
+  \label{eqn:smd_ode_trivariate_stochastic}
+  \begin{aligned}
+    m(y_1) \tdt{u(t,\vv{y})}{t} + c(y_2) \td{u(t,\vv{y})}{t} +  k(y_3) {u(t,\vv{y})} & = 0 && \in && {\mathcal{T}} \otimes {\mathcal{Y}}^3\\
+    u(0,\vv{y}) & = u_0    && \in && {\partial{\mathcal{T}}} \otimes {\mathcal{Y}}^3 \\
+    \dot{u}(0,\vv{y}) & = \dot{u}_0    && \in && {\partial{\mathcal{T}}} \otimes {\mathcal{Y}}^3 \\
+  \end{aligned}
+\end{equation}
+where $\vv{y} = [y_1, y_2, y_3] \in {\mathcal{Y}}^3$ is a vector-valued random variable from stochastic space.
+Let the random variables be modeled as follows
+\begin{equation}
+\begin{aligned}
+  y_1 &\sim {\mathcal{E}}(\mu=4.00,&\beta=1.00) \\
+  y_2 &\sim {\mathcal{U}}(a=0.25,&b=0.75) \\
+  y_3 &\sim {\mathcal{N}}(\mu=5.00,&\sigma=0.50) \\
+\end{aligned}
+\end{equation}
+and the initial conditions be $u_0=-0.5$ and $\dot{u}_0=1$.
+
+\subsubsection{Details of Stochastic Galerkin Projection}
+The formation of multivariate basis functions from univariate basis functions as well as the multivariate quadrature rules are essential for uncertainty propagation.
+
+\paragraph*{Trivariate Quadrature Rule}
+Let $Q_1$, $Q_2$ and $Q_3$ be the number of quadrature points chosen for the corresponding one-dimensional Gauss--Laguerre, Gauss--Legendre and Gauss--Hermite quadrature, based on the resultant degree of the integrand and applying the exactness theorem of polynomial integration using quadrature.
+We can construct a three dimensional quadrature rule using tensor multiplication of one-dimensional quadrature rule for numerical approximation of inner products.
+Consider two functions $f(\vv{y})$ and $g(\vv{y})$ where $ \vv{y} \in {\mathcal{Y}}^3$
+\begin{equation}
+  \begin{aligned}
+    \sinner{f(\vv{y})}{g(\vv{y})}_{\rho^y}^{{\mathcal{Y}}^3}
+    & \approx \sum_{i=1}^{Q_1} \sum_{j=1}^{Q_2} \sum_{k=1}^{Q_3} f(\pre{y}{i,1}, {\pre{y}{j,2}}, {\pre{y}{k,3}}) \alpha_i^y \alpha_j^y \alpha_k^y g({\pre{y}{i,1}}, {\pre{y}{j,2}}, {\pre{y}{k,3}}) \\
+    & =
+    \sum_{l=1}^Q f(\vv{y}_l) {\alpha}_l^y g(\vv{y}_l)
+  \end{aligned}
+\end{equation}
+where the total number of quadrature points $Q=Q_1\times Q_2 \times Q_3$, the weights ${\alpha}_l^y = \alpha_i^y \alpha_j^y \alpha_k^y$ and trivariate ordered nodes $\vv{y}_l = [{\pre{y}{i,1}}, {\pre{y}{j,2}}, {\pre{y}{k,3}}]$.
+Note that the new weights must add upto unity as it was the case with univariate quadrature
+\begin{equation}
+  \sum_{l=1}^Q {\alpha}_l^y = 1.
+\end{equation}
+This condition can be used as a simple test for multivariate quadrature implementations.
+
+
+\paragraph*{Trivariate Orthonormal Basis}
+Let us expand each probabilistic variable upto cubic terms ($d_1, d_2, d_3 = 3$), and choose Laguerre, Legendre and Hermite polynomials as corresponding univariate basis functions.
+Recall that $N_1 = d_1 + 1, N_2 = d_2 + 1,$ and $N_3 = d_3 + 1$; which are the number of univariate basis set entries for each random variable.
+Thus, the orthonormal space for projection is constructed using tensor product with $N_1 = 4$, $N_2=4$ and $N_3=4$ functions in each variable, giving rise to $64$ terms in the trivariate basis set.
+We have
+\begin{equation}
+  \widehat{\psi}_l^y(\vv{y}) = \\
+  \begin{pmatrix}
+    \widehat{L}_0^y(y_1)\widehat{P}_0^y(y_2)\widehat{H}_0^y(y_3)\\
+    \widehat{L}_1^y(y_1)\widehat{P}_0^y(y_2)\widehat{H}_0^y(y_3)\\
+    \widehat{L}_2^y(y_1)\widehat{P}_0^y(y_2)\widehat{H}_0^y(y_3)\\
+    \widehat{L}_3^y(y_1)\widehat{P}_0^y(y_2)\widehat{H}_0^y(y_3)\\
+    \vdots\\
+    \widehat{L}_0^y(y_1)\widehat{P}_3^y(y_2)\widehat{H}_0^y(y_3)\\
+    \widehat{L}_1^y(y_1)\widehat{P}_3^y(y_2)\widehat{H}_0^y(y_3)\\
+    \widehat{L}_2^y(y_1)\widehat{P}_3^y(y_2)\widehat{H}_0^y(y_3)\\
+    \widehat{L}_3^y(y_1)\widehat{P}_3^y(y_2)\widehat{H}_0^y(y_3)\\
+    \vdots \\
+    \widehat{L}_0^y(y_1)\widehat{P}_3^y(y_2)\widehat{H}_3^y(y_3)\\
+    \widehat{L}_1^y(y_1)\widehat{P}_3^y(y_2)\widehat{H}_3^y(y_3)\\
+    \widehat{L}_2^y(y_1)\widehat{P}_3^y(y_2)\widehat{H}_3^y(y_3)\\
+    \widehat{L}_3^y(y_1)\widehat{P}_3^y(y_2)\widehat{H}_3^y(y_3)\\
+    %\widehat{L}_{d_1}^y(y_1)\widehat{P}_{d_2}^y(y_2)\widehat{H}_{d_3}^y(y_3)\\
+  \end{pmatrix}
+\end{equation}
+In compact form, we may write this as
+\begin{equation}
+  \prod_{l=1}^{N} \widehat{\psi}_l^y(\vv{y}) = \prod_{i=0}^{d_1} \prod_{j=0}^{d_2} \prod_{k=0}^{d_3} \widehat{L}_i^y(y_1)\widehat{P}_j^y(y_2)\widehat{H}_k^y(y_3)
+\end{equation}
+
+\paragraph*{Trivariate Stochastic Projection:}
+The states and its time derivatives are
+\begin{equation}
+  \label{eqn:smd-trivariate-expansion}
+  \begin{aligned}
+    {u}(t,\vv{y})      = \sum_{i=1}^N \pre{u}{i}(t) {{\widehat{\psi}}_i^y}(\vv{y}),~
+    \dot{u}(t,\vv{y})  = \sum_{i=1}^N \pre{\dot{u}}{i}(t) {{\widehat{\psi}}_i^y}(\vv{y}),~\text{and}~
+    \ddot{u}(t,\vv{y}) = \sum_{i=1}^N \pre{\ddot{u}}{i}(t) {{\widehat{\psi}}_i^y}(\vv{y})
+  \end{aligned}
+\end{equation}
+Using spectral expansions~\eqref{eqn:smd-trivariate-expansion} in ODE
+\eqref{eqn:smd_ode_trivariate_stochastic} we get
+\begin{equation}
+  \begin{gathered}
+    m(y_1)\left( \sum_{i=1}^N \pre{\ddot{u}}{i}(t) {{\widehat{\psi}}_i^y}(\vv{y}) \right)
+    + c(y_2) \left( \sum_{i=1}^N \pre{\dot{u}}{i}(t) {{\widehat{\psi}}_i^y}(\vv{y}) \right)
+    +  k(y_3)\left( \sum_{i=1}^N \pre{u}{i}(t) {{\widehat{\psi}}_i^y}(\vv{y})\right)  = 0 \\
+    \sum_{i=1}^N \pre{u}{i}(t) {{\widehat{\psi}}_i^y}(\vv{y})  = u_0 \\
+    \sum_{i=1}^N \pre{\dot{u}}{i}(t) {{\widehat{\psi}}_i^y}(\vv{y}) = \dot{u}_0 \\
+  \end{gathered}
+\end{equation}
+Let us now project the above relations onto each basis element
+${\widehat{\psi}}_j(\vv{y})$ using inner products that are numerically
+evaluated using quadrature rules.  The stochastic ODE results from
+\begin{equation}
+  \begin{gathered}
+    \sinner{m(y_1) \sum_{i=1}^N \pre{\ddot{u}}{i}(t) {{\widehat{\psi}}_i^y}(\vv{y})  + c(y_2) \sum_{i=1}^N \pre{\dot{u}}{i}(t) {{\widehat{\psi}}_i^y}(\vv{y}) + k(y_3) \sum_{i=1}^N \pre{u}{i}(t) {{\widehat{\psi}}_i^y}(\vv{y})}{{\widehat{\psi}}_j^y(\vv{y})}_{\rho^y}^{\mathcal{Y}} \\ = \\ \sinner{0}{{\widehat{\psi}}_j^y(\vv{y})}_{\rho^y}^{\mathcal{Y}} \\
+  \end{gathered}
+\end{equation}
+with corresponding initial conditions as
+\begin{equation}
+  \begin{gathered}
+    \sinner{\sum_{i=1}^N \pre{u}{i}(0) {{\widehat{\psi}}_i^y}(\vv{y})}{{\widehat{\psi}}_j^y(\vv{y})}_{\rho^y}^{\mathcal{Y}} = \sinner{u_0}{{\widehat{\psi}}_j^y(\vv{y})}_{\rho^y}^{\mathcal{Y}} \\
+    \sinner{\sum_{i=1}^N \pre{\dot{u}}{i}(0) {{\widehat{\psi}}_i^y}(\vv{y})}{{\widehat{\psi}}_j^y(\vv{y})}_{\rho^y}^{\mathcal{Y}} = \sinner{\dot{u}_0}{{\widehat{\psi}}_j^y(\vv{y})}_{\rho^y}^{\mathcal{Y}} \\
+  \end{gathered}
+\end{equation}
+
+
+\subsubsection{Probabilistic Moments}
+The orthonormal space for projection is constructed using tensor product with $N_1 = 4$, $N_2=4$ and $N_3=4$ functions in each variable, giving rise to $64$ terms in the basis.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.65\linewidth]{smd-stochastic-element-block-4x4x4.pdf}
+  \caption{Nonzero pattern of SMD system with 3 random variables
+    $y_1$, $y_2$ and $y_3$ with $N_1=N_2=N_3=4$ giving rise to 64
+    basis terms with tensor product.}
+  \label{fig:smd-sparsity}
+\end{figure}
+The sparsity pattern arising due to this setup is shown in Figure~\ref{fig:smd-sparsity}.
+The mean and variance of the solution field is computed using sampling and projection methods are plotted in Figure~\ref{fig:smd-mean-variance}.
+The SGM computations were performed using deterministic implementation of the SMD system and the system is solved for time interval of $[0,10]s$ with a step size of $0.1s$ using BDF2 method.
+The stochastic collocation (sampling) solutions are computed using a tensor product grid of $15 \times 15 \times 15$.
+It can be seen that both the solutions are in good agreement with each other.
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.67\textwidth}
+    \includegraphics[width=\linewidth]{smd-means.pdf}
+    \caption{expectation}
+  \end{subfigure}
+  \centering
+  \begin{subfigure}{0.67\textwidth}
+    \includegraphics[width=\linewidth]{smd-vars.pdf}
+    \caption{variance}
+  \end{subfigure}
+  \caption{Expectation (top) and variance (bottom) of solution and its time derivatives obtained stochastic collocation and Galerkin methods.}
+  \label{fig:smd-mean-variance}
+\end{figure}
+
+\subsubsection{Function and Gradient Verification:}
+For the complex-step verification of adjoint gradients, we model the damping coefficient $c$ to be normally distributed as ${{\mathcal{N}}(\mu=0.2,\sigma=0.1)}$, and the mass $m$ is treated as the design variable $\xi$. The stiffness value is assumed to be deterministic: $k=5.0$.
+We are interested in computing the probabilistic moments of the time integral of potential energy
+\begin{equation}\label{eqn:potential-energy}
+  F = \int_0^{T} \frac{1}{2} k u(t)^2~dt
+\end{equation}
+and the Kreisselmeier----Steinhauser (KS)~\cite{original-KS-paper:1979, Kennedy:2015:ks-paper} estimate of the  maximum potential energy
+\begin{equation}\label{eqn:ks-potential-energy}
+  F = a + \frac{1}{\rho_{ks}} \ln \left[ \int_0^{T} e^{\rho_{ks}\left(\frac{1}{2} k u(t)^2-a\right)}~dt  \right].
+\end{equation}
+where $a$ and $\rho_{ks}$ are aggregation parameters.
+The probabilistic moments of~\eqref{eqn:potential-energy} and ~\eqref{eqn:ks-potential-energy} and their design variable derivatives computed using sampling and projection methods are listed in Tables~\ref{tab:derivative-function-values-integral} and ~\ref{tab:derivative-function-values-ks}, respectively.
+It be seen that the stochastic adjoint derivatives exhibit good agreement with the complex-step method.
+\begin{table}[h!]
+  \caption{Probabilistic moments and derivatives of the time integral of potential energy with 10 basis terms and 10 quadrature samples.}
+  \centering \scalebox{1}{
+    \begin{tabular}{c|cc}
+      \toprule
+          {Quantity} & Sampling & Projection  \\
+          \midrule
+          $\mathbb{E}[F]$  & 8.623478998405\textbf{29308} &  8.623478998405\textbf{32683} \\
+          $\mathbb{V}[F]$  & 2.18825865715\textbf{865575} & 2.18825865715\textbf{922419} \\
+          \midrule
+          Adjoint $d{\mathbb{E}[F]}/d{m}$      & 2.29637589213\textbf{232607}   & 2.29637589213\textbf{362459} \\
+          Complex-step $d{\mathbb{E}[F]}/d{m}$ & 2.296375892132\textbf{85809}   & 2.296375892132\textbf{98554} \\
+          Error                                & $5.3 \times 10^{-13}$  & $6.4 \times 10^{-13}$ \\
+          \midrule
+          Adjoint $d{\mathbb{V}[F]}/d{m}$      & 0.4168637865\textbf{27159164}  & 0.4168637865\textbf{19840573} \\
+          Complex-step $d{\mathbb{V}[F]}/d{m}$ & 0.41686378652\textbf{9946490}  &  0.41686378652\textbf{8287372} \\
+          Error                                &  $2.8 \times 10^{-12}$ &  $8.4 \times 10^{-12}$ \\
+          \bottomrule
+    \end{tabular}
+  }
+  \label{tab:derivative-function-values-integral}
+\end{table}
+
+\begin{table}[h!]
+  \caption{Probabilistic moments and derivatives of the maximum potential energy in time domain with 10 basis terms and 10 quadrature samples.}
+  \centering \scalebox{1}{
+    \begin{tabular}{c|cc}
+      \toprule
+          {Quantity} & Sampling & Projection  \\
+          \midrule
+          $\mathbb{E}[F]$ & 2.50\textbf{293127981364005} & 2.50\textbf{708458655184918} \\
+          $\mathbb{V}[F]$ & $3.8\textbf{1254813515422378} \times 10^{-3}$ & $3.8\textbf{0147552479659367} \times 10^{-3}$ \\
+          \midrule
+          Adjoint $d{\mathbb{E}[F]}/d{m}$ & $-3.69267283814\mathbf{737500} \times 10^{-3} $ & $-3.69267283814\mathbf{618151} \times 10^{-3}$ \\
+          Complex-step $d{\mathbb{E}[F]}/d{m}$ & $-3.692672838150\mathbf{61589}\times 10^{-3}$ & $-3.692672838150\mathbf{30625}\times 10^{-3}$ \\
+          Error & $3.2\times 10^{-15}$ & $2.5 \times 10^{-14}$\\
+          \midrule
+          Adjoint $d{\mathbb{V}[F]}/d{m}$ & $-8.5942293336\mathbf{9482361}\times 10^{-3}$ & $-8.5942293336\mathbf{8299627}\times 10^{-3}$ \\
+          Complex-step $d{\mathbb{V}[F]}/d{m}$ & $-8.59422933370\mathbf{226558}\times 10^{-3}$ & $-8.59422933370\mathbf{156128}\times 10^{-3}$ \\
+          Error & $7.4 \times 10^{-15}$ & $8.1\times 10^{-14}$\\
+          \bottomrule
+    \end{tabular}
+  }
+  \label{tab:derivative-function-values-ks}
+\end{table}
+
+%% 
+%% \subsection{Forced Spring Mass Damper}
+%% Many physical systems correspond to the case where they are subject to random forces that are modeled probabilistically. 
+%% In order to demonstrate the semi-intrusive projection for such cases, we extend the spring mass damper system to include forcing function $f(t) = a_0 \sin(\Omega t)$  with prescribed initial conditions $u_0$, $\dot{u}_0$, system parameters $m$, $c$ and $k$.
+%% \begin{equation}
+%%   \label{eqn:smd_ode_deterministic}
+%%   \begin{aligned}
+%%     m \tdt{u(t)}{t} + c \td{u(t)}{t} +  k {u(t)} & = f(t) && \in && {\mathcal{T}} \\
+%%     u(0) & = u_0    && \in && {\partial{\mathcal{T}}} \\
+%%     \dot{u}(0) & = \dot{u}_0    && \in && {\partial{\mathcal{T}}} \\
+%%   \end{aligned}
+%% \end{equation}
+%% We assume the problem parameters of the system as listed in Table~\ref{tab:smd-parameters}.
+%% \begin{table}[h!]
+%%   \caption{Problem parameters of the forced spring mass damper system.}
+%%   \medskip
+%%   \centering
+%%   \scalebox{1.0}{
+%%     \begin{tabular}{c|c|c}
+%%       \toprule
+%%       Parameter   &  Name             & Specification \\
+%%       \midrule
+%%       $m = m(y_1)$         &  mass             & ${\cal{E}}(\mu=4.00,\beta=1.00)$ \\
+%%       $c$         &  damping          & 0.50 \\
+%%       $k = k(y_2)$         &  stiffness        & ${\cal{N}}(\mu=5.00,\sigma=0.50)$ \\
+%%       $a_0 = a_0(y_3)$       &  forcing amplitude  & ${\cal{U}}(a=0.75,b=1.25)$ \\
+%%       $\Omega$         &  forcing frequency          & 1.00 \\
+%%       $u_0$       &  initial position & -0.50 \\
+%%       $\dot{u}_0$ = $\dot{u}_0(y_4)$ &  initial velocity & ${\cal{N}}(\mu=1.00,\sigma=0.25)$ \\
+%%       \bottomrule
+%%     \end{tabular}
+%%   }
+%%   \label{tab:smd-parameters}
+%% \end{table}
+%% Since some of the problem parameters contain probabilistic dependence (functions of probabilistic variable $y$),
+%% we obtain a stochastic ordinary differential equation with corresponding initial conditions:
+%% \begin{equation}
+%%   \label{eqn:smd_ode_stochastic}
+%%   \begin{aligned}
+%%     m(y_1) \tdt{u(t,y)}{t} + c \td{u(t,y)}{t} +  k(y_2) {u(t,y)} & = a_0(y_3) \sin(\Omega t) && \in && {\mathcal{T}} \otimes  {\mathcal{Y}}^4 \\
+%%     u(0,y) & = u_0    && \in && {\partial{\mathcal{T}}} \otimes  {\mathcal{Y}}^4  \\
+%%     \dot{u}(0,y) & = \dot{u}_0(y_4)    && \in && {\partial{\mathcal{T}}} \otimes  {\mathcal{Y}}^4  \\
+%%   \end{aligned}
+%% \end{equation}
+%% where $y = [y_1,y_2,y_3,y_4] \in {\mathcal{Y}}^4$ is a vector from
+%% four-dimensional probabilistic space. We assume that the random
+%% variables are independent of each other. The problem setup of this
+%% simple ODE model is designed to emulate a general scenario of model
+%% parameters being a mix of uncertain, fixed and design
+%% parameters. Also, the uncertain parameters are chosen from all
+%% components of the differential equation model such as its
+%% coefficients, right hand side and initial conditions. The stochastic
+%% sampling technique involves repeated solution of the
+%% model~\eqref{eqn:smd_ode_stochastic} for different quadrature points
+%% $\pre{y}{q}$ from probabilistic space ${\mathcal{Y}}^4$. Using the
+%% semi-intrusive technique introduced in this work, we reuse the
+%% underlying deterministic capabilities of deterministic
+%% model~\eqref{eqn:smd_ode_deterministic} in solving the stochastic
+%% model~\eqref{eqn:smd_ode_stochastic} using Galerkin projection. The
+%% steps can be summarized as:
+%% \begin{enumerate}
+%% \item the construction of probabilistic space
+%% \item the projection of initial conditions
+%% \item the projection of residuals and forces
+%% \item the projection of Jacobians
+%% \item the post-processing to compute probabilistic moments
+%% \end{enumerate}
+%% We begin using the process by defining allowed maximum degree for the
+%% univariate polynomials basis functions along each of the four
+%% probabilistic directions as $d = [d_1,d_2,d_3,d_4]$. Note that, if $d
+%% = [0,0,0,0]$ we theoretically recover the deterministic case as the
+%% first normalized Hermite, Legendre and Laguerre polynomials evaluate
+%% to unity (one), and the only entry in the probabilistic basis set
+%% would be $\widehat{\psi}(y) = \{L_0(y_1)H_0(y_2)P_0(y_3)H_0(y_4)\} =
+%% \{1\}$. This fact can be used as a verification criteria for
+%% stochastic Galerkin frameworks built on deterministic capabilities.
+%% 
+%% %\subsubsection{Verification of Expectation and Variance}
+%% %Here, we verify the moments computed using the semi-intrusive technique for stochastic Galerkin method, with that of the stochastic sampling method. 
+%% %Although, both processes converge to the true moments as we increase the number of terms in probabilistic space (for SGM) or the number of quadrature samples (for SSM), we compare these moments for a selected number of samples and basis terms. 
+%% %This is an accepted verification strategy when there is no
+%% %known analytical solution to the stochastic problem.
+%% 
+%% \subsubsection{Response Bands using the stochastic Galerkin Method}
+%% We overlay the standard deviations obtained using the SGM on top of
+%% the expected response to establish probabilisitic bounds on quantities
+%% of interest. Figure~\ref{fig:smd-mean-std-band-complete} shows the moments
+%% obtained using the SGM when complete polynomial rule is used for basis
+%% construction.
+%% \begin{figure}[h!]
+%%   \centering
+%%   \begin{subfigure}{\textwidth}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-one-sigma-0-complete.pdf}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-two-sigma-0-complete.pdf}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-three-sigma-0-complete.pdf}
+%%     \caption{$d = [0,0,0,0]$ (deterministic)}
+%%   \end{subfigure}
+%% 
+%%   \begin{subfigure}{\textwidth}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-one-sigma-1-complete.pdf}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-two-sigma-1-complete.pdf}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-three-sigma-1-complete.pdf}
+%%     \caption{$d = [1,1,1,1]$}
+%%   \end{subfigure}
+%% 
+%%   \begin{subfigure}{\textwidth}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-one-sigma-2-complete.pdf}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-two-sigma-2-complete.pdf}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-three-sigma-2-complete.pdf}
+%%     \caption{$d = [2,2,2,2]$}
+%%   \end{subfigure}
+%% 
+%%   \caption{The expected response quantities with overlaid bands of one (left), two (middle) and three (right) standard deviations with bases formed using complete polynomials.}
+%%   \label{fig:smd-mean-std-band-complete}
+%% \end{figure}
+%% Figure~\ref{fig:smd-mean-std-band-tensor} shows the moments obtained using
+%% the SGM when full tensor product rule is used for basis construction.
+%% \begin{figure}[h!]
+%%   \centering
+%%   \begin{subfigure}{\textwidth}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-one-sigma-0-full.pdf}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-two-sigma-0-full.pdf}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-three-sigma-0-full.pdf}
+%%     %\caption{maximum degree of probabilistic basis functions is 0}
+%%     \caption{$d = [0,0,0,0]$ (deterministic)}
+%%   \end{subfigure}
+%% 
+%%   \begin{subfigure}{\textwidth}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-one-sigma-1-full.pdf}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-two-sigma-1-full.pdf}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-three-sigma-1-full.pdf}
+%%     %\caption{maximum degree of probabilistic basis functions is 1}
+%%     \caption{$d = [1,1,1,1]$}
+%%   \end{subfigure}
+%% 
+%%   \begin{subfigure}{\textwidth}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-one-sigma-2-full.pdf}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-two-sigma-2-full.pdf}
+%%     \includegraphics[width=0.32\linewidth]{smd-galerkin-three-sigma-2-full.pdf}
+%%     \caption{$d = [2,2,2,2]$}
+%%     %\caption{maximum degree of probabilistic basis functions is 2}
+%%   \end{subfigure}
+%%   \caption{The expected response quantities with overlaid bands of one (left), two (middle) and three (right) standard deviations with bases formed using tensor polynomials.}
+%%   \label{fig:smd-mean-std-band-tensor}
+%% \end{figure}
+%% The bands around the temporal response quantities emphasize the  effect that uncertainties can have on system behavior. 
+%% From these plots,  the convergence of response and bands around the response to limiting values can be visually noticed. 
+%% By comparing the tensor and complete polynomial constructions, we can notice a qualitative differences in the response quantities.
+%% The quantitative differences between the two basis selection options is studied in more detail in the next test problem.
+%% 
+%% 
+\subsection{Natural Vibration of a Series of Masses and Springs}
+We consider a linear ordinary differential equation modeling a series
+of masses connected through springs shown in
+Figure~\ref{fig:mass-spring-series}.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.7\linewidth]{mass-spring.pdf}
+  \caption{The mass spring system.}
+  \label{fig:mass-spring-series}
+\end{figure}
+The residual of the equations of motion are of the abstract form $R(t, \ddot{u}(t), \dot{u}(t),{u}(t))=0$, and can be written out as
+\begin{equation}\label{eqn:smd-series-residual}
+  \begin{bmatrix}
+    m_1 & 0 & 0   \\
+    0 & m_2 & 0   \\
+    0 & 0   & m_3 \\
+  \end{bmatrix}
+  \begin{Bmatrix}
+    \ddot{u}_1 \\
+    \ddot{u}_2 \\
+    \ddot{u}_3 \\
+  \end{Bmatrix}
+  +
+  \begin{bmatrix}
+    k_1 + k_2 & -k_2 & 0 \\
+    -k_2      & k_2 + k_3  & -k_3 \\
+    0          & -k_3 & k_3 + k_4 \\
+  \end{bmatrix}
+  \begin{Bmatrix}
+    {u}_1 \\
+    {u}_2 \\
+    {u}_3 \\
+  \end{Bmatrix}
+  = 0
+\end{equation}
+with initial conditions $u = [0,0,0]$ and $\dot{u} = [0,0,0.1]$,  as well as spring stiffness constants $k_1=1,~k_2=10,~k_3=100$ and $k_4=1000$.
+In order to solve the solve second-order dynamic system ``as-is'' in natural form~\cite{Boopathy2019:Adjoint,Boopathy:2017:SciTech}, we implement the residual evaluation based on Equation~\eqref{eqn:smd-series-residual}, and corresponding Jacobian matrix blocks
+$$\pd{R}{\ddot{u}} =
+\begin{bmatrix}
+    m_1 & 0 & 0   \\
+    0 & m_2 & 0   \\
+    0 & 0   & m_3 \\
+\end{bmatrix}
+~\mathrm{and}~
+\pd{R}{u} =
+\begin{bmatrix}
+  k_1 + k_2 & -k_2 & 0 \\
+  -k_2      & k_2 + k_3  & -k_3 \\
+  0         & -k_3 & k_3 + k_4 \\
+\end{bmatrix}$$
+within the TACS finite element framework, following the \texttt{Element} interface outlined in Section~\ref{sec:stochastic-architecture}.
+The temporal solution of the system is setup using the second-order backward differences method for a finite time interval of $[0,2]s$ with a step size of $0.02s$.
+
+\paragraph*{Probabilistic Parameters, Quadrature and Basis Setup:}
+For the extension of the above deterministic analysis to stochastic Galerkin computations, we assume the masses are dependent on probabilistically modeled random variables as
+$m_1 = m_1 (y_1)$,
+$m_2 = m_2 (y_2)$,
+$m_3 = m_3 (y_3)$
+where
+\begin{enumerate}
+\item $y_1 \sim {{{\mathcal{U}}(a=1.0,b=2.0)}}$ follows uniform distribution,
+\item $y_2 \sim {{{\mathcal{E}}(\mu=10.0,\beta=1.0)}}$  follows exponential distribution,
+\item $y_3 \sim {{{\mathcal{N}}(\mu=100.0,\sigma=10.0)}}$ follows normal distribution.
+\end{enumerate}
+Thus, we have a stochastic ODE in ${\mathcal{T}} \otimes {\mathcal{Y}^3}$ whose stochastic states are $u(t,y)$, $\dot{u}(t,y)$ and $\ddot{u}(t,y)$.
+The numerical quadrature in three probabilistic dimensions is setup
+using the tensor product of
+Gauss--Legendre,
+Gauss--Laguerre and
+Gauss-Hermite
+quadrature points and weights along each of the three probabilistic dimensions.
+Next, we select univariate Legendre, Laguerre and Hermite orthonormal polynomials listed in Table~\ref{tab:pdf-functions} of chosen maximum degrees $[d_2,d_2,d_3]$.
+Using these we construct a set of distinct trivariate orthonormal polynomials using tensor product rule and complete polynomial rule.
+%$D = \mathrm{max}[d_1,d_2,d_3]$
+%$D = d_1 + d_2 + d_3$
+We use this mass--spring system to compare the efficiency of these two basis choices.
+
+% Assuming that the functions are ordered in the When using the tensor product rule the highest degree of the last basis function is $d_1 + d_2 + d_3$, whereas with
+% We use complete polynomial rule as it offers a simple means for basis reduction with a smaller impact on accuracy compared to full tensor product rule.
+
+\paragraph*{Semi-Intrusive Projection of Arrays and Matrices:}
+With the setup of probabilistic basis and quadrature,
+the stochastic states follow from~\eqref{eqn:spectral-state-expansion-hypothesis},
+the stochastic residual follows from~\eqref{eqn:residual-projection-i},
+the stochastic Jacobian follows from~\eqref{eqn:jacobianij-projection}, and
+initial conditions follow from~\eqref{eqn:ic-projection}.
+For this simple system, the Jacobian matrix is independent of the state variables and thus are easier to compute.
+The stochastic mass matrix entries are computed as $\sum_{q=1}^Q {\alpha_q {\widehat{\psi}_i}(\pre{y}{q}) {\widehat{\psi}_j}(\pre{y}{q})} [\pd{R}{\ddot{u}}(\pre{y}{q})]$.
+Note that the problem size is $3N$, where $N$ is the number of terms in the trivariate basis set.
+
+\paragraph*{Probabilistic Moments:}
+We compare the probabilistic moments computed using the semi-intrusive stochastic Galerkin method with that of stochastic sampling.
+The reference solution is computed using the stochastic sampling method with a grid of $10 \times 10 \times 10$ amounting to 1000 quadrature samples.
+The mean and variance of the solution field is computed using sampling and projection methods are plotted in Figure~\ref{fig:smd-response-one-sigma} along with a band whose width is one standard deviation.
+Here we compare semi-intrusive SGM with 20 basis terms formed using a maximum degree set of $[3,3,3]$ parameter wise with the sampling-based solution.
+It can be seen that both the solutions are in good agreement with each other.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.99\linewidth]{smd-galerkin-one-sigma-complete-dmax3-nterms20.pdf}
+  \caption{The time history of the expected response along with a band that is one standard deviation wide on either side.}
+  \label{fig:smd-response-one-sigma}
+\end{figure}
+Next, we compare the norm of the absolute error, defined as the difference between sampling- and projection-based solutions in Figure~\ref{fig:smd-series-convergence-loglog}.
+For this study we use both tensor and complete polynomial based construction of basis function set.
+It can be seen that the moments (expectation and variance) computed using polynomial based construction is accurate than tensor product construction.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.99\linewidth]{smd-convergence-complete-tensor-semilogy.pdf}
+  \caption{Plot of the norm of absolute error in expectation and variance versus the number of terms in the basis set for different basis sets.}
+  \label{fig:smd-series-convergence-loglog}
+\end{figure}
+
+%% \section{Uncertainty Analysis  Spring Mass Damper System}
+%%
+%% \paragraph*{Introduction.}
+%% In this chapter, we study a second-order differential equation known as the spring mass damper system with uncertain parameters.
+%% The goal of this chapter is to bring out the mathematical details involved treating more than one random variable (multivariate uncertainty analysis).
+%% We begin with an univariate case and extend the analysis to multivariate case.
+%%
+%% \subsection{Deterministic Problem}
+%% We consider the following second-order differential equation with prescribed initial conditions $u_0$, $\dot{u}_0$ and constant system parameters $m$, $c$ and $k$
+%% \begin{equation}\label{eqn:smd_ode_deterministic}
+%%   \begin{aligned}
+%%     m \tdt{u(t)}{t} + c \td{u(t)}{t} +  k {u(t)} & = 0 && \in && {\mathcal{T}} \\
+%%     u(0) & = u_0    && \in && {\partial{\mathcal{T}}} \\
+%%     \dot{u}(0) & = \dot{u}_0    && \in && {\partial{\mathcal{T}}} \\
+%%   \end{aligned}
+%% \end{equation}
+%%
+%% \subsection{Univariate Stochastic Problem}
+%% Let us assume that the mass $m: = m(y)$, where
+%% $y$ is a random variable from stochastic domain ${\mathcal{Y}}$. This adds
+%% a stochastic dimension to the differential equation resulting in the
+%%  stochastic differential equation
+%%  \begin{equation}\label{eqn:smd_ode_univariate_stochastic}
+%%    \begin{aligned}
+%%      m(y) \tdt{u(t,y)}{t} + c \td{u(t,y)}{t} +  k {u(t,y)} & = 0 && \in && {\mathcal{T}} \otimes {\mathcal{Y}}\\
+%%      u(0,y) & = u_0    && \in && {\partial{\mathcal{T}}} \otimes {\mathcal{Y}} \\
+%%      \dot{u}(0,y) & = \dot{u}_0    && \in && {\partial{\mathcal{T}}} \otimes {\mathcal{Y}} \\
+%%    \end{aligned}
+%%  \end{equation}
+%% We are interested in moments of the solution, namely the mean
+%% $\mathbb{E}[(u(t,y)]$ and variance $\mathbb{V}[u(t,y)]$. We will use
+%% stochastic quadrature and stochastic projection methods to obtain
+%% these moments in the remainder of this chapter.
+%%
+%% \subsubsection{Stochastic Projection}
+%% We assume the following forms for the solution fields
+%% \begin{equation}\label{eqn:smd-solution-expansion}
+%%   \begin{aligned}
+%%     {u}(t,y)      &= \sum_{i=1}^N \pre{u}{i}(t) {\widehat{\psi}_i^y}(y) \\
+%%     \dot{u}(t,y)  &= \sum_{i=1}^N \pre{\dot{u}}{i}(t) {\widehat{\psi}_i^y}(y) \\
+%%     \ddot{u}(t,y) &= \sum_{i=1}^N \pre{\ddot{u}}{i}(t) {\widehat{\psi}_i^y}(y) \\
+%%   \end{aligned}
+%% \end{equation}
+%% Using expansions \eqref{eqn:smd-solution-expansion} in the ODE~\eqref{eqn:smd_ode_univariate_stochastic} we get
+%% \begin{equation}
+%%   \begin{gathered}
+%%     m(y) \left( \sum_{i=1}^N \pre{\ddot{u}}{i}(t) {\widehat{\psi}_i^y}(y) \right) + c \left( \sum_{i=1}^N \pre{\dot{u}}{i}(t) {\widehat{\psi}_i^y}(y) \right) +  k \left( \sum_{i=1}^N \pre{u}{i}(t) {\widehat{\psi}_i^y}(y) \right)  = 0 \\
+%%     \sum_{i=1}^N \pre{u}{i}(0) {\widehat{\psi}_i^y}(y) = u_0 \\
+%%     \sum_{i=1}^N \pre{\dot{u}}{i}(0) {\widehat{\psi}_i^y}(y) = \dot{u}_0 \\
+%%   \end{gathered}
+%% \end{equation}
+%% We project the above relations onto each basis element $\widehat{\psi}_i(y)$ using
+%% inner products that are numerically evaluated using quadrature rules.
+%% The stochastic ODE results from
+%% \begin{equation}
+%%   \begin{gathered}
+%%     \sinner{m(y) \sum_{i=1}^N \pre{\ddot{u}}{i}(t) {\widehat{\psi}_i^y}(y)  + c  \sum_{i=1}^N \pre{\dot{u}}{i}(t) {\widehat{\psi}_i^y}(y)  +  k  \sum_{i=1}^N \pre{u}{i}(t) {\widehat{\psi}_i^y}(y)}{\widehat{\psi}_j^y(y)}_{\rho^y}^{\mathcal{Y}} \\ = \\ \sinner{0}{\widehat{\psi}_j^y(y)}_{\rho^y}^{\mathcal{Y}} \\
+%%   \end{gathered}
+%% \end{equation}
+%% with corresponding initial conditions as
+%% \begin{equation}
+%%   \begin{gathered}
+%%     \sinner{\sum_{i=1}^N \pre{u}{i}(0) {\widehat{\psi}_i^y}(y)}{\widehat{\psi}_j^y(y)}_{\rho^y}^{\mathcal{Y}} = \sinner{u_0}{\widehat{\psi}_j^y(y)}_{\rho^y}^{\mathcal{Y}} \\
+%%     \sinner{\sum_{i=1}^N \pre{\dot{u}}{i}(0) {\widehat{\psi}_i^y}(y)}{\widehat{\psi}_j^y(y)}_{\rho^y}^{\mathcal{Y}} = \sinner{\dot{u}_0}{\widehat{\psi}_j^y(y)}_{\rho^y}^{\mathcal{Y}} \\
+%%   \end{gathered}
+%% \end{equation}
+%% All inner products on the left hand side except the ones involving
+%% $m(y)$ are identity matrices $I_{N+1,N+1}$ scaled by system parameters
+%% $c$ and $k$ owing to the choice of orthonormal polynomials. If
+%% $m(y)=m$ then this becomes diagonal too, but such a choice simply
+%% recovers the deterministic mass parameter and thus meaningless in a
+%% stochastic sense. For the remainder of this chapter, let us assume
+%% that the mass parameter is an identify function of the random
+%% variable $y$
+%% \begin{equation}
+%% m(y) = y \sim
+%% \begin{cases}
+%%   {\mathcal{N}}(\mu_m,\sigma_m^2)\\
+%%   {\mathcal{U}}(a,b)\\
+%% \end{cases}
+%% \end{equation}
+%% Let us also assume the normal distribution parameters to be $\mu_m =
+%% 5$, $\sigma_m = 0.5$, and the uniform distribution parameters to be
+%% $a=1$ and $b=5$.
+%% The remaining deterministic parameters are $k=5$, $c=1.5$ and $u_0=-0.5$ and
+%% $\dot{u}_0=1$. The stochastic ODE is solved using BDF2 implicit time
+%% marching scheme.
+%% The mean and variance of solution field and its time
+%% derivatives are computed as
+%% \begin{equation}
+%%   \begin{aligned}
+%%     \mathbb{E}[u(t,y)] = U_0(t),  && \mathbb{V}[u(t,y)] = \sum_{j=2}^N \pre{u}{j}^2(t) \\
+%%     \mathbb{E}[\dot{u}(t,y)] = \dot{U}_0(t), && \mathbb{V}[\dot{u}(t,y)] = \sum_{j=2}^N \pre{\dot{u}}{j}^2(t) \\
+%%     \mathbb{E}[\ddot{u}(t,y)] = \ddot{U}_0(t), && \mathbb{V}[\ddot{u}(t,y)] = \sum_{j=2}^N pre{\ddot{u}}{j}^2(t) \\
+%%   \end{aligned}
+%% \end{equation}
+%% Figure~\ref{fig:smd_exp_var_projection_univariate} plots and
+%% expectation and variance of the solution obtained using stochastic
+%% projection method.
+%% \begin{figure}[ht]
+%%   \begin{subfigure}{0.49\textwidth}
+%%     \includegraphics[width=\linewidth]{smd-projected-univariate-expectation-normal.pdf}
+%%     \includegraphics[width=\linewidth]{smd-projected-univariate-variance-normal.pdf}
+%%     \subcaption{Normal distribution}
+%%   \end{subfigure}
+%%   \begin{subfigure}{0.49\textwidth}
+%%     \includegraphics[width=\linewidth]{smd-projected-univariate-expectation-uniform.pdf}
+%%     \includegraphics[width=\linewidth]{smd-projected-univariate-variance-uniform.pdf}
+%%     \subcaption{Uniform distribution}
+%%   \end{subfigure}
+%%   \caption{Expectation and variance obtained using projection method with $N=5$  for normal (left) and uniform distributions (right).}
+%%   \label{fig:smd_exp_var_projection_univariate}
+%% \end{figure}
+%%
+%% \subsection{Stochastic Quadrature}
+%% The ODE is solved for different values of $\pre{y}{i}$
+%% \begin{equation}\label{eqn:smd_ode_univariate_stochastic}
+%%   \begin{aligned}
+%%     m(\pre{y}{i}) \tdt{u(t,\pre{y}{i})}{t} + c \td{u(t,\pre{y}{i})}{t} +  k {u(t,\pre{y}{i})} & = 0 && \in && {\mathcal{T}} \otimes {\mathcal{Y}}\\
+%%     u(0,\pre{y}{i}) & = u_0    && \in && {\partial{\mathcal{T}}} \otimes {\mathcal{Y}} \\
+%%     \dot{u}(0,\pre{y}{i}) & = \dot{u}_0    && \in && {\partial{\mathcal{T}}} \otimes {\mathcal{Y}} \\
+%%   \end{aligned}
+%% \end{equation}
+%% The nodes $\pre{y}{i}$ and weights $\alpha_i^y$ are drawn according to
+%% Gauss-Hermite quadrature rule as $y$ is assumed to have a Gaussian
+%% distribution.
+%% The mean and variance of solution field and
+%% its time derivatives are
+%% \begin{equation}
+%%   \begin{aligned}
+%%     \mathbb{E}[u(t,y)] & = \sum_{i=1}^Q \alpha_i^y u(t,\pre{y}{i})  & ,    \mathbb{V}[u(t,y)] & = \sum_{i=1}^Q \alpha_i^y u^2(t,\pre{y}{i}) - \left( \mathbb{E}[u(t,y)] \right)^2 \\
+%%     \mathbb{E}[\dot{u}(t,y)] & = \sum_{i=1}^Q \alpha_i^y \dot{u}(t,\pre{y}{i})  & ,     \mathbb{V}[\dot{u}(t,y)] & = \sum_{i=1}^Q \alpha_i^y \dot{u}^2(t,\pre{y}{i}) - \left( \mathbb{E}[\dot{u}(t,y)] \right)^2 \\
+%%     \mathbb{E}[\ddot{u}(t,y)] & = \sum_{i=1}^Q \alpha_i^y \ddot{u}(t,\pre{y}{i})  & ,     \mathbb{V}[\ddot{u}(t,y)] & = \sum_{i=1}^Q \alpha_i^y \ddot{u}^2(t,\pre{y}{i}) - \left( \mathbb{E}[\ddot{u}(t,y)] \right)^2 \\
+%%   \end{aligned}
+%% \end{equation}
+%% Figure~\ref{fig:smd_exp_var_quadrature_univariate} plots and
+%% expectation and variance of the solution obtained using stochastic
+%% quadrature method.
+%% \begin{figure}[ht]
+%%   \begin{subfigure}{0.49\textwidth}
+%%     \includegraphics[width=\linewidth]{smd-collocated-univariate-expectation-normal.pdf}
+%%     \includegraphics[width=\linewidth]{smd-collocated-univariate-variance-normal.pdf}
+%%     \subcaption{Normal distribution}
+%%   \end{subfigure}
+%%   \begin{subfigure}{0.49\textwidth}
+%%     \includegraphics[width=\linewidth]{smd-collocated-univariate-expectation-uniform.pdf}
+%%     \includegraphics[width=\linewidth]{smd-collocated-univariate-variance-uniform.pdf}
+%%     \subcaption{Uniform distribution}
+%%   \end{subfigure}
+%%   \caption{Expectation and variance obtained using quadrature method with $Q=5$ for normal (left) and uniform distributions (right).}
+%%   \label{fig:smd_exp_var_quadrature_univariate}
+%% \end{figure}
+%%
+%% % \subsubsection{Comparison of Projection and Quadrature}
+%% % \clearpage
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+
+\subsection{Pitching and Plunging Airfoil System}
+We study a second-order differential equation in two variables: pitch and plunge variables of an airfoil with prescribed initial conditions $\vv{u}_0$, ${\vv{\dot{u}}}_0$ and constant system parameters $\left[M\right]$, $\left[C\right]$ and $\left[K\right]$ in matrix form
+\begin{equation}
+  \label{eqn:ppa_ode_deterministic}
+   \arraycolsep=1.5pt\def\arraystretch{0.75}
+  \begin{aligned}
+     \begin{bmatrix}
+       m & s \\
+       s & I_f \\
+     \end{bmatrix}
+     \begin{Bmatrix}
+       \ddot{u_1}(t) \\
+       \ddot{u_2}(t) \\
+     \end{Bmatrix}
+     +
+     \begin{bmatrix}
+       c_h & 0 \\
+       0 & c_a \\
+     \end{bmatrix}
+     \begin{Bmatrix}
+       \dot{u_1}(t) \\
+       \dot{u_2}(t) \\
+     \end{Bmatrix}
+     +
+     \begin{bmatrix}
+       k_h & 0 \\
+       0   & k_a \\
+     \end{bmatrix}
+     \begin{Bmatrix}
+       {u_1}(t) \\
+       {u_2}(t) \\
+     \end{Bmatrix}
+     & = \begin{Bmatrix}
+       0 \\
+       0 \\
+     \end{Bmatrix}
+    && \in && {\mathcal{T}} \\
+    \vv{u}(0) & = \vv{u}_0    && \in && {\partial{\mathcal{T}}} \\
+    \dot{\vv{u}}(0) & = \dot{\vv{u}}_0    && \in && {\partial{\mathcal{T}}} \\
+  \end{aligned}
+\end{equation}
+The deterministic parameters of the system are listed in Table~\ref{tab:ppa-parameters}.
+\begin{table}[h!]
+  \caption{Parameters defining the pitching and plunging airfoil system.}
+  \medskip
+  \centering
+  \scalebox{1.0}{
+    \begin{tabular}{c|p{6cm}|c|c}
+      \toprule
+      Parameter & Definition & Value & Unit \\
+      \midrule
+      $x_f$    & position of flexural axis  & $0.25$ & $m$ \\
+      $x_{cm}$  & position of center of mass & $0.375$ & $m$ \\
+      $m$      & mass of airfoil & $55.3291$ &  $kg$ \\
+      $I_f$    & mass moment of inertia of the airfoil around the elastic axis & $3.4581$ & $kg.m^2$ \\
+      $s$      & static unbalance $m(x_{cm}-x_{f})$ & $6.9161375$ & $kg.m$\\
+      $c_h$    & plunge damping & $0$ & $N/kg/s$\\
+      $c_a$    & pitch torsional damping & $0$ & $N.m/kg/s$\\
+      $k_h$    & plunge stiffness & $11366.0$ & $N/kg$ \\
+      $k_a$    & pitch torsional stiffness & $7002.6$ & $N.m/kg$ \\
+      \bottomrule
+    \end{tabular}
+  }
+  \label{tab:ppa-parameters}
+\end{table}
+%\subsection{Univariate Stochastic Problem}
+Let us assume that the mass $m: = m(y)$, where $y$ is a random variable from stochastic domain ${\mathcal{Y}}$.
+This adds a stochastic dimension to the differential equation resulting in the stochastic differential equation.
+In $ {\mathcal{T}} \otimes {\mathcal{Y}}$ we have the vector-valued ordinary differential equation
+\begin{equation}\label{eqn:smd_ode_univariate_stochastic}
+  \arraycolsep=1.5pt\def\arraystretch{0.75}
+  \begin{aligned}
+    \begin{bmatrix}
+      m(y) & s(y) \\
+      s(y) & I_f \\
+    \end{bmatrix}
+    \begin{Bmatrix}
+      \ddot{u_1}(t,y) \\
+      \ddot{u_2}(t,y) \\
+    \end{Bmatrix}
+    +
+    \begin{bmatrix}
+      c_h & 0 \\
+      0 & c_a \\
+    \end{bmatrix}
+    \begin{Bmatrix}
+      \dot{u_1}(t,y) \\
+      \dot{u_2}(t,y) \\
+    \end{Bmatrix}
+    +
+    \begin{bmatrix}
+      k_h & 0 \\
+      0   & k_a \\
+    \end{bmatrix}
+    \begin{Bmatrix}
+      {u_1}(t,y) \\
+      {u_2}(t,y) \\
+    \end{Bmatrix}
+    & = \begin{Bmatrix}
+      0 \\
+      0 \\
+    \end{Bmatrix} \\
+  \end{aligned}
+\end{equation}
+In $ {\partial \mathcal{T}} \otimes {\mathcal{Y}}$ we have initial conditions defined as
+\begin{equation}%\label{}
+  \arraycolsep=1.5pt\def\arraystretch{0.75}
+  \begin{aligned}
+    \vv{u}(0,y) & = \vv{u}_0 \\
+    \dot{\vv{u}}(0,y) & = \dot{\vv{u}}_0 .\\
+  \end{aligned}
+\end{equation}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.5\linewidth]{ppa-stochastic-element-block-4x4x4.pdf}
+  \caption{Nonzero pattern of PPA system with one random variable decomposed on a stochastic basis with 16 terms.}
+  \label{fig:ppa-sparsity}
+\end{figure}
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{ppa-means.pdf}
+  \end{subfigure}
+  \centering
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{ppa-vars.pdf}
+  \end{subfigure}
+  \caption{Expectation (left) and variance (right) of solution of pitching-plunging airfoil system obtained using stochastic Galerkin with 5 terms in the basis set and collocation methods with 15 samples.}
+  \label{fig:ppa-mean-variance}
+\end{figure}
+%\subsubsection{Probabilistic Moments}
+%Let us assume that the mass $m: = m(y)$, where $y$ is a random variable from stochastic domain ${\mathcal{Y}}$.
+%This adds a stochastic dimension to the differential equation resulting in the  stochastic differential equation.
+When using the projection method, an extended linear system is formed. The sparsity of corresponding the stochastic Jacobian for pitching-plunging airfoil system can be visualized from Figure~\ref{fig:ppa-sparsity}.
+We find the moments of the solution using SGM and SCM and compare them in Figure~\ref{fig:ppa-mean-variance}.
+It can be observed that both the methods are in excellent agreement for both the degrees of freedom (pitch and plunge) for both statistical moments (mean and variance).
+
+\section{Nonlinear Time Dependent Systems}
+%In this section, we study a nolinear
+\input{chapters/uq-applications/coupled_vanderpol}

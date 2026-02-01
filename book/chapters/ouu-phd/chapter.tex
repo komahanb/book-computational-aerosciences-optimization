@@ -1,0 +1,392 @@
+\section{Finite Element Based Flexible Multibody Systems}
+%We present the results of semi-intrusive uncertainty propagation and sensitivity analysis for time dependent systems, with application to probabilistic design optimization problems.
+%We consider the following four test cases:
+%\begin{enumerate}
+%\item Spring mass damper;
+%\item Flexible four-bar beam mechanism; and
+%\item Robotic arm
+%\end{enumerate}
+We present the application of semi-intrusive SGM on finite element problems in the context of flexible multibody dynamics.
+\subsection{Four-Bar Mechanism}
+We present the application of the proposed semi-intrusive projection technique to the four-bar mechanism benchmark case~\cite{BauchauBenchmark2016}.
+\subsubsection{Analysis Setup}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\linewidth]{four_bar_example_diagram.pdf}
+  \caption{The four-bar mechanism problem.}
+  \label{fig:fourbar-problem}
+\end{figure}
+Figure~\ref{fig:fourbar-problem} illustrates the setup of the four-bar mechanism.
+The problem contains three flexible bars that are modeled using Timoshenko beam elements, three revolute joints and an actuator driving the mechanism.
+An imaginary, infinitely rigid fourth bar exists in the mechanism between the points $A$ and $D$.
+The revolute joints are at points $A$, $B$, and $D$, and have an axis of rotation that is perpendicular to the plane of the mechanism.
+The revolute joint at point $C$ is misaligned by an angle of $5^{\circ}$, and rotated about the direction of the bar $CD$.
+This misalignment angle is modeled as subject to uncertainty and distributed normally with $\mathcal{N}(\mu = 5^{\circ}, \sigma=2.5^{\circ})$.
+The Bars $AB$ and $BC$ are of the same cross-section, while bar $CD$ has a smaller cross-section.
+The rotation of bar $AB$ about point $A$ of the mechanism is driven at an angular rate of $\Omega_3 = 0.6$\,rad/s.
+The material properties are  Young's modulus of $207~GPa$,  density of $7800~kg/m^3$, Poisson's ratio $0.3$, and shear correction factor of $5.0/6.0$.
+The angular rate of the revolute driver is $0.6~rad/s$, due to which it takes $12~s$ for one full revolution of the mechanism.
+The time marching is performed using second-order BDF method~\cite{Boopathy:2017:SciTech}.
+The finite element library TACS is used for deterministic, stochastic sampling and stochastic projection based solution of the four-bar mechanism problem.
+
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.45\textwidth}
+    \includegraphics[width=\linewidth]{four_bar_mean.pdf}
+  \end{subfigure}
+  \begin{subfigure}{0.45\textwidth}
+    \includegraphics[width=\linewidth]{four_bar_mean_zoom.pdf}
+  \end{subfigure}
+  \caption{The mean of normalized axial force in bar $AB$ as a function of time predicted using SGM and SSM.}
+  \label{fig:fourbar-mean}
+\end{figure}
+
+ \begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.45\textwidth}
+    \includegraphics[width=\linewidth]{four_bar_variance.pdf}
+  \end{subfigure}
+  \begin{subfigure}{0.45\textwidth}
+    \includegraphics[width=\linewidth]{four_bar_variance_zoom.pdf}
+  \end{subfigure}
+  \caption{The variance of the normalized axial force in bar $AB$ as a function of time predicted using SGM and SSM.}
+  \label{fig:fourbar-variance}
+\end{figure}
+
+\subsubsection{Verification of Probabilistic Moments}
+Our goal here is to demonstrate the accuracy of the semi-intrusive stochastic Galerkin method by comparing with the stochastic sampling method.
+Figure~\ref{fig:fourbar-mean} shows the response of the expectation of the normal force in the bar $AB$ computed using semi-intrusive SGM with 3, 5, and 7 terms in the orthonormal basis compared with SSM using 15 sample points.
+In one full cycle between $0$ to $12~s$, the normal force exhibits two larger peaks that occur as the mechanism is forced to snap through the angle where it would lock if the bars were rigid due to the misaligned joint.
+The overall behavior of the mean axial force is shown in Figure~\ref{fig:fourbar-mean} as well as a zoomed in view of the behavior between $t = 7.6$ and $t = 8.1$ which centers on the second large spike in the axial force.
+The SGM captures the peak behavior in the normal force, even with only three terms.
+In the case of the deterministic simulation without uncertainties (represented in gray), we obtain a normal force that is less than the mean maximum force considering uncertainties.
+Figure~\ref{fig:fourbar-variance} shows the variance of the axial force in the bar $AB$ computed using SGM with 3, 5, and 7 terms in the orthonormal basis compared with SSM using 15 sample points.
+Again, the distribution of the variance exhibits two large peaks.
+The second zoomed in view of the variance illustrates that SGM again captures the overall behavior with only 3 terms.
+In general a better agreement is obtained between SSM and SGM as more basis functions are used.
+
+\subsubsection{Optimization Under Uncertainty}
+Next, we extend the analysis case presented to optimization demonstration.
+We also verify the accuracy of the adjoint-gradients of expectation and variance using the complex-step method prior to optimization.
+\paragraph{Optimization Setup:}
+The optimization under uncertainty problem is stated as:
+\begin{equation*}
+  \begin{aligned}
+    %          &&& \textcolor{dred}{\text{deterministic~problem}} \\
+    %          & \textbf{{\text{minimize}}} & & {\text{mass}}  \\
+    %          & \textbf{\text{design~variable}}          & & \text{width~of~bars} \\
+    %          & \textbf{\text{problem~parameter}}          & & \text{revolute~axis}~\theta =5^\circ \\
+    %          & \textbf{\text{subject to}}               & & {\text{max~failure~index}} \le 1 \\% \quad \text{and} \quad {H}(\xi) = 0\\
+    %          &                                 & & {\text{max~displacement}} \le 5mm \\% \quad \text{and} \quad {H}(\xi) = 0\\
+    %          & \textbf{\text{bounds}}                   & & 5 mm \le \xi \le 25mm \\
+    %         &&& \textcolor{dred}{\text{optimization~under~uncertainty~problem}}  \\
+    & \textbf{\text{minimize}}  & & {\mathbb{E}}[{\text{mass}}]  \\
+    & \textbf{\text{design~variable}}          & & \text{width~of~bars} \\
+    & \textbf{\text{uncertainty}}         & & \text{revolute~axis}~\theta \sim {\mathcal{N}}(\mu=5^\circ,\sigma=2.5^\circ)  \\
+    & \textbf{\text{subject to}}               & & {\mathbb{E}}[{\text{failure}}] + \beta \cdot {\mathbb{S}}[{\text{failure}}] \le 1 \\% \quad \text{and} \quad {H}(\xi) = 0\\
+    &                                 & & {\mathbb{E}}[{\text{displacement}}] + \beta \cdot {\mathbb{S}}[{\text{displacement}}] \le 5mm \\% \quad \text{and} \quad {H}(\xi) = 0\\
+    & \textbf{\text{bounds}}                   & & 5 mm \le \text{width} \le 25mm \\
+  \end{aligned}
+\end{equation*}
+The mass objective refers to the overall mass of the mechanism,
+%the failure is computed based on critical loads of buckling,
+the displacement constraint refers to the displacement component that is out of the plane, and
+the failure is evaluated based on allowed normal (axial) force in the bars.
+We use spatio-temporal aggregation of constraint functions based on the Kreisselmeier--Steinhauser formulation~\cite{original-KS-paper:1979, Kennedy:2015:ks-paper} for displacement and failure.
+
+\paragraph{Gradient Verification:}
+The adjoint gradients of the expectation and variance are verified using the complex-step method, and the values are compared in Table~\ref{tab:fourbar-gradient-verification}.
+It can be seen that the values are in good agreement and show the consistency of adjoint implementation with that of the complex perturbation.
+Since, we implicitly formed the adjoint equations, this shows that the approach is equivalent to the approach where one derives explicit adjoint equations.
+\begin{table}[h!]
+  \smallskip
+  \caption{The complex-step verification of adjoint derivatives of expectation and variance of objective and constraint metrics.}
+  \centering
+  \scalebox{1}{
+    \begin{tabular}{c|ccc}
+      \toprule
+          {Quantity} & Mass & Failure & Displacement \\
+          \midrule
+          % \textcolor{dblue}{$\mathbb{E}[F]$}                      & 9.34502400000310551  & 0.715857892093989534 & \\
+          \textcolor{black}{adjoint $d{\mathbb{E}[F]}/d{\xi}$}      & 1078.272  & 22.5748  &-0.1067834 \\
+          \textcolor{black}{complex $d{\mathbb{E}[F]}/d{\xi}$}      & 1078.272  & 22.5748  &-0.1067834 \\
+          \textcolor{black}{error}                                & $4.5 \cdot 10^{-11}$     &  $8.7 \cdot 10^{-6}$ & $5.5 \cdot 10^{-8}$ \\
+          \midrule
+          % $\mathbb{V}[F]$                     & $1.42 \cdot 10^{-14}$  & 0.295270628210455133 & \\
+          adjoint $d{\mathbb{V}[F]}/d{\xi}$     & N/A  & 22.45792 & $-1.57732\cdot 10^{-4}$ \\
+          complex $d{\mathbb{V}[F]}/d{\xi}$     & N/A  & 22.45792 & $-1.57732\cdot 10^{-4}$ \\
+          error                                 & N/A   &  $6.7 \cdot 10^{-6}$ &  $1.1 \cdot 10^{-10}$ \\
+          \bottomrule
+    \end{tabular}
+  }
+  \label{tab:fourbar-gradient-verification}
+\end{table}
+
+\paragraph{Optimization Results:}
+We perform five optimization runs composed of one deterministic and four probabilistic OUU runs with $\beta=0,1,2$ and 3, and compare the designs in
+Table~\ref{tab:fourbar-optimization-results}.
+\begin{table}[h!]
+  \smallskip
+  \caption{Designs resulting from the deterministic and probabilistic optimization of the four-bar mechanism.}
+  \centering
+  \scalebox{1}{
+    \begin{tabular}{c|c|cccc}
+      \toprule
+          {Quantity}          & {Deterministic} & $\beta=0$ & $\beta=1$ &  $\beta=2$ & $\beta=3$ \\
+          \midrule
+          width AB $\&$ BC    &  5.0 & 5.0 & 13.0 & 18.3 & 23.5 \\
+          width CD            &  5.0 & 5.0 & 5.0  & 6.0  & 7.0 \\
+          \midrule
+          mass [kg]           & $1.1$     & 1.1 & 6.02 & 11.7 & 19.3 \\
+          failure [\% max]         & $47 \%$ & $55$ & $90$ & $100$ & $100 $\\
+          displacement [\% max]    & $78.22$ & $78.72$ & $100$ & $100$  & $100 $\\
+          \bottomrule
+    \end{tabular}
+  }
+    \label{tab:fourbar-optimization-results}
+\end{table}
+As a general remark, the designs are heavier with more and more incorporation of probabilistic criteria in the formulation.
+The widths of the bars AB and BC have a larger impact than the width of the third bar CD, as the bar BC encounters the highest magnitude of force and displacement throughout the simulation range.
+
+\subsection{Flexible Remote Manipulator System (Canadarm)}
+Next, we apply the semi-intrusive stochastic Galerkin method for the probabilistic design of a flexible robotic manipulator system, that is representative of the robotic arms used in space, such as the Canadarm-I, the Canadarm-II and the Dextre.
+These flexible manipulator systems~\cite{Damaren1995a,Damaren1995b,Damaren1996, Hiltz:2001, Canadarm2:2016, FlexibleManupilators:2015, Canadarm2:2010} are used to move payloads in space, assemble space systems, assist with the docking of space shuttles from earth, and  perform maintenance activities in space (see Figure~\ref{fig:canadarm-space}).
+
+\begin{figure}
+  \begin{minipage}{\textwidth}
+    \centering
+  \begin{minipage}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{canadarm-shuttle.png}
+    %\caption*{attached to space shuttle}
+  \end{minipage}\hspace{0.25cm}
+  \begin{minipage}{0.32\textwidth}
+    \centering
+    \includegraphics[width=0.8\linewidth]{canadarm-payload.png}
+    %\caption*{attached to space shuttle}
+  \end{minipage}
+  \begin{minipage}{0.32\textwidth}
+    \centering
+    \includegraphics[width=0.8\linewidth]{canadarm-walk.png}
+    %\caption*{astronaut performing space walk}
+  \end{minipage}
+  \caption[]%
+          {The working of shuttle manipulator systems~\footnote{\url{https://www.nasa.gov/mission_pages/shuttle/behindscenes/rms_gallery.html}}.}
+          \label{fig:canadarm-space}
+  \end{minipage}
+\end{figure}
+
+
+
+%%
+%% \begin{figure}[h!]
+%%   \centering
+%%   \includegraphics[width=\linewidth]{canadarm-srms.png}
+%%   \caption{Illustration of space shuttle remote manipulator system.}
+%%   \label{fig:remote-manipulator}
+%% \end{figure}
+%%
+\subsubsection{Analysis Setup}
+The representative system used here is modeled after the Canadarm-I, and is functionally similar to a human arm with six joint degrees of freedom.
+Figure~\ref{fig:remote-manipulator-schematic} shows the schematic of the manipulator system modeled using the TACS flexible multibody dynamics framework.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.9\linewidth]{figures/canadarm-schematic.pdf}
+  \caption{A six degree of freedom remote manipulator system.}
+  \label{fig:remote-manipulator-schematic}
+\end{figure}
+There are two joints at the shoulder end, one joint at the elbow between flexible booms and three joints at the wrist end of the robotic manipulator system.
+The joints at $A$ and $E$ allow yawing motion, the joints at $B$, $C$ and $D$ allow pitching motion, and the joint at $F$ allows rolling motion.
+%The shoulder joints allow the lower arm to yaw and pitch, the elbow joint allows pyoungsitching motion between booms, and wrist joints allow the tip of the arm to pitch, yaw and roll.
+The booms in Canadarm-I are made of graphite epoxy, but for our purposes here, we assume the material properties are Young's modulus of $207~GPa$,  density of $7800~kg/m^3$, Poisson's ratio $0.3$, and shear correction factor of $5.0/6.0$.
+We use ten Timoshenko beam elements for each boom with rectangular cross-sections for the finite element analysis.
+The number of degrees of freedom in the problem is 432.
+The angular rate of the joints are assumed to be
+$\omega_A = 0.1~rad/s$,
+$\omega_B = 0.1~rad/s$,
+$\omega_C = 0.1~rad/s$,
+$\omega_D = 0.1~rad/s$,
+$\omega_E = 0.1~rad/s$,
+and
+$\omega_F = 0.1~rad/s$ about their respective revolute axes.
+The lengths are $l_1=0.9~m,~l_2=6.4~m,~l_3=7.0~m,~l_4=0.5~m,~l_5=0.8~m,~l_6=0.6~m.$
+The masses of rigid bodies are $m_1 = 95~kg,~m_4 = 8~kg,~m_5 = 44~kg,~m_6 = 41~kg$~\cite{Damaren1995a,Damaren1995b,Damaren1996} and the payload mass is $100,000~kg$.
+The dynamics of the robotic manipulator is simulated for a duration of $5s$ with BDF2 time marching scheme.
+The time lapse of the simulated motion is shown in Figure~\ref{fig:canadarm-timelapse}, with aforementioned angular rates and initial configuration of a fully extended arm.
+%$360^\circ$
+%In general, the Canadarm undergoes different motions based on the maintenance activity or mission at hand, and is driven by the control inputs to the joints.
+%Although it is possible to simulated a particular motion scenario through finite element frameworks, it is difficult to design the Canadarm for general motion. 
+%Alternatively, all known motions can be simulated during design. 
+%Some times the angular rates at which the motors drive the joint becomes important.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\linewidth]{canadarm-timelapse.png}
+  \caption{Timelapse of the motion of Canadarm model.}
+  \label{fig:canadarm-timelapse}
+\end{figure}
+
+\paragraph*{Remark on configurations and rates:}
+The intended use of open-chain mechanisms like the Canadarm is to reach the three dimensional space within the full extent of the mechanism, often, within a specified amount of time.
+\begin{enumerate}
+\item This implies that there are an \emph{infinite number of attainable configurations} to be analyzed (even by excluding elastic deformations), which is computationally intractable.
+However, a finite subset of preferred kinematic configurations can be simulated and analyzed with the availability of computing power.
+One possible application of UQ methods here is that, the initial configuration of the bodies can be modeled probabilistically and defined as random functions following specified probability distributions.
+
+\item Secondly, there are an \emph{infinite number of rates} at which the configurations can be attained. 
+The rates at which the links are driven is often subject to upper bounds for safety reasons: for example, the tip of the Canadarm-I is designed to operate at a maximum rate of $0.06~m/s$~\footnote{https://www.ieee.ca/millennium/canadarm/canadarm\_technical.html}.
+In order to mathematically model such uncertainties during operation, we can use the probabilistic random variables $y$ with appropriate distributions, instead of analyzing different possible rates.
+\end{enumerate}
+In summary, the approach of using probabilistically modeled initial conditions along with probabilistically modeled joint angular rates, can provide a firm mathematical basis for analysis and optimization.
+However, proper care must be exercised in ``assuming'' distributions for such parameters, if needed, the inverse UQ methods should be applied.
+
+\subsubsection{Optimization Under Uncertain Payloads}
+Next, we demonstrate the utility of OUU as a tool to account for uncertainties in space-systems design process with a simplified probabilistic model of the manipulator system.
+The Canadarm is used to move bodies whose mass ranges from a few hundred kilograms (\eg astronauts on spacewalk wearing specialized suits) to several hundred tonnes (\eg assembling and repairing the space station).
+The robotic manipulator system needs to be designed for handling a wide range of masses, and we demonstrate the suitability of the OUU methods in this context.
+We model the mass of the payload to depend on a  ``probabilistic'' random variable -- to emulate the scenario where the arm is used to move payloads of different masses around space, that is  $mass_{payload}(y)$ where $y \sim {\mathcal{N}}(\mu=100,000~kg,\sigma=50,000~kg)$.
+We setup the optimization problem to minimize the mass of the system subject to stress-based failure constraint as follows:
+%\paragraph{Optimization Setup:}
+%The optimization under uncertainty problem is stated as:
+\begin{equation}\label{eqn:ouu-problem-canadarm}
+  \begin{aligned}
+    & \textbf{\text{minimize}}  & & {\mathbb{E}}[{\text{mass}}] = {\mathbb{E}}[\rho  (A_1l_1 + A_2l_2)] =  \rho  (A_1 l_1 + A_2 l_2) \\
+    & \textbf{\text{design~variable}}          & & \text{width~of~bars} \\
+    & \textbf{\text{uncertainty}}         & & \text{payload~mass}\sim {\mathcal{N}}(\mu=100,000~kg,\sigma=50,000~kg, N=3)  \\
+    & \textbf{\text{subject to}}               & & {\mathbb{E}}[{\text{failure}}] + \beta \cdot {\mathbb{S}}[{\text{failure}}] \le 1 \\% \quad \text{and} \quad {H}(\xi) = 0\\
+    & \textbf{\text{bounds}}                   & & 25 cm \le \text{width} \le 50cm \\
+  \end{aligned}
+\end{equation}
+The design variables are the cross-sectional width of the booms. % and the mass of the payload attached to the arm is probabilistically modeled.
+The objective function refers to the mass of the flexible booms subject to design, where $\rho$ is the density of the material, $A_i$ is the area of cross-section, and $l_i$ is the length of the $i-$th boom.
+In this case, the objective function has no dependence on the random variable $y$; but for verification purposes we evaluate the expectation and variance operators during computations.
+We use spatio-temporal aggregation of constraint functions based on the Kreisselmeier--Steinhauser formulation~\cite{original-KS-paper:1979, Kennedy:2015:ks-paper} for failure constraint evaluation.
+We use a probabilistic basis set with $N=3$ Hermite polynomials. This implies that the stochastic matrices and vectors are thrice as big as the deterministic counterparts, and are formed implicitly using the semi-intrusive stochastic Galerkin method.
+
+\paragraph{Gradient Verification:}
+First, the verification of derivatives is performed using the complex-step method prior to optimization, and the values are listed in Table~\ref{tab:canadarm-gradient-verification}.
+We see a good agreement in derivative values for optimization; however, we note that the accuracy of the adjoint derivatives is affected by a few significant digits when spatio-temporal aggregation is employed.
+We believe that this is due to the numerical issues arising from the choice of aggregation parameter, which needs to be large number $ >> 1$ for better approximation of the maximum.
+\begin{table}[h!]
+  \smallskip
+  \caption{The complex-step verification of adjoint derivatives for the Canadarm system.}
+  \centering
+  \scalebox{1}{
+    \begin{tabular}{c|cc}
+      \toprule
+          {Quantity} & Mass & Failure  \\
+          \midrule
+          \textcolor{black}{adjoint $d{\mathbb{E}[F]}/d{\xi}$} & $1.2480000000000\underline{1979} \cdot 10^{5}$  & -3.7659\underline{7889920338691} \\
+          \textcolor{black}{complex $d{\mathbb{E}[F]}/d{\xi}$} & $1.2480000000000\underline{1819} \cdot 10^{5}$  & -3.7659\underline{6706242138746} \\
+          \textcolor{black}{relative error} & $1.3 \cdot 10^{-15}$     &  $3.1 \cdot 10^{-6}$ \\
+          \midrule
+          adjoint $d{\mathbb{V}[F]}/d{\xi}$ & N/A  & $-4.46442271585651973 \cdot 10^{-1}$  \\
+          complex $d{\mathbb{V}[F]}/d{\xi}$ & N/A  & $-4.46444953483493667 \cdot 10^{-1}$ \\
+          relative error & N/A   &  $6.0 \cdot 10^{-6}$ \\
+          \bottomrule
+    \end{tabular}
+  }
+  \label{tab:canadarm-gradient-verification}
+\end{table}
+
+\paragraph{Optimization Results:}
+The optimization problem~\eqref{eqn:ouu-problem-canadarm} was solved for reliability parameter values ranging from zero to seven.
+For the purposes of comparison, a deterministic optimization problem with reference payload mass of $100,000~kg$ was also solved.
+The results are tabulated in Table~\ref{tab:canadarm-optimization-results}.
+It can be seen that the widths increase as we require more constraint reliability through the parameter $\beta$.
+It appears that the constraints are $100\%$ active for some OUU designs (\ie $\beta = 3-7$), but recall that the mathematical constraint formulation included $\beta$ standard deviations of failure into consideration.
+To substantiate this further, the expected constraint manifold can be seen to be more and more away from the actual enforced constraint from the tabulated ``expectation'' values.
+Therefore, the reliability parameter is similar in purpose to the \emph{factor of safety} commonly employed in structural design, as they both seek a design point that is a ``specified'' distance away from the constraint bounds.
+For example, the OUU design point pertaining to $\beta=6$ is six standard deviations away from the expected failure manifold.
+The difference between the \emph{reliability parameter} and the \emph{factor of  safety} is that the former is driven by mathematical concepts from probability theory, whereas the latter is driven by expert opinion and industry or regulatory standards.
+% lists the results of optimization under uncertainty problem~\eqref{eqn:ouu-problem-canadarm} solved for different values of reliability parameter $\beta$.
+\begin{table}[h!]
+  \smallskip
+  \caption{Designs resulting from the deterministic and probabilistic optimization of the flexible manipulator system.}
+  \centering
+  \scalebox{0.95}{
+    \begin{tabular}{c|c|ccccccccc}
+      \toprule
+          {Quantity} & {Deterministic} & $\beta=0$ & $\beta=1$ &  $\beta=2$ & $\beta=3$ & $\beta=4$ & $\beta=5$ & $\beta=6$ & $\beta=7$ \\
+          \midrule
+          width 1 [m] &  0.250 & 0.250 & 0.250 & 0.271 & 0.303 & 0.343 & 0.385 & 0.428 & 0.471 \\
+          width 2 [m] &  0.250 & 0.250 & 0.250  & 0.250  & 0.250 & 0.278 & 0.311 & 0.347 & 0.381 \\
+          \midrule
+          constraint $\%$ & $76.8$ & $72.9$ & $92.6$ & $100$ & $100$ & $100$ & $100$ & $100$ & $100$ \\
+          $\mathbb{E}$[failure] & -- & 0.729 & 0.729 & 0.650 & 0.552 & 0.482 & 0.431 & 0.387 & 0.353 \\
+          iterations & 7 & 7 & 7 & 9 & 8 & 34 & 62 & 43 & 41 \\
+          \bottomrule
+    \end{tabular}
+  }
+  \label{tab:canadarm-optimization-results}
+\end{table}
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{canadarm_design_space_objective.png}
+%    \caption{Objective}
+  \end{subfigure}
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{canadarm_design_space_constraint.png}
+ %   \caption{Failure}
+  \end{subfigure}
+  \caption{The visualization of optimization design space with contours of the mass and failure.}
+  \label{fig:canadarm-design-space}
+\end{figure}
+In order to graphically interpret the results, we plot the contours of the design space in Figure~\ref{fig:canadarm-design-space}, on a $25 \times 25$ Cartesian grid of the design variable bounds.
+The trajectory of the design points, for increasing values of the reliability parameter $\beta$, is plotted along with the mass and failure contours.
+The deterministic optimization case took under a minute to converge, 
+whereas the OUU cases took between $5-25$~minutes to converge: the number of optimizer iterations, function and gradient evaluations varied between these cases.
+
+%% 
+%% \paragraph*{Remarks on computational time:}
+%% \begin{table}[h!]
+%%   \smallskip
+%%   \caption{Designs resulting from the deterministic and probabilistic optimization of the flexible manipulator system.}
+%%   \centering
+%%   \scalebox{1}{
+%%     \begin{tabular}{c|cc}
+%%       \toprule
+%%       \midrule
+%%       \bottomrule
+%%     \end{tabular}
+%%   }
+%%   \label{tab:canadarm-optimization-budget}
+%% \end{table}
+%% 
+
+\subsubsection{Scalability Studies}
+The stochastic problem size grows linearly with increasing number of terms in the basis set. 
+In this section, we perform a study that identifies the rate at which the computational effort grows with increasing problem size $N$.
+We use the Canadarm case, to perform forward analysis in time domain, and adjoint sensitivity analysis.
+We perform stochastic Galerkin projection with increasing number of terms in the expansion of the random variable $y \sim {\mathcal{N}}(\mu=100,000~kg,\sigma=50,000~kg, N)$, where $N=1,\ldots,10$.
+Recall, that the number of deterministic degrees of freedom in the problem is 432: therefore, the total number of stochastic degrees of freedom is $432\times N$.
+The results are plotted in Figure~\ref{fig:stochastic-scalability}.
+The slope of line is approximately 2.88, which implies that the computational effort grows as ${\cal{O}}(N^{2.88})$.
+The actual wall times were divided by the number of time steps taken in the simulation for normalization.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.65\linewidth]{stochastic_scalability.pdf}
+  \caption{Plot of normalized wall time versus the cardinality of the probabilistic basis set.}
+  \label{fig:stochastic-scalability}
+\end{figure}
+In order to improve the scalability with respect to the problem size, the exploitation of symmetry and sparsity of the Jacobian, optimization of the number of quadrature nodes based on the polynomial degree of the integrand, application of sparse quadrature methods and matrix-free implementations are being considered for further studies.
+
+\paragraph*{Summary.}
+In this chapter, we applied the semi-intrusive uncertainty propagation technique on a wide range of problems from simple ODEs to complex space robotic systems.
+Although, we presented the explicit details of the Galerkin projection for some test cases, in order to illustrate it from the perspective of linear algebra and inner products, 
+all the computer implementations rely on abstractions and implicit formation of stochastic quantities from deterministic quantities as described in Section~\ref{sec:semi-intrusive-sgm}.
+We used the sampling method to verify the probabilistic moments, and the complex-step method to verify the adjoint derivatives.
+We used the four-bar mechanism and the remote manipulator model, to demonstrate the use of OUU methods to produce designs that contain probabilistic information that can be used for certification and quality assurance purposes.
+We demonstrated the propagation of uncertainties through time dependent physics and adjoint formulations in the context of stochastic Galerkin method.
+%The probabilistic moments of constraints can be used for certification purposes.
+
+
+%% \subsection{Topology Optimization using Solid Elements}
+%% The previous examples discussed the results of semi-intrusive uncertainty propagation using the beam and constraint elements.
+%% Here, we consider the case of a solid element used to setup topology optimization of cantilever beam~\cite{}.
+%% We assume the material density to be dependent on a normally distributed random variable $\rho:= \rho(y)$ where $y\sim{\mathcal{N}}(\mu=2600.0,\sigma=500.0)$.
+%% The probabilistic moments and their design variable derivatives are computed using projection and verified using finite-differences using a step size of \kb{$10^{-8}$}, and the results are tabulated in Table~\ref{}
+%%
+% figure of problem setup and description of the problem
+% plot of moments
+% sparsity pattern

@@ -1,0 +1,258 @@
+\setcounter{secnumdepth}{5} % section, subsec, subsubsection, para, subpara
+\usepackage{chngcntr}
+%\counterwithout{paragraph}{subsubsection} % removes paragraph from the subsubsections
+\counterwithin{paragraph}{subsection} % makes paragraph depend on chapter
+%\renewcommand{\theparagraph}{\arabic{paragraph}} % redefine the display of the paragraph
+% Numbering of subsubsection
+% https://tex.stackexchange.com/questions/3177/how-to-change-the-numbering-of-part-chapter-section-to-alphabetical-r
+%\renewcommand\thesubsubsection{(\Alph{subsubsection})}
+\renewcommand{\theparagraph}{(\alph{paragraph})}
+%\renewcommand{\theparagraph}{\arabic{paragraph}}
+%%     \arabic (1, 2, 3, ...)
+%%     \alph (a, b, c, ...)
+%%     \Alph (A, B, C, ...)
+%%     \roman (i, ii, iii, ...)
+%%     \Roman (I, II, III, ...)
+%%     \fnsymbol (∗, †, ‡, §, ¶, ...)
+
+%%% \usepackage[standard-baselineskips]{cmbright}
+%%% \renewcommand\familydefault{\sfdefault}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+% https://latex.org/forum/viewtopic.php?t=29038
+\usepackage[most]{tcolorbox}
+\newtcolorbox{mybox}[2][]{= {yshift=-8pt},
+  colback      = black!5!white,
+  colframe     = black!75,
+  fonttitle    = \bfseries,
+  colbacktitle = black,
+  title        = #2,#1,
+  enhanced,
+}
+%\usepackage{mathtools}
+%\usepackage{amssymb}
+%\usepackage{amsfonts}
+\usepackage{amsmath}
+
+%\usepackage{mathtools}
+\usepackage{tensor}
+\usepackage{actuarialsymbol}
+%\usepackage{eucal}
+%\usepackage[mathcal]{eucal}
+\usepackage[mathscr]{eucal}
+\usepackage[sans]{dsfont}
+
+%\usepackage{newtxmath}
+%\SetSymbolFont{largesymbols}{bold}{OMX}{cmsy}{b}{n}
+
+\usepackage{mathalfa}
+\DeclareMathAlphabet\mathbfcal{OMS}{cmsy}{b}{n}
+
+\usepackage{lscape}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{doi}
+\usepackage{xcolor}
+\usepackage{graphicx,dblfloatfix}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{cancel}
+
+\usepackage{bm} % load after fonts
+\usepackage{epigraph} % quotes in chapter
+\renewcommand{\textflush}{flushepinormal}
+\setlength\epigraphwidth{8cm}
+\setlength\epigraphrule{0pt}
+
+\usepackage{xspace}
+
+% Add a period to the end of an abbreviation unless there's one
+% already, then \xspace.
+\makeatletter
+\DeclareRobustCommand\onedot{\futurelet\@let@token\@onedot}
+\def\@onedot{\ifx\@let@token.\else.\null\fi\xspace}
+
+\def\eg{\emph{e.g}\onedot} \def\Eg{\emph{E.g}\onedot}
+\def\ie{\emph{i.e}\onedot} \def\Ie{\emph{I.e}\onedot}
+\def\cf{\emph{c.f}\onedot} \def\Cf{\emph{C.f}\onedot}
+\def\etc{\emph{etc}\onedot} \def\vs{\emph{vs}\onedot}
+\def\wrt{w.r.t\onedot} \def\dof{d.o.f\onedot}
+\def\etal{\emph{et al}\onedot}
+\makeatother
+
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{sidecap}
+\usepackage{pdflscape}
+\usepackage{etoolbox}
+\usepackage{lipsum}
+\usepackage{enumerate}
+\usepackage[format=plain, font=it]{caption}
+\usepackage{nomencl}
+\makenomenclature
+
+% Define inner product in latex
+%\newcommand\sinner[2]{{\Big\langle} #1 ~\Big|~ #2 {\Big\rangle}}
+%\newcommand\stinner[3]{{\Big\langle} #1 ~\Big|~ #2~\Big|~ #3{\Big\rangle}}
+%\newcommand\linner[2]{{\big\langle} #1 ~\big|~ #2 {\big\rangle}}
+%\newcommand\oinner[2]{{\langle} #1 ~|~ #2 {\rangle}}
+%\newcommand\otinner[3]{{\langle} #1 |#2| #3 {\rangle}}
+%\newcommand\cinner[2]{{\langle} #1 | #2 {\rangle}}
+%\newcommand\crinner[2]{{(} #1 | #2 {)}}
+
+% Define inner product in latex
+\newcommand\inner[2]{{\Bigg\langle} #1 ~\Bigg|~ #2 {\Bigg\rangle}}
+\newcommand\sinner[2]{{\Big\langle} #1 ~\Big|~ #2 {\Big\rangle}}
+\newcommand\stinner[3]{{\Big\langle} #1 ~\Big|~ #2~\Big|~ #3{\Big\rangle}}
+\newcommand\ltinner[3]{{\big\langle} #1 ~\big|~ #2~\big|~ #3{\big\rangle}}
+\newcommand\linner[2]{{\big\langle} #1 ~\big|~ #2 {\big\rangle}}
+\newcommand\oinner[2]{{\langle} #1 ~|~ #2 {\rangle}}
+\newcommand\otinner[3]{{\langle} #1 |#2| #3 {\rangle}}
+\newcommand\cinner[2]{{\langle} #1 | #2 {\rangle}}
+\newcommand\crinner[2]{{(} #1 | #2 {)}}
+
+
+%\newcommand\pre[2]{\tensor[^{#2}_{}]{#1}{}}
+%$\tensor[^{i}_{j}]{\pd{F(y,\cdot)}{\xi}}{}$
+\newcommand{\pre}[2]{{{#1}_{#2}}}
+
+% Define commands
+\newcommand{\half}{\ensuremath{\frac{1}{2}}}
+
+\newcommand{\bea}{\begin{eqnarray}}
+\newcommand{\eea}{\end{eqnarray}}
+\newcommand{\bsp}{\begin{split}}
+\newcommand{\esp}{\end{split}}
+\newcommand{\beq}{\begin{equation}}
+\newcommand{\eeq}{\end{equation}}
+\newcommand{\bed}{\begin{displaymath}}
+\newcommand{\eed}{\end{displaymath}}
+\newcommand{\bdm}{\begin{displaymath}}
+\newcommand{\edm}{\end{displaymath}}
+
+\newcommand{\pd}[2]{\dfrac{\partial #1}{\partial #2}}
+\newcommand{\pf}[2]{\dfrac{d #1}{d #2}}
+\newcommand{\pdt}[2]{\dfrac{\partial^2 #1}{\partial (#2)^2}}
+\newcommand{\pft}[2]{\dfrac{d^2 #1}{d (#2)^2}}
+\newcommand{\pdtno}[2]{\dfrac{\partial^2 #1}{\partial #2}}
+\newcommand{\pdd}[3]{\dfrac{\partial^2 #1}{\partial #2 \partial #3}}
+\newcommand{\pff}[3]{\dfrac{d^2 #1}{d #2 d #3}}
+\newcommand{\tdt}[2]{\dfrac{d^2 #1}{d (#2)^2}}
+\newcommand{\td}[2]{\dfrac{d #1}{d #2}}
+\newcommand{\mb}{\bm}
+\newcommand{\f}{\frac}
+\newcommand{\p}{\partial}
+\newcommand{\vect}[1]{\vec{\mathbf{#1}}}
+\newcommand{\x}{\bm{x}}
+\newcommand{\y}{\bm{y}}
+\newcommand{\z}{\bm{z}}
+
+\newcommand{\q}{\bm{q}}
+\renewcommand{\u}{\bm{u}}
+\renewcommand{\v}{\bm{v}}
+\newcommand{\qd}{\bm{\dot{q}}}
+\newcommand{\qdd}{\bm{\ddot{q}}}
+\newcommand{\R}{\bm{R}}
+\renewcommand{\r}{\bm{r}}
+\renewcommand{\S}{\bm{S}}
+\newcommand{\zerovec}{\bm{0}}
+\newcommand{\for}{\mathrm{for}}
+\newcommand{\bnabla}{\bm{\nabla}}
+\newcommand{\var}{\vartheta}
+\newcommand{\g}{\bm{g}}
+\newcommand{\bpsi}{\bm{\psi}}
+\newcommand{\n}{\bm{\eta}}
+\renewcommand{\d}{\bm{d}}
+\renewcommand{\c}{\bm{c}}
+\newcommand{\e}{\bm{\tau}}
+\newcommand{\es}{\tau}
+\newcommand{\ns}{\eta}
+\newcommand{\zs}{\xi}
+\newcommand{\mus}{\mu_{f*}}
+\newcommand{\vars}{\vartheta_{f*}}
+\newcommand{\kmat}{\bm{[k]}}
+\newcommand{\K}{\bm{[K]}}
+\newcommand{\J}{\mathcal{J}}
+\newcommand{\D}{\mathcal{D}}
+\newcommand{\W}{W}
+\newcommand{\A}{\mathcal{A}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\F}{}
+\renewcommand{\b}{\bm{\beta}}
+\renewcommand{\a}{\bm{\alpha}}
+\newcommand{\as}{\bm{\alpha}^*}
+\newcommand{\bs}{\bm{\beta}^*}
+
+\newcommand\blfootnote[1]{%
+  \begingroup
+  \renewcommand\thefootnote{}\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \endgroup
+}
+
+\makeatletter
+\patchcmd{\epigraph}{\@epitext{#1}}{\itshape\@epitext{#1}}{}{}
+\makeatother
+
+\newcommand{\mc}[2]{\multicolumn{#1}{c}{#2}}
+\newcommand{\btable}[3]{%
+\begin{table}[htbp]
+\begin{center}
+\caption{#2\label{#3}}
+\begin{tabular}{#1}}
+\newcommand{\etable}{\end{tabular}
+\end{center}
+\end{table}}
+\newcommand*{\nom}[2]{#1\nomenclature{#1}{#2}}
+\newcommand{\com}[1]{\textcolor{blue}{#1}}
+\newcommand{\setchaptergraphics}[1]{\graphicspath{{chapters/#1/figures/}}}
+
+%% \newcommand\spmatrix[1]{{%
+%%   \tiny\arraycolsep=0.3\arraycolsep\ensuremath{\begin{pmatrix}#1\end{pmatrix}}}}
+%% \newcommand\sbmatrix[1]{{%
+%%   \tiny\arraycolsep=0.3\arraycolsep\ensuremath{\begin{bmatrix}#1\end{bmatrix}}}}
+%%
+
+\newcommand\bdot[1]{\overset{\bm \cdot}{#1}}
+% {\langle} #1 | #2 | #3 {\rangle}
+
+%  vector
+\newcommand*{\vv}[1]{\vec{\mkern0mu#1}}
+
+%\newcommand{\etal}{\textit{et al}. }
+%\newcommand{\ie}{\textit{i}.\textit{e}., }
+%\newcommand{\eg}{\textit{e}.\textit{g}. }
+
+\usepackage{fancyhdr}
+%\fancyhf{}
+%\fancyhead[L]{\rightmark} % left
+%\fancyfoot[C]{\thepage} % right
+%\renewcommand{\headrulewidth}{5pt}
+%\pagestyle{fancy}
+
+% \input{tikz}
+\renewcommand{\arg}[1]{\textcolor{black}{(#1)}}
+\renewcommand{\bm}[1]{{#1}}
+\renewcommand{\vec}[1]{{#1}}
+
+\usepackage{empheq}
+
+\newtcbox{\mymath}[1][]{%
+   nobeforeafter, math upper, tcbox raise base,
+   enhanced, colframe=blue!30!black,
+   colback=white!30, boxrule=1pt,
+   #1}
+% \tcbset{highlight math style={boxsep=5mm,colback=blue!30!red!30!white}}
+
+%\newcommand{\heading}[2]{\colorbox{#1}{\centering{\textbf{#2}}}}
+
+\usepackage{eqparbox}
+%\renewcommand{\algorithmiccomment}[1]{\hfill\eqparbox{COMMENT}{\# \textcolor{gray}{#1}}}
+\renewcommand{\algorithmiccomment}[1]{\hfill\# \textcolor{gray}{#1}}
+
+% Make clickable footnote http://www.brechtdeman.com/blog/latex-clickable-footnote.html
+%\newcommand{\hyperfootnote}[1][]{\def\ArgI\hyperfootnoteRelay}
+% relay to new command to make extra optional command possible
+%\newcommand\hyperfootnoteRelay[2][]{\href{#1#2}{\ArgI}\footnote{\href{#1#2}{#2}}}
+% the first optional argument is now in \ArgI, the second is in #1

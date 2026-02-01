@@ -1,0 +1,64 @@
+
+\chapter{\uppercase{Conclusions}}\label{conclusion}
+
+
+\section{Summary of Results}
+
+A dynamic training point selection framework has been proposed and applied to two different surrogate models: the kriging and polynomial chaos expansions.
+It provides a better choice of training point locations for both surrogate models since it inherits the characteristics of both domain- and response-based training point selection methods, \ie~ a geometric criterion is used to spread out the points and the points are chosen based on discrepancies between local and global surrogate approximated response values.
+Comparisons with latin hypercube sampling and other domain-based training point selection approaches show that more monotone convergence behavior and  better accuracies are achieved. 
+
+The framework also addresses the question of training point selection in the presence of higher-order derivative information: the local surrogate models use the available derivative information in approximating the function values and  influence the training point selection via the discrepancy function.
+As a result, it is shown that the dynamic method ably chooses better locations to evaluate the gradient and Hessian information than LHS. In this process, polynomial chaos has been newly enhanced to incorporate Hessian information.
+The computational advantage of using higher-order derivative information for the construction of surrogate models in conjunction with the proposed training point selection is also discussed.
+
+The framework also introduces a local as well as global measure of surrogate model accuracy, where the global error measure (RMSD) is the mean of all local error measures, $\delta$. The proposed MAD and RMSD show great promise for measuring surrogate model error in applications of practical interest where it is intractable to calculate the actual errors (MAE or RMSE). This is demonstrated by an excellent agreement between the proposed measures and actual errors for a variety of analytical test functions for both surrogate models. However, for the aerodynamic test function, the proposed error measures are not as accurate as they are for analytical test functions, due to the difficulties of the MIR local surrogate in approximating non-smooth functions. The error estimate does not require additional exact function evaluations and the extra computational overhead of building and evaluating local surrogate models is negligible compared to most high-fidelity physics-based function evaluations. 
+
+
+This work also compares the performances of kriging and polynomial chaos surrogate models on analytical and aerodynamic test problems in terms of model accuracy. 
+The performances of both surrogate models are also assessed when applied to uncertainty quantification and robust optimization under uncertainty (mixed epistemic/aleatory) on structural and aerodynamic test problems.
+
+\section{Novel Contributions}
+
+\begin{enumerate}
+
+\item \textbf{Training Point Selection:} A new framework for surrogate model training point selection is the main contribution of this work. The dynamic method is shown to perform better than commonly used methods for DoE.
+Many methods exist in the literature for training point selection in the absence of derivative information. This work also allows better choices of locations where to evaluate the gradients as well as Hessian.
+
+\item \textbf{Error Estimation:} This work proposes an error estimate to the surrogate models in the form of a discrepancy function. This function is shown to exhibit close agreement with the actual distribution of error.
+\item \textbf{Hessian Enhancement of PCE:} The polynomial chaos (regression procedure) is newly enhanced to incorporate Hessian information as additional fitting conditions.
+\end{enumerate}
+
+
+
+\section{Recommendations for Future Work}
+
+
+In summary, the presented framework has shown promise to improve training point selection as well as  estimate the error of the resulting surrogate model. The following is recommended as future research avenues.
+
+\subsection{On the Proposed Framework}
+
+\begin{itemize}
+\item The suitability of the training point selection method for building globally accurate surrogate models has been explored in this work, however, its suitability pertaining to surrogate-based optimization needs investigation. The framework currently ensures at least one mean distance (see Eq.~\eqref{eq:avgmindist}) between a new and existing training point. The proposed framework can be adapted for optimizations, for example, by means of tuning the \emph{control parameter} discussed in section~\ref{selecting} which controls the placement of training points closer to an existing training point (if needed by the optimizer). On the other hand, the proposed error estimate driven by the discrepancy function ($\delta=|\widehat{f}_{global}-\widehat{f}_{local}|$) can readily be used for optimizations, but this is also not investigated in this work. A straightforward investigation of the suitability of the error estimation framework for validating the statistics (e.g. mean and variance) produced by the global surrogate model is also recommended as a research avenue.
+
+\item The assumption that a local surrogate model is more accurate than a global one becomes less reasonable in some test cases such as the aerodynamic problem studied in section~\ref{Database}. It is recommended to study other potential candidates for local surrogate models (e.g. neural networks~\cite{NeuralNetworks}, radial basis function~\cite{Buhmann2005}), particularly for non-smooth functions. Also, considerable efforts have gone into tuning the MIR local surrogate model in terms of the parameters which influence the approximation~\cite{Qiqi2010a,Qiqi2010b}. 
+A surrogate model that is relatively insensitive to the function to be modeled and without any tunable parameters will be an attractive candidate to serve as a local surrogate model. 
+Along the same line of discussion, the use of two or more local surrogate models for added fidelity is also a recommended topic of investigation.
+
+\item The training point selection and error estimation framework has been applied to kriging and polynomial chaos. The application of the framework to other existing surrogate modeling methods can also be considered.
+
+\end{itemize}
+
+
+\subsection{On Optimization Under Uncertainty}
+
+This work identifies the following as potential research areas in applying the surrogate models to uncertainty quantification and optimization under uncertainty.
+\begin{itemize}
+
+\item The gradient approximation for epistemic variables discussed in section~\ref{epistemicgradients} needs further refinement.
+
+\item In this work the random variables are assumed to be \emph{uncorrelated} as well as \emph{normally} distributed. This naturally leads into the investigation of correlated random variables and other input distributions.
+
+\item The OUU framework (IMCS-BCO), can be applied to complex problems of interest, for example, structural optimization of a wing, by coupling the OUU framework with specialized finite-element solvers.
+
+\end{itemize}

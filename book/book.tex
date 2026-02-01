@@ -1,0 +1,103 @@
+\documentclass[12pt]{report}
+\usepackage{graphicx}
+\usepackage[letterpaper, left=1.0in, right=1.0in, top=1.0in, bottom=1.0in]{geometry}
+\usepackage{setspace}
+\usepackage[explicit]{titlesec}
+\usepackage[titles]{tocloft}
+\usepackage[numbers,compress,sort]{natbib}
+\usepackage{tikz}
+\input{tex/tableau_colors}
+\usepackage[bookmarks=true, hidelinks]{hyperref}
+\hypersetup{
+  colorlinks,
+  citecolor=black,
+  linkcolor=black,
+  urlcolor=black
+}
+\usepackage[page]{appendix}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amssymb}
+
+\input{tex/custom.tex}
+
+\newcommand{\loadchapter}[1]{%
+  \setchaptergraphics{#1}%
+  \input{chapters/#1/chapter.tex}%
+}
+
+\begin{document}
+\doublespacing
+
+\graphicspath{{frontmatter/figures/}}
+
+\input{frontmatter/epigraph.tex}
+\input{frontmatter/dedication.tex}
+
+\pagenumbering{roman}
+
+% Table of Contents formatting
+\renewcommand{\cftchapdotsep}{\cftdotsep}
+\renewcommand{\cftchapfont}{\bfseries}
+\renewcommand{\cftchappagefont}{}
+\renewcommand{\cftchappresnum}{Chapter }
+\renewcommand{\cftchapaftersnum}{:~}
+\renewcommand{\cftchapnumwidth}{6.2em}
+\renewcommand{\cftchapafterpnum}{\vskip\baselineskip}
+\renewcommand{\cftsecafterpnum}{\vskip\baselineskip}
+\renewcommand{\cftsubsecafterpnum}{\vskip\baselineskip}
+\renewcommand{\cftsubsubsecafterpnum}{\vskip\baselineskip}
+
+\titleformat{\chapter}[display]
+{\normalfont\bfseries\filcenter}{\chaptertitlename\ \thechapter}{0pt}{\MakeUppercase{#1}}
+
+\renewcommand\contentsname{Table of Contents}
+
+\begin{singlespace}
+\tableofcontents
+\end{singlespace}
+
+\currentpdfbookmark{Table of Contents}{TOC}
+
+\clearpage
+
+\addcontentsline{toc}{chapter}{List of Tables}
+\begin{singlespace}
+  \setlength\cftbeforetabskip{\baselineskip}
+  \listoftables
+\end{singlespace}
+
+\clearpage
+
+\addcontentsline{toc}{chapter}{List of Figures}
+\begin{singlespace}
+  \setlength\cftbeforefigskip{\baselineskip}
+  \listoffigures
+\end{singlespace}
+
+\clearpage
+
+\addcontentsline{toc}{chapter}{Summary}
+\input{frontmatter/summary.tex}
+
+\clearpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\titleformat{\chapter}[display]
+{\normalfont\bfseries\filcenter}{\MakeUppercase\chaptertitlename\ \thechapter}{0pt}{\MakeUppercase{#1}}
+\titlespacing*{\chapter}{0pt}{0pt}{30pt}
+\titleformat{\section}{\normalfont\bfseries}{\thesection}{1em}{#1}
+\titleformat{\subsection}{\normalfont}{\uline{\thesubsection}}{0em}{\uline{\hspace{1em}#1}}
+\titleformat{\subsubsection}{\normalfont\itshape}{\thesubsubsection}{1em}{#1}
+
+% Chapters are auto-generated from manifest.yml
+\input{build/chapters.tex}
+
+\begin{singlespace}
+  \bibliographystyle{bib/myabbrvnat}
+  \bibliography{bib/references}
+\end{singlespace}
+\addcontentsline{toc}{chapter}{References}
+
+\end{document}

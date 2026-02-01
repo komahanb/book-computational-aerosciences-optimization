@@ -1,0 +1,279 @@
+\section{Implementation of Semi-Intrusive Stochastic Galerkin Method}\label{sec:stochastic-architecture}
+We proceed with the subject of computer implementation of semi-intrusive SGM.
+We begin with the summary of the deterministic and stochastic finite element methodologies in Table~\ref{tab:detfem-stofem}. The mesh information (nodes and connectivities) are identical between the two methods, but differ in residual, Jacobians and metrics of interest.
+%The goal here is to discuss the architecture of the implementations and outline a few algorithms with details of implementation.
+\begin{table}[h]
+  \caption{Summary  of deterministic and stochastic finite element methodologies.}
+  \medskip
+  \centering
+  \scalebox{1.0}{
+    \begin{tabular}{c|p{6cm}p{6cm}}
+      \toprule
+          {} & \textbf{Deterministic FEM} & \textbf{Stochastic FEM} \\
+          \midrule
+          nodes               & coordinates of position vectors of points discretizing the spatial geometry &  coordinates of position vectors of points discretizing the spatial geometry \\
+          connectivity        & ordered sequence of nodes define a deterministic element &  the same sequence of nodes define a stochastic element \\
+          \midrule
+          state (field) variables  & spatial and temporal degrees of freedom & spatial, temporal, and probabilistic degrees of freedom \\          
+          residuals, Jacobians     & vectors and matrices that are derived from deterministic ODE & vectors and matrices that are $N$ times larger than deterministic ODEs \\
+          \midrule
+          metrics of interest       & integrals (or functions of integrals of) in space and time domains & moments of integrals (or functions of integrals of) in space and time domains \\          
+          \bottomrule
+    \end{tabular}
+  }
+  \label{tab:detfem-stofem}
+\end{table}
+
+
+
+\subsection{Software Architecture for Element-wise Projection}
+Often, finite element simulation libraries use object-oriented programming principles such as abstraction, inheritance and composition.
+We outline the object-oriented software architecture that is used to develop the stochastic finite element framework by extending the deterministic finite element framework TACS~\cite{Boopathy2019:Adjoint,Boopathy:2017:SciTech}.
+Figure~\ref{fig:software-architecture} shows the core element-level software architecture followed in this work.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\linewidth]{stochastic-architecture.pdf}
+  \caption{The element-level software architecture of semi-intrusive stochastic Galerkin method for projection in probabilistic space.}
+  \label{fig:software-architecture}
+\end{figure}
+The deterministic finite element framework for multibody dynamics has a pool of concrete classes implementing the \texttt{Element} interface.
+We refer to these concrete classes with generic names \texttt{Element Type 1} and \texttt{Element Type 2}, but these are often beams, shells, solids, rigid bodies, kinematic constraints in the context of multibody dynamics.
+These concrete classes provide us the means to obtain deterministic residuals, Jacobian matrices, as well as derivatives needed for adjoint sensitivity analysis.
+This forms the core of deterministic adjoint-enabled finite element framework.
+In order to extend this framework to implement stochastic Galerkin finite element method, we provide two new classes \texttt{ProbabilisticSpace} and \texttt{StochasticElement}, that function as follows:
+\begin{enumerate}
+\item The \texttt{ProbabilisticSpace} class acts as a container for probabilistically modeled random parameters, as well as is responsible for multivariate basis evaluation and quadrature setup.
+  This class abstracts the different options for basis function evaluation and quadrature rules.
+
+\item The \texttt{StochasticElement} class implements the \texttt{Element} interface and uses one of the concrete deterministic element instances.
+  Thus, the \texttt{StochasticElement} is a regular element through \textit{inheritance}, and also has a deterministic element through \textit{composition}.
+  The composition enables the reuse of underlying deterministic capabilities for forward analysis and adjoint sensitivity analysis.
+  The inheritance allows us to utilize the existing assembly, linear algebra and time-marching algorithms.
+\end{enumerate}
+In addition to the architecture of the element library shown in Figure~\ref{fig:software-architecture}, there are other classes such as the \texttt{Assembler} and the \texttt{TimeIntegrator} responsible for system-wide assembly operations, and implicit time marching, respectively (see~Section~\ref{sec:adjoint-implementation} for details).
+The evaluation of metrics of interest can be accomplished through a similar setup of \texttt{Function} -- \texttt{StochasticFunction} using \texttt{ProbabilisticSpace}.
+The evaluation of deterministic metrics such as stress, compliance and structural mass, happens through specialized implementations of the \texttt{Function} interface.
+The \texttt{StochasticFunction} is responsible for computing the probabilistic moments of such deterministic metrics.
+
+\paragraph*{System-wide and Element-wise Projection:} We presented the architecture for element-wise stochastic Galerkin projection.
+As mentioned earlier in this section, it is also possible to perform Galerkin projection at the system level operating on larger system wide matrices and vectors.
+In order to achieve that, the architecture would involve the same \texttt{ProbabilisticSpace} class operating on \texttt{StochasticAssembler} extending \texttt{Assembler} interface.
+Both options are mathematically equivalent, and thus can be decided based on the convenience of implementation, and software architecture of the deterministic code base.
+
+\subsection{Software Algorithms for Element-wise Projection}
+%We present the mathematical details and associated algorithms of obtaining stochastic residuals, Jacobians and initial conditions using algebraic equations of deterministic element obtained after spatial discretization.
+%We present this in a general time dependent solution technique; for stationary cases the time domain can simply be ignored.
+%We assume that a Newton--Raphson technique is employed.
+We present basic computational algorithms forming the core of nonlinear stochastic solution process.
+A nonlinear solution process is driven by assembling residuals, Jacobians and initial conditions (e.g. Newton--Raphson method).
+The goal here is to present the key mathematical operations in the form of algorithms, thus the presented algorithms need not be an optimal implementation for fast computations.
+
+\subsubsection{Stochastic Element Residual}
+Let the deterministic residual of an element $e$ be $\vec{R}^e\left(t,\vec{y}, \vec{u}^e(t,\vec{y}), \vec{\dot{u}}^e(t,\vec{y}),\vec{\ddot{u}}^e(t,\vec{y})\right)$
+and the stochastic residual of element $e$ be $\vec{\cal{R}}^e\left(t, \vec{y}, \vec{U}^e(t), \vec{\dot{U}}^e(t), \vec{\ddot{U}}^e(t)\right).$
+The size of stochastic element residual vector is $N$ times the size of deterministic element residual vector, where the integer multiple is the number of basis functions in the orthonormal set.
+For every orthonormal basis function $i = 1, \ldots, N$, we project the element residual on basis function $\widehat{\psi}_i^y(y)$ and place the decomposition coefficients in the stochastic element residual array.
+This projection is evaluated using numerical quadrature as
+\begin{equation}\label{eqn:residual-projection}
+  \begin{gathered}
+    \sinner{\widehat{\psi}_i^y(\vec{y})}{\vec{R}^e\left(t, \vec{y}, \vec{u}^e(t,\vec{y}), \vec{\dot{u}}^e(t,\vec{y}\right), \vec{\ddot{u}^e(t,\vec{y}))}_{\rho^y(\vec{y})}^{\cal{Y}} }
+      % \int\limits_{{\cal{Y}}} \rho^y(\vec{y})
+      % \widehat{\psi}_i^y(\vec{y}) {\vec{R}^e\left(t, \vec{y}, \vec{u}^e(t,\vec{y}), \vec{\dot{u}}^e(t,\vec{y}), \vec{\ddot{u}}^e(t,\vec{y})\right)}\mathrm{d}\vec{y} \\
+    \\ \approx \\
+    \sum_{q=1}^Q \alpha_q \widehat{\psi}_i^y(\pre{y}{q}) {\vec{R}^e\left(t, \pre{y}{q}, \vec{u}^e(t,\pre{y}{q}), \vec{\dot{u}}^e(t,\pre{y}{q}), \vec{\ddot{u}}^e(t,\pre{y}{q})\right)}
+    \end{gathered}
+\end{equation}
+We repeatedly evaluate the deterministic element residuals for each value of quadrature node $\pre{y}{q}$ from the probabilistic domain ${\cal{Y}}$.
+As an input for evaluation of deterministic element residuals corresponding $\pre{y}{q}$, we need the deterministic state vectors and their time derivatives evaluated as
+\begin{equation}\label{eqn:state-expansions}
+  \begin{gathered}
+    \vec{u}^e(t,\pre{y}{q}) \approx \sum\limits_{i=1}^N {U}_{i}^e(t) \widehat{\psi}_i^y(\pre{y}{q}) \\
+    \vec{\dot{u}}^e(t,\pre{y}{q}) \approx \sum\limits_{i=1}^N {\dot{U}}_{i}^e(t) \widehat{\psi}_i^y(\pre{y}{q}) \\
+    \vec{\ddot{u}}^e(t,\pre{y}{q}) \approx \sum\limits_{i=1}^N {\ddot{U}}_{i}^e(t) \widehat{\psi}_i^y(\pre{y}{q}) .
+  \end{gathered}
+\end{equation}
+In an iterative solution process such as Newton--Raphson method for solving nonlinear systems $\vec{U}_{i}^e(t)$, $\vec{\dot{U}}_{i}^e(t)$, and $\vec{\ddot{U}}_{i}^e(t)$ are available as initial guesses.
+Thus all information required to form the stochastic residual by decomposing deterministic residuals on each basis term from stochastic space is readily available.
+The Algorithm~\ref{alg:stochastic-residual} details the formation of stochastic residual by projecting deterministic residual on to the probabilistic basis elements.
+
+\subsubsection{Stochastic Element Jacobian}
+Let the deterministic Jacobian of an element $e$ be $\vec{J}^e\left(t,\vec{y}, \vec{u}^e(t,\vec{y}),\vec{\dot{u}}^e(t,\vec{y}),\vec{\ddot{u}}^e(t,\vec{y})\right)$ and the stochastic Jacobian be $\vec{\cal{J}}^e\left(t, \vec{y}, \vec{U}^e(t), \vec{\dot{U}}^e(t),\vec{\ddot{U}}^e(t)\right)$.
+%The stochastic Jacobian is as many times as big as the deterministic Jacobian.  
+The process is similar to the residual assembly and the projection in stochastic domain is performed as
+\begin{equation}\label{eqn:jacobian-projection}
+  \begin{gathered}
+    \stinner{\widehat{\psi}_i^y(\vec{y})}{\vec{J}^e\left(t, \vec{y}, \vec{u}^e(t,\vec{y}), \vec{\dot{u}}^e(t,\vec{y}\right), \vec{\ddot{u}}^e(t,\vec{y}))}{\widehat{\psi}_j^y(\vec{y})}_{\rho^y(\vec{y})}^{\cal{Y}} \\
+    \approx \\
+    \sum_{q=1}^Q \alpha_q \widehat{\psi}_i^y(\pre{y}{q}) {\vec{J}^e\left(t, \pre{y}{q}, \vec{u}^e(t,\pre{y}{q}), \vec{\dot{u}}^e(t,\pre{y}{q}), \vec{\ddot{u}}^e(t,\pre{y}{q}) \right) \widehat{\psi}_j^y(\pre{y}{q})}
+  \end{gathered}
+\end{equation}
+The algorithm performing this is shown in Algorithm~\ref{alg:stochastic-jacobian}.
+
+\subsubsection{Stochastic Initial Conditions}
+The projection of initial conditions and their time derivatives is performed as follows
+\begin{equation}
+  \label{eqn:ic-projection}
+  \begin{aligned}
+    \sinner{\widehat{\psi}_i^y(\vec{y})}{\vec{{u}}^e(0,\vec{y}) }_{\rho^y(\vec{y})}^{\cal{Y}}
+& \approx \sum_{q=1}^Q \alpha_q \widehat{\psi}_i^y(\pre{y}{q}) \vec{u}^e( 0,\pre{y}{q} ) \\
+    \sinner{\widehat{\psi}_i^y(\vec{y})}{\vec{\dot{u}}^e(0,\vec{y}) }_{\rho^y(\vec{y})}^{\cal{Y}}
+& \approx \sum_{q=1}^Q \alpha_q \widehat{\psi}_i^y(\pre{{y}}{q}) \vec{\dot{u}}^e( 0,\pre{\dot{y}}{q} ) \\
+%    \sinner{\widehat{\psi}_i^y(\vec{y})}{\vec{\ddot{u}}^e(0,\vec{y}) }_{\rho^y(\vec{y})}^{\cal{Y}}
+%& \approx \sum_{q=1}^Q \alpha_q \widehat{\psi}_i^y(\pre{{y}}{q}) \vec{\ddot{u}}^e( 0,\pre{\ddot{y}}{q} ) \\
+  \end{aligned}
+\end{equation}
+This includes the case where the initial conditions also are dependent
+on random variables from probabilistic domain (uncertainty associated
+with initial conditions). The algorithm for this projection is shown
+in Algorithm~\ref{alg:stochastic-ic}. Usually for a second-order time dependent process, we
+require only upto first-time derivatives.
+
+% In practice, the second time
+%derivatives are determined by holding states and their first
+%derivatives constant by solving a linear/nonlinear system. Once we
+%obtain the second derivatives, their projection in stochastic space is
+%trivial.
+
+\begin{singlespace}
+  \begin{algorithm}[h!]
+    \caption{Algorithm for evaluating stochastic element residual from deterministic element residual.}
+    \label{alg:stochastic-residual}
+    \begin{algorithmic}[1]
+      \Require $pspace$ \Comment{probabilistic space object}
+      \Require $delem$  \Comment{deterministic element object}
+      \Function{StochasticResidual}{pspace, delem, $t,  \vec{U}^e, \vec{\dot{U}}^e, \vec{\ddot{U}}^e$}
+      \State $N \gets  pspace.getNumBasisFunctions()$ \Comment{number of stochastic basis functions}
+      \State $N_{nodes} \gets delem.getNumNodes()$ \Comment{number of element nodes}
+      \State $N_{ddof}  \gets delem.getNumDof()$ \Comment{number of deterministic degrees of freedom}
+      \State $N_{sdof} \gets N \times N_{ddof}$ \Comment{number of stochastic degrees of freedom}
+      \State $\vec{\cal{R}}^e = zeros(N_{sdof})$ \Comment{set the stochastic residual to zero}
+      \For {$i = 1, N$} \Comment{loop over basis function set}
+      \State $pspace.InitializeQuadrature(i)$ \Comment{optimize number of quadrature points}
+      \State {\texttt{! Perform projection using quadrature}}
+      \State $\pre{R}{i}^e = zeros(N_{ddof})$ \Comment{zero vector for storage}
+      \For {$q = 1, Q$} \Comment{quadrature loop}
+      \State $\pre{y}{q}, \pre{z}{q}, \alpha_q \gets pspace.getQuadraturePointsWeight(q)$ % \Comment{points in general and standard domains}
+      \State $\pre{R}{q}^e, \pre{u}{q}^e, \pre{\dot{u}}{q}^e, \pre{\ddot{u}}{q}^e = zeros(N_{ddof})$ \Comment{zero vectors for storage}
+      \State {\texttt{! Form state vectors as input for deterministic element}}
+      \For {k = 1, N} \Comment{loop over basis function set}
+      \State $\pre{\psi}{q}_k^{z} \gets  pspace.evaluateBasis(k, \pre{z}{q})$ \Comment{evaluate k-th basis function}
+      \State $\pre{u}{q}^e \gets \pre{u}{q}^e + \vec{U}^e[k\times N_{ddof}:(k+1)\times N_{ddof}]\times \pre{\psi}{q}_k^{z} $
+      \State $\pre{\dot{u}}{q}^e \gets \pre{\dot{u}}{q}^e + \vec{\dot{U}}^e[k\times N_{ddof}:(k+1)\times N_{ddof}]\times \pre{\psi}{q}_k^{z} $
+      \State $\pre{\ddot{u}}{q}^e \gets \pre{\ddot{u}}{q}^e + \vec{\ddot{U}}^e[k\times N_{ddof}:(k+1)\times N_{ddof}]\times \pre{\psi}{q}_k^{z} $
+      \EndFor % state loop
+      \State $\pre{\psi}{q}_i^z \gets pspace.evaluateBasis(i, \pre{z}{q})$ \Comment{evaluate i-th basis function}
+      \State $\pre{R}{q}^e \gets  delem.getResidual(t, \pre{y}{q}, \pre{u}{q}^e, \pre{\dot{u}}{q}^e, \pre{\ddot{u}}{q}^e)$ \Comment{deterministic residual at $y_q$}
+      \State $\pre{R}{i}^e \gets \pre{R}{i}^e + \alpha_q \times \pre{\psi}{q}_i^z\times \pre{R}{q}^e$ \Comment{Equation~\eqref{eqn:residual-projection}}
+      \EndFor % quadrature projection loop
+      \State {\texttt{! Order stochastic residuals nodewise}}
+      \For {$ii = 1, N_{nodes}$}
+      \State $off \gets ii \times N_{sdof} $
+      %\State $distart = ii \times N_{ddof}$
+      %\State $diend  = (ii+1) \times N_{ddof}$
+      %\State $sistart = off + i  \times N_{ddof}$
+      %\State $siend   = off + (i+1) \times N_{ddof}$
+      \State $\vec{\cal{R}}^e[off + i  \times N_{ddof}:off + (i+1) \times N_{ddof}] \gets \pre{R}{i}^e[ii \times N_{ddof}:(ii+1) \times N_{ddof}]$
+      \EndFor
+      \EndFor % basis funtion loop
+      \State \Return $\vec{\cal{R}}^e$
+      \EndFunction
+    \end{algorithmic}
+  \end{algorithm}
+\end{singlespace}
+
+\begin{singlespace}
+\begin{algorithm}[h!]
+  \caption{Algorithm for evaluating stochastic element Jacobian from deterministic element Jacobian.}
+  \label{alg:stochastic-jacobian}
+  \begin{algorithmic}[1]
+    \Require $pspace$ \Comment{probabilistic space object}
+    \Require $delem$  \Comment{deterministic element object}
+    \Function{StochasticJacobian}{pspace, delem, $t, \vec{U}^e, \vec{\dot{U}}^e, \vec{\ddot{U}}^e$}
+    \State $N \gets  pspace.getNumBasisFunctions()$ \Comment{number of stochastic basis functions}
+    \State $N_{nodes} \gets delem.getNumNodes()$ \Comment{number of element nodes}
+    \State $N_{ddof}  \gets delem.getNumDof()$ \Comment{number of deterministic degrees of freedom}
+    \State $N_{sdof} \gets N \times N_{ddof}$ \Comment{number of stochastic degrees of freedom}
+    \State $\vec{\cal{J}}^e = zeros(N_{sdof},N_{sdof})$ \Comment{space for stochastic element Jacobian}
+    \For {$i = 1, N$} \Comment{loop over basis function set for rows}
+    \For {$j = 1, N$} \Comment{loop over basis function set for columns}
+    \State $pspace.InitializeQuadrature(i,j)$ \Comment{number of quadrature points}
+    \State {\texttt{! Perform projection using quadrature}}
+    \State $\pre{J}{{ij}}^e = zeros(N_{ddof},N_{ddof})$ \Comment{space for Jacobian block at $i,j$}
+    \For {$q = 1, Q$} \Comment{loop over quadrature}
+    \State $\pre{y}{q}, \pre{z}{q}, \alpha_q \gets pspace.getQuadraturePointsWeight(q)$ %\Comment{points in general and standard domains}
+    \State $\pre{u}{q}^e, \pre{\dot{u}}{q}^e, \pre{\ddot{u}}{q}^e = zeros(N_{ddof})$  \Comment{space for deterministic state variables at $y_q$}
+    \State {\texttt{! Form state vectors as input for deterministic element}}
+    \For {k = 1, N}
+    \State $\pre{\psi}{q}_k^{z} \gets  pspace.evaluateBasis(k, \pre{z}{q})$ \Comment{evaluate k-th basis function}
+    \State $\pre{u}{q}^e \gets \pre{u}{q}^e + \vec{U}^e[k\times N_{ddof}:(k+1)\times N_{ddof}]\times \pre{\psi}{q}_k^{z} $
+    \State $\pre{\dot{u}}{q}^e \gets \pre{\dot{u}}{q}^e + \vec{\dot{U}}^e[k\times N_{ddof}:(k+1)\times N_{ddof}]\times \pre{\psi}{q}_k^{z} $
+    \State $\pre{\ddot{u}}{q}^e \gets \pre{\ddot{u}}{q}^e + \vec{\ddot{U}}^e[k\times N_{ddof}:(k+1)\times N_{ddof}]\times \pre{\psi}{q}_k^{z} $
+    \EndFor % state loop
+    \State $\pre{\psi}{q}_i^z \gets pspace.evaluateBasis(i, \pre{z}{q})$ \Comment{evaluate i-th basis function}
+    \State $\pre{\psi}{q}_j^z \gets pspace.evaluateBasis(j, \pre{z}{q})$ \Comment{evaluate j-th basis function}
+    \State $\pre{J}{q}^e = zeros(N_{ddof},N_{ddof})$ \Comment{space for deterministic Jacobian at $y_q$}
+    \State $\pre{J}{q}^e \gets  delem.getJacobian(t, \pre{y}{q}, \pre{u}{q}^e, \pre{\dot{u}}{q}^e, \pre{\ddot{u}}{q}^e)$ \Comment{deterministic Jacobian at $y_q$}
+    \State $\pre{J}{ij}^e \gets \pre{J}{ij}^e + \alpha_q \times \pre{\psi}{q}_i^z \times \pre{J}{q}^e \times \pre{\psi}{q}_j^z $ \Comment{Equation~\eqref{eqn:jacobian-projection}}
+    \EndFor % quadrature projection loop
+    \State {\texttt{! Order stochastic jacobians nodewise}}
+    \For {$ii = 1, N_{nodes}$} \Comment{outer loop over nodes}
+    \For {$jj = 1, N_{nodes}$} \Comment{inner loop over nodes}
+    \State $istart$ $\gets$ $ii \times N_{sdof} + i  \times N_{ddof}$ \Comment{row start index}
+    \State $iend$ $\gets$ $jj \times N_{sdof} + (i+1) \times N_{ddof}$ \Comment{row end index}
+    \State $jstart$ $\gets$ $jj \times N_{sdof}  + j  \times N_{ddof}$ \Comment{column start index}
+    \State $jend$ $\gets$ $jj \times N_{sdof} + (j+1) \times N_{ddof}$   \Comment{column end index}
+    \State $\vec{\cal{J}}^e[istart:iend, jstart : jend] \gets \pre{J}{ij}^e[ii \times N_{ddof}:(ii+1) \times N_{ddof}, jj \times N_{ddof}:(jj+1) \times N_{ddof}]$
+    \EndFor % end jj
+    \EndFor % end ii
+    \EndFor % basis funtion loop i
+    \EndFor % basis funtion loop j
+    \State \Return $\vec{\cal{J}}^e$
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
+\end{singlespace}
+
+\begin{singlespace}
+  \begin{algorithm}[h!]
+    \caption{Algorithm for evaluating stochastic element initial conditions from deterministic initial conditions.}
+    \label{alg:stochastic-ic}
+    \begin{algorithmic}[1]
+      \Require $pspace$ \Comment{probabilistic space object}
+      \Require $delem$  \Comment{deterministic element object}
+      \Function{StochasticInitialCondition}{pspace, delem, $t, \vec{U}^e, \vec{\dot{U}}^e$}
+      \State $N \gets  pspace.getNumBasisFunctions()$ \Comment{number of stochastic basis functions}
+      \State $N_{nodes} \gets delem.getNumNodes()$ \Comment{number of element nodes}
+      \State $N_{ddof}  \gets delem.getNumDof()$ \Comment{number of deterministic degrees of freedom}
+      \State $N_{sdof} \gets N \times N_{ddof}$ \Comment{number of stochastic degrees of freedom}
+      \State $\vec{{U}}^e, \vec{\dot{{{U}}}}^e = zeros(N_{sdof})$ \Comment{zero vectors for storage}
+      \For {$i = 1, N$} \Comment{loop over basis function set}
+      \State $pspace.InitializeQuadrature(i)$ \Comment{number of quadrature points}
+      \State {\texttt{! Perform projection using quadrature}}
+      \For {$q = 1, Q$} \Comment{loop over quadrature points}
+      \State $\pre{y}{q}, \pre{z}{q}, \alpha_q \gets pspace.getQuadraturePointsWeight(q)$ % \Comment{quadpoints in general and standard domains}
+      \State $\pre{\psi}{q}_i^z \gets pspace.evaluateBasis(i, \pre{z}{q})$ \Comment{evaluate i-th basis function}
+      \State $\pre{u}{q}^e, \pre{\dot{u}}{q}^e \gets delem.getInitialConditions(t,\pre{y}{q})$ \Comment{deterministic ICs at $y_q$}
+      \State $\pre{U}{i}^e \gets \pre{U}{i}^e + \alpha_q \times \pre{\psi}{q}_i^z\times \pre{u}{q}^e$ \Comment{Equation~\eqref{eqn:ic-projection}}
+      \State $\pre{\dot{U}}{i}^e \gets \pre{\dot{U}}{i}^e + \alpha_q \times \pre{\psi}{q}_i^z\times \pre{\dot{u}}{q}^e$ \Comment{Equation~\eqref{eqn:ic-projection}}
+      \EndFor % quadrature projection loop
+      \State {\texttt{! Order stochastic initial conditions nodewise}}
+      \For {$ii = 1, N_{nodes}$} \Comment{loop overs nodes in the element from mesh}
+      \State $off \gets ii \times N_{sdof} $ \Comment{find the start index}
+      \State $\vec{U}^e[off + i  \times N_{ddof}:off + (i+1) \times N_{ddof}] \gets \pre{U}{i}^e[ii \times N_{ddof}:(ii+1) \times N_{ddof}]$
+      \State $\vec{\dot{U}}^e[off + i  \times N_{ddof}:off + (i+1) \times N_{ddof}] \gets \pre{\dot{U}}{i}^e[ii \times N_{ddof}:(ii+1) \times N_{ddof}]$
+      \EndFor
+      \EndFor % basis funtion loop
+      \State \Return $\vec{U}^e$, $\vec{\dot{U}}^e$
+      \EndFunction
+    \end{algorithmic}
+  \end{algorithm}
+\end{singlespace}
+
+\paragraph*{Summary.}
+We presented the details of nonintrusive and semi-intrusive SGM for UQ, along with details of adjoint sensitivity analysis.
+We developed the stochastic FEM framework using simple extensions of the deterministic finite element framework.
+We discussed the formation of stochastic Jacobian matrices in detail with emphasis on optimizing quadrature evaluations alongside the sparsity and symmetry considerations.
+The application of the semi-intrusive approach for stochastic finite volume frameworks (FVM) is straight-forward and intuitive.
+In the case of stochastic finite volume method, we should work with cell-wise residuals and Jacobians, as opposed to element-wise residuals and Jacobians in the context of FEM.
+Recall that \emph{cells} are the fundamental units of FVM computations, and \emph{elements} are the fundamental units of FEM framework.
+In this thesis, the semi-intrusive method is demonstrated on FEM problems;~\citet{CHATZIMANOLAKIS2019207} presents a similar exposition in the context of FVM for Reynolds-Averaged Navier--Stokes without adjoint sensitivity analysis.

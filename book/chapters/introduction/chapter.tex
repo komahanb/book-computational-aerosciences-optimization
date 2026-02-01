@@ -1,0 +1,195 @@
+\chapter{Efficient Optimization Under Uncertainty of Systems with Temporal Physics}\label{ch:introduction}
+\setlength{\epigraphwidth}{0.70\textwidth}
+\epigraph{\textit{A product should be designed in such a way that makes its performance insensitive to variation in variables beyond the control of the designer.}}{\textit{Genichi Taguchi}}
+%\paragraph*{Introduction:}
+%%\begin{figure}[h!]
+%%  \centering
+%%  \includegraphics[width=0.65\linewidth]{three-areas-nocolor.pdf}
+%%  \caption{A schematic diagram of the mathematical areas of this thesis.}
+%%  \label{fig:thesis-scope}
+%%\end{figure}
+%%\noindent In this chapter, the motivations are reviewed and classified them into three work areas shown in Figure~\ref{fig:thesis-scope}.
+%%
+%%The specific goals are discussed and the contributions are highlighted.
+%%
+
+%\paragraph*{Introduction.}
+We begin this Chapter with Genichi Taguchi's quote on producing robust and reliable designs. 
+The motivating factors of the thesis are summarized and classified under three subject areas: uncertainty quantification, time dependent physics and adjoint sensitivity analysis.
+Finally, we outline the contributions of this thesis and present its organization.
+
+\section{Motivations}
+\paragraph{Uncertainty quantification:}
+The Federal Aviation Authority (FAA) airworthiness certification requires a factor of safety of 1.5 for aircraft structures with human occupancy~\cite{Keane2005}.
+The inclusion of a factor of safety as a certification requirement is a tacit acknowledgment of the ubiquitous presence of uncertainties that are beyond the scope of classical system design process.
+For aerospace systems, higher factor of safety implies heavier designs with increased operation costs for the entire life cycle of the system.
+Despite factor of safety stipulations in the design process, systems do fail (a risk concern) or perform in a degraded manner (a robustness concern), partly due  to a lack of uncertainty assessments before designing the system.
+To this end, the fields of uncertainty quantification (UQ) and optimization under uncertainty (OUU) have evolved to rigorously address the effect of uncertainties in the design process.
+UQ addresses the mathematical representation and propagation of input uncertainties, whereas OUU addresses the mathematical aspects of formulating design/regulatory requirements as objective or constraint functions.
+
+\paragraph{Temporal physics:}
+The mathematical models of physics can also be a contributing factor for unforeseen system behavior.
+% Often when mathematically modeling physics, certain physical aspects are neglected for simplicity.
+For example, when fixed- and rotary-wing aeromechanical structures are designed without time dependent analysis of response (by using a static evaluation), the onset of many time dependent adverse effects such as limit cycle oscillations, buffeting, flutter, stall-induced vibration and rotor-shaft whirl can go unpredicted.
+Arguably, inclusion of time domain within system analysis is as important as uncertainty quantification; thus, time dependent mathematical models of physics along with mathematically modeled uncertain inputs encompass a superior representation of system behavior.
+The systems designed using such inclusive analyses will emerge better in terms of robustness and reliability.
+
+\begin{figure}[h!]
+  \centering \includegraphics[width=0.99\linewidth]{motivations-nocolor.pdf}
+  \caption{{An integrated design framework with temporal physics,
+      uncertainty quantification and sensitivity analysis.}}
+  \label{fig:motivations}
+\end{figure}
+
+\paragraph{Adjoint-based gradient evaluation:}
+Numerical optimization of large aeromechanical systems require gradient-based optimization techniques that are computationally efficient compared to techniques that do not use higher-order information.
+Therefore, an efficient evaluation of gradients is also an important ingredient to the UQ--OUU design process.
+The time dependent nature of physical analysis necessitates the development of time dependent sensitivity analysis equations.
+Altogether, a need for incorporation of temporal analysis of physics, uncertainty analysis and sensitivity analysis into a common design framework emerges naturally (see Figure~\ref{fig:motivations}).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                    Research Objectives                              %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Thesis Contributions}
+The main contributions of this thesis are as follows:
+\begin{enumerate}
+\item We present simpler time dependent analysis methods for flexible multibody systems, that can be used to assess the onset of time dependent issues like flutter or large vibrations while designing aeromechanical systems.
+\item We contribute adjoint based gradient evaluation capabilities to address the issue of the scalability of optimization problems with respect to the design variables, in the context of time dependent simulations.
+\item In the context of uncertainty propagation, we address the issue of ``intrusiveness'' of the stochastic Galerkin method by presenting a simpler technique to achieve projection in probabilistic space.
+\item We present a stochastic Galerkin based OUU framework that can be used to solve probabilistic optimization problems, and provide information in the form of probabilistic moments that can be used for certification and quality assurance purposes.
+\end{enumerate}
+The technical contributions align with the subject areas shown in Figure~\ref{fig:motivations}, and are summarized as \emph{deterministic optimization} and \emph{optimization under uncertainty} capabilities, in the reminder of this section.
+%The high level contributions are the development of efficient deterministic optimization capabilities based on the physics of flexible multibody dynamics and the ability to propagate uncertainties through time-domain physics and adjoint computations.
+
+\subsection{Deterministic Finite Element Framework with Adjoint Sensitivities}
+The first contribution of this thesis is the development of high-fidelity simulation techniques and the implementation of adjoint-based derivative evaluation method for time-accurate flexible multibody dynamic simulations.
+These capabilities are implemented within the Toolkit for Analysis of Composite Structures (TACS), a parallel framework for finite element analysis~\citep{Kennedy:2014:TACS}, that is available as open source software\footnote{\href{https://github.com/gjkennedy/tacs}{https://github.com/gjkennedy/tacs}}.
+The finite element formulations based on Lagrange's equation of motion were implemented, along with implicit time marching methods and adjoint formulations.
+
+%Along this process, we develop and contribute the following enhancements to the state-of-the-art.
+%%
+%% \paragraph{Time marching in natural form of governing equations:}
+%% Often authors convert the second-order governing system of equations into first-order form so that they can be solved using existing numerical libraries for solving first-order systems~\cite{Gear1971a,Gear1971b, Brenan1995}.
+%% In this work, however, the second-order descriptor form~\eqref{eqn:gov-descriptor-form} is employed directly since it retains the underlying structure of Euler--Lagrange equations and leads to a system of adjoint equations that is simpler to implement and easier to interpret.
+%% The descriptor form of the governing equations can be solved using implicit time integration schemes that are required to solve the numerically stiff governing equations associated with flexible multibody dynamics.
+%% We developed a generalized Newton--Raphson iterative method applicable for second-order system of equations, and showed its applicability using multistep and multistage time marching methods.
+%%
+%%\paragraph{Time dependent discrete adjoint sensitivities:}
+%% Accurate prediction of rotorcraft performance requires coupling multiple disciplines together to form an integrated multidisciplinary rotorcraft analysis.
+%% Depending on the performance metrics of interest, the disciplines needed for rotorcraft analysis include aerodynamics, structures, and structural dynamics at a minimum, and may also include control systems, acoustics, and propulsion systems.
+%% Comprehensive rotorcraft simulation tools provide good performance prediction capabilities by integrating low- and medium-fidelity models that capture the most important disciplinary physics.
+%% These comprehensive codes, such as RCAS~\citep{RCAS}, CAMRAD~\cite{CAMRAD} and the general purpose flexible multibody dynamics analysis tool Dymore~\citep{Dymore}, have been used throughout industry and academia in a wide range of applications.
+%% However, as more advanced rotorcraft configurations are considered, such as tilt-rotors or co-axial rotor concepts, comprehensive analysis tools may not provide sufficient accuracy.
+%% Furthermore, due to the tightly coupled physics in rotorcraft problems, poor structural dynamics prediction can lead to poor aerodynamic predictions or vice-versa.
+%% Thus, high-fidelity disciplinary models are needed to accurately predict rotorcraft performance, especially when novel concepts are considered.
+%% In addition to accurate performance estimates, rotorcraft design tools should also provide a means to systematically improve designs.
+%% Such a capability is not available in existing comprehensive codes.
+
+%A key property of the adjoint method is that the computational cost of evaluating the gradient of a single functional of interest is nearly independent of the number of design variables.
+%This property is critical for high-fidelity multibody dynamics models that may require detailed cross-sectional design parametrizations for the rotor blade geometry.
+
+% Gradient-based design tools offer the potential to identify the design
+
+\subsection{Stochastic Finite Element Framework with Adjoint Sensitivities}
+The second contribution of this work is the modular extension of the deterministic design optimization capabilities to include uncertainties through projection-based stochastic Galerkin technique.
+These capabilities are implemented as modular extensions to the TACS framework, and are available as open source packages PSPACE\footnote{\href{https://github.com/komahanb/pspace}{https://github.com/komahanb/pspace}} and STACS\footnote{\href{https://github.com/komahanb/stacs}{https://github.com/komahanb/stacs}}.
+
+
+\paragraph*{New Mathematical Techniques:}
+During the development of these frameworks for deterministic
+optimization and optimization under uncertainty of flexible multibody
+systems, we developed two mathematical techniques as listed
+in Table~\ref{tab:mathematical-technique-contributions}.
+
+\begin{table}[h]
+  \caption{The developed mathematical techniques and their primary benefit.}
+  \centering
+  \scalebox{1}{
+    \begin{tabular}{cp{5cm}p{9cm}}
+      \toprule
+          {} &  \textbf{Technique} & \textbf{Primary~Benefit} \\
+          \midrule
+          1  &  Generalized Newton--Raphson method for second-order nonlinear equations & facilitates the \emph{direct} solution of the governing equations of flexible multibody dynamics in natural second-order form \\
+          \midrule
+          2  &  Semi-intrusive stochastic Galerkin method &  facilitates the reuse of time-domain physics and adjoint sensitivity analysis capabilities for creating a stochastic Galerkin framework for uncertainty propagation \\
+          \bottomrule
+    \end{tabular}
+  }
+  \label{tab:mathematical-technique-contributions}
+\end{table}
+
+\paragraph*{Other Contributions:}
+The other notable contributions are listed as follows:
+\begin{itemize}
+\item We develop discrete adjoint sensitivity formulations for implicit multistep and multistage time marching methods based on abstract governing equations and functions of interest. These equations are applicable to general second-order systems.
+\item We address the software architecture aspects alongside the mathematical developments, which is key for modular implementations.
+\item We demonstrate the adjoint-based design capabilities with the structural optimization of a rotorcraft system.
+\item We present the application of the semi-intrusive projection method using a flexible robotic manipulator system modeled after the Canadarm.
+\end{itemize}
+%Overall, the work of this thesis lies in developing mathematical techniques in the time-domain, probabilistic-domain and design-parameter domain.
+
+%\paragraph{Semi-intrusive uncertainty propagation method}
+%% When the governing deterministic PDEs take complex, nonlinear, and coupled forms, the explicit derivation of stochastic equations in algebraic (fully discretized) form may not be possible~\cite{Xiu2009Review,2004-Miguel-Krenk}. % or is not the best way
+%% Since projection-based methods require explicit source code modification to perform integration in probabilistic space, the readiness of this method for applications is limited -- due to the extra effort involved in code development~\cite{Xiu2009Review}.
+%% To alleviate this difficulty, this work extends the deterministic analysis process into stochastic analysis process by reusing existing deterministic capabilities and solution algorithms using object oriented programming principles.
+%% This thesis puts-forth a core idea that allows an implicit formation of stochastic algebraic equations circumventing the requirement for explicit derivation of stochastic algebraic equations.
+%% The developed body of principles is referred to as the \underline{semi-intrusive} approach; it is aimed to further the applicability of projection-based methods in a more general setting almost similar to black-box approaches like sampling. % The semi-intrusive approach can be viewed as a hybrid method of intrusive and non-intrusive methods.
+%%
+%These capabilities are sought to be a part/extension of the Toolkit for Analysis of Composite Structures (TACS), a parallel framework for finite element analysis~\citep{Kennedy:2014:TACS}, that is available as open-source software.
+%This idea is based on the observation that the solution of an underlying physics can be centered around the formation of residual and Jacobian functions. %, we propose to develop the solution of stochastic PDEs as residuals and Jacobians.
+%Using our approach the stochastic residuals and Jacobians can be computed on the fly from deterministic residuals and Jacobians, and thus deriving explicit stochastic algebraic equations is simply not required.
+%This approach simplifies the code development necessary for building a stochastic Galerkin simulation framework.
+
+%We find that the explicit equations are not necessary if they can be made an implicit part of computational machinery seeking the solution to stochastic PDEs.
+%Similarly, the stochastic adjoint terms for sensitivity analysis are obtained implicitly from the deterministic adjoint terms, eliminating the need for deriving stochastic adjoint equations. % enabling the reuse of adjoint derivative capabilities of deterministic code base.
+%In other words, the stochastic quantities are simply a function of the deterministic quantities.
+%The implicit representation of stochastic residuals, Jacobians and adjoint-terms via deterministic residuals, Jacobians and adjoint-terms enables the reuse existing deterministic capabilities of simulation code.
+
+%In this work, we present a semi-intrusive approach to bridge this gap and take a step in furthering the applicability of projection-based methods in a more general stochastic finite-element setting.
+%To demonstrate this approach, we extend a deterministic finite element analysis process to a stochastic finite element analysis process by reusing existing deterministic finite element capabilities.
+%As Krenk and Gutirez~\cite{2004-Miguel-Krenk} identify, projection-based methods for problems involving nonlinearities have not yet reached a mature stage.
+%\citet{Xiu2009Review} also acknowledges the difficulty in deriving explicit stochastic nonlinear equations for nonlinear physical models.
+%As a remedy to this problem, we propose an implicit formulation of stochastic algebraic equations, which circumvents the need for explicit stochastic equations.
+%We apply this semi-intrusive framework to time dependent simulations of flexible multibody dynamic systems.
+%The use of time domain simulations poses the additional difficulty of integrating stochastic differential equations in time.
+%This challenge is addressed by extending deterministic time-integration methods to the stochastic problem.
+%To perform efficient gradient-based optimization, we develop an adjoint method for the projection-based simulation that leverages the deterministic implementation.
+%The development of efficient adjoint methods is time consuming, however the proposed framework utilizes the deterministic implementation for the most challenging components of the adjoint method.
+%The uncertainty framework is illustrated in Figure~\ref{fig:motivations} which shows the integration of time dependent physics, uncertainty analysis, and gradient evaluation using the adjoint method.
+
+%The stochastic Galerkin projection method offers an efficient approach to propagate uncertainties through complex, nonlinear simulations.
+%However, challenges can arise when implementing SGM and the adjoint method for OUU.
+%In this paper, we demonstrated a framework for SGM based on the deterministic finite-element code TACS.
+%This framework leverages existing deterministic element implementations to provide the terms needed for analysis and adjoint-based gradient evaluation.
+%The main idea of the proposed semi-intrusive technique is to project the deterministic element residuals, Jacobians, boundary conditions, and adjoint terms on to the probabilistic space prior to assembly of the stochastic finite element system, assuming the deterministic implementations to be black-box.
+%The mean and variance of the implemented SGM were compared to the mean and variance computed using sampling methods to demonstrate the accuracy of SGM.
+%The accuracy of the adjoint method was verified using complex-step methods.
+%Future work will consider the application of the proposed framework to OUU problems.
+
+\section{Thesis Organization}
+The remainder of this thesis is organized into parts and chapters as outlined in Table~\ref{tab:thesis-organization}.
+\begin{table}[h!]
+  \caption{Organization of the thesis.}
+  \centering
+  \scalebox{0.95}{
+    \begin{tabular}{c|c|p{12.0cm}}
+      \toprule
+      \textbf{Part} & \textbf{Chapter} &  \textbf{Contents} \\
+      \midrule
+      \ref{part:1} & \ref{ch:background} & introduces and reviews the time marching methods for flexible multibody dynamics, the uncertainty quantification techniques and the sensitivity analysis methods that are needed for design optimization under uncertainty \\
+      \midrule
+      \ref{part:2} & \ref{chapter:semianalytical-stationary} & provides the mathematical details of the adjoint and the direct sensitivity analysis  methods on static (time independent) problems \\
+      & \ref{chapter:adjoint-ode} & provides the mathematical details of time dependent physical analysis and adjoint sensitivity analysis, in the context of multistep and multistage time marching methods \\
+      & \ref{chapter:detapps} & presents the deterministic optimization applications in the context of flexible multibody dynamics \\
+      \midrule
+      \ref{part:3} & \ref{chapter:uq_math_review} & presents the mathematical preliminaries necessary for the presentation of uncertainty propagation methods as inner products and corresponding quadrature approximations \\
+       & \ref{ch:ouu-semi-intrusive} & presents the mathematical details of sampling and semi-intrusive projection approaches for uncertainty propagation, along with the software architecture for programming implementations \\
+      & \ref{chapter:uq_applications} & illustrates the semi-intrusive stochastic Galerkin method on simple time dependent systems and flexible multibody dynamics problems \\
+      \midrule
+      \ref{part:4} & \ref{chapter:conclusions} & {summarizes the results and contributions as well as outlines future research directions} \\
+      \bottomrule
+    \end{tabular}
+  }
+  \label{tab:thesis-organization}
+\end{table}

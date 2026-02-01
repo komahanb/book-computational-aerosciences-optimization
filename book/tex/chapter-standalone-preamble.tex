@@ -1,0 +1,33 @@
+\documentclass[12pt]{report}
+\providecommand{\standaloneroot}{./}
+\usepackage{graphicx}
+\usepackage[letterpaper, left=1.0in, right=1.0in, top=1.0in, bottom=1.0in]{geometry}
+\usepackage{setspace}
+\usepackage[explicit]{titlesec}
+\usepackage[titles]{tocloft}
+\usepackage[numbers,compress,sort]{natbib}
+\usepackage{tikz}
+\input{\standaloneroot tex/tableau_colors}
+\usepackage[bookmarks=true, hidelinks]{hyperref}
+\hypersetup{
+  colorlinks,
+  citecolor=black,
+  linkcolor=black,
+  urlcolor=black
+}
+\usepackage[page]{appendix}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amssymb}
+
+\input{\standaloneroot tex/custom.tex}
+
+\titleformat{\chapter}[display]
+{\normalfont\bfseries\filcenter}{\chaptertitlename\ \thechapter}{0pt}{\MakeUppercase{#1}}
+\titlespacing*{\chapter}{0pt}{0pt}{30pt}
+\titleformat{\section}{\normalfont\bfseries}{\thesection}{1em}{#1}
+\titleformat{\subsection}{\normalfont}{\uline{\thesubsection}}{0em}{\uline{\hspace{1em}#1}}
+\titleformat{\subsubsection}{\normalfont\itshape}{\thesubsubsection}{1em}{#1}
+
+\doublespacing
+\begin{document}

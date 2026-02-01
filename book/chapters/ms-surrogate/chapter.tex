@@ -1,0 +1,633 @@
+\chapter{\uppercase{Surrogate Models}}
+\label{surrogatemodels}
+
+
+The computational cost associated with the use of high-fidelity physics-based simulation models pose a serious impediment to successful application of optimization algorithms~\cite{Keane2005}. 
+In many engineering problems, thousands of function evaluations may be required to locate an optimal solution. Therefore, when expensive high-fidelity simulations are employed, the naive application of optimization algorithms can demand exorbitant number of exact simulations. The computational requirement is even higher when uncertainties need to be quantified and accounted in the optimization process.
+
+
+In the 1960s numerical optimization was limited to perhaps fifty variables and was computationally very expensive~\cite{Gibson1971}. In the 1970s, Schmit~\etal~\cite{Schmit1974} introduced the concept of a sequential approximate optimization to improve the efficiency of  prevalent structural optimization practices. The basic idea was to analyze  an initial design to generate data that could be used to construct approximations (local) to the objective function and constraints and supply them to the optimizer. Appropriate move limits were applied to ensure the validity of these approximations. After solving this approximate optimization problem, the models are updated and the process is continued until suitable convergence criteria are met. Subsequently, more general approximation techniques (local and global) have been developed and it is now increasingly commonplace to employ computationally cheap approximation models in lieu of exact calculations. For a detailed understanding of the evolution of approximation schemes, the reader is referred to the work of Schmit~\cite{Schmit1981}.
+
+Several methods exist in the scientific literature for the purpose of modeling the input -- output relationship of an exact simulation~\cite{Keane2005}. This chapter aims to describe the three surrogate modeling approaches employed in this work: (1) kriging~\cite{Yamazaki2008}, (2) polynomial chaos expansions~\cite{Xiu2010}  and (3) multivariate interpolation and regression~\cite{Qiqi2010a,Qiqi2010b}.
+
+
+\section{Kriging Surrogate Model}
+\label{kriging}
+
+The kriging surrogate model was originally developed in the field of geostatistics by a South African mining engineer {Danie G. Krige}~\cite{Cressie90}.
+Kriging was introduced in engineering design following the work of Sacks \etal~\cite{Sacks1989} and has found a lot of aerospace applications~\cite{Jeong2005,Chung2002,Laurenceau2008a,Martin2005}.
+Kriging predicts the function value by using stochastic processes and has the flexibility to represent multi-modal and non-smooth functions. 
+A detailed mathematical background for the kriging surrogate models is provided in the upcoming paragraphs. 
+This review is extracted from works in the literature such as Han~\etal~\cite{Han2012}, Rosenbaum~\etal~\cite{Rosenbaum2012,Rosenbaum2013}, Yamazaki~\etal~\cite{Yamazaki2012,Rumpfkeil2010c} and Jones~\cite{Jones2001}.
+
+
+\subsection{Original Kriging Model}
+
+\subsubsection{Model Construction}
+\subsubsection*{Universal Kriging}
+The formulation of ``universal kriging model'' is given by,
+\beq
+{\widehat f}(x)=\sum_{k=1}^{m}\mu_kf_k(x) +Z(x),
+\label{universal_kriging_eqn}
+\eeq
+where \nom{${\widehat f}$}{surrogate approximated function value} is the approximated function value. The first term is a lower-order polynomial of order $m$ modeling the mean behavior using regression and $Z(x)$ represents a local variation from the mean behavior modeled as a stochastic process.
+\subsubsection*{Ordinary Kriging}
+The simplest model called ``ordinary kriging'' has the following formulation~\cite{Arora2007},
+\beq
+{\widehat f}(x)=\mu +Z(x),
+\label{krigingeqn}
+\eeq
+where \nom{$\mu$}{mean} is an unknown constant term modeling the mean behavior.
+In both formulations $Z(x)$ is assumed to be a stationary Gaussian random process satisfying:
+\beq
+\textrm{E}[Z(x)]=0
+\eeq
+and 
+\beq
+\textrm{Cov}[Z(x^{(i)}),Z(x^{(j)})]=\sigma^2R(x^{(i)},x^{(j)}),
+\eeq
+where \nom{$R$}{spatial correlation function} is the user defined spatial correlation function.
+
+The following mathematical discussions are based on \emph{ordinary kriging} (constant mean term) for simplicity and an extension to \emph{universal kriging} is straight-forward.
+
+\subsubsection{Model Training}
+
+Let $\bm{X}=\{x^{(1)},x^{(2)},\ldots,x^{(N)}\}$ be a vector of \nom{$N$}{number of training points for the global surrogate} training point locations, where the exact function $f(x)$ is evaluated leading to a vector of training data denoted as $\bm{F}=\{f^{(1)},f^{(2)},\ldots,f^{(N)}\}$.
+ 
+\subsubsection*{Correlation Parameters}
+The training of the kriging model occurs through correlation parameters as follows.
+\begin{enumerate}
+\item \textbf{Correlation matrix:}~Kriging uses a spatial correlation function to relate stochastic variables between the observed training points, that is, the available data $\bm{F}$ is correlated through a correlation matrix \nom{$\R$}{correlation matrix}. Hence the size of the resulting correlation matrix is $N \times N$.
+The correlation matrix takes the form,
+\begin{eqnarray}
+\R = \left[ \begin{array}{ccc}
+R(x^{(1)},x^{(1)})      &\cdots & R(x^{(1)},x^{(N)}) \\
+\vdots &\ddots &\vdots \\ 
+R(x^{(N)},x^{(1)})      &\cdots & R(x^{(N)},x^{(N)}) \\
+\end{array} \right].
+\label{eq:corrmatrix}
+\end{eqnarray} 
+\item \textbf{Correlation vector:}~A correlation vector, \nom{$\r$}{correlation vector}, represents the correlation between an untried point $x$ and observed training points $x^{(i)}$ and can be written as,
+\begin{eqnarray}
+\r = \left[ \begin{array}{c}
+R(x^{(1)},x)\\
+\vdots \\ 
+R(x^{(N)},x) \\
+\end{array} \right].
+\label{eq:corrvec}
+\end{eqnarray} 
+\item \textbf{Correlation function:} The construction of correlation matrix and vector requires a user-specified correlation function.% and its first and second derivatives (if used). 
+This correlation function, $R$, determines the nature of the data fitting by the kriging model. 
+Any function which renders the correlation matrix positive definite can be used as the correlation function, and this is one of the greatest flexibility of kriging.
+Some popular correlation functions are listed in Table~\ref{tab:correlationfunctions}.
+\begin{table}[h]
+\caption[Spatial correlation functions for kriging.]{Popular spatial correlation functions for the kriging surrogate model.}
+\medskip
+\centering 
+\scalebox{0.9}{\begin{tabular}{llll}
+\hline\hline
+Basis Function && & $R(x^{(i)},x^{(j)})$ \\
+\hline\hline
+\bf{Exponential} &&& $\begin{array}{ll}\exp(-{\theta}|x^{(i)}-x^{(j)}|^p)& \end{array}$\\\hline 
+\bf{Gaussian} &&&  $\begin{array}{ll}\exp(-{\theta}|x^{(i)}-x^{(j)}|^2)& \end{array}$ \\\hline
+\bf{Cubic Spline} &&& $\begin{array}{ll} 1-6\xi^2+6\xi^3&\textrm{for}~0\le\xi<0.5\\ 2(1-\xi)^3&\textrm{for}~0.5\le\xi< 1\\ 0&\textrm{for}~\xi\ge1\\ \textrm{where}~ \xi={\theta}|x^{(i)}-x^{(j)}| \end{array}$ \\ \hline
+\bf{Wendland $C^2$} &&& $\begin{array}{ll} \dfrac{(1-\xi)^4 (4\xi +1)}{3} &\textrm{for}~0\le\xi\le1 \\ 0 &\textrm{for}~\xi>1 \\  \textrm{where}~ \xi={\theta}|x^{(i)}-x^{(j)}| \end{array}$\\\hline
+\bf{Wendland $C^4$} &&& $\begin{array}{ll} \dfrac{(1-\xi)^6 (35\xi^2 + 18\xi +3)}{3} &\textrm{for}~0\le\xi\le1 \\ 0 &\textrm{for}~\xi>1 \\  \textrm{where}~ \xi={\theta}|x^{(i)}-x^{(j)}| \end{array}$\\
+\hline
+\end{tabular}}
+\label{tab:correlationfunctions}
+\end{table}
+The correlation function is dependent on the spatial distance between the given points $x^{(i)}$ and $x^{(j)}$ and a few hyper-parameters (denoted as $\Theta$) that may be introduced by the chosen correlation function.
+\end{enumerate}
+
+\subsubsection*{Maximum Likelihood Estimation}
+The available training data $\bm{F}$ is assumed to be realizations of a normally distributed random variable ${f}(x)$ with mean $\mu$ and variance \nom{$\sigma^2$}{variance}, that is, ${f}\sim{\N}(\mu,\sigma^2)$.
+In the process of fitting the training data a \emph{maximum likelihood estimation (MLE)} is carried out, that tunes the unknown parameters of the random process (the mean and variance) as well as the hyper-parameters, $\Theta$, introduced by the correlation function (e.g. $p$ and ${\theta}$ by an exponential), to maximize the \emph{probability density function} (also termed as likelihood function) of the assumed Gaussian random process:
+\beq
+L(\mu,\sigma^2,\Theta)=\dfrac{1}{(2\pi\sigma^2)^{N/2}|\R|^{1/2}} \textrm{exp}\left[\dfrac{-(\bm{F}-\bm{I}\mu)^T\R^{-1}(\bm{F}-\bm{I}\mu)}{2\sigma^2}\right].
+\label{lhood}
+\eeq
+Here, $\bm{I}$ is a column vector of ones since a constant $\mu$ is used. Taking natural logarithm on both sides yields:
+\beq
+\ln\{L(\mu,\sigma^2,\Theta)\}= -\dfrac{N}{2}\ln{(2\pi\sigma^2)}-\half\ln(|\R|)
+-\dfrac{(\bm{F}-\bm{I}\mu)^T\R^{-1}(\bm{F}-\bm{I}\mu)}{2\sigma^2}.
+\label{lnlhood}
+\eeq
+This form of the likelihood function is known as the ln-likelihood function and is preferred over the original representation for stability reasons~\cite{Forrester2008}.
+Now, by using the necessary condition for optimality~\cite{Arora2007}, the optimal estimations of mean,
+\beq
+\mu^*(\Theta)=\dfrac{\bm{I}^T\R^{-1}\bm{F}}{\bm{I}^T\R^{-1}\bm{I}},
+\label{optmean}
+\eeq
+and variance of the random process,
+\beq
+{\sigma^2}^*(\Theta)=\dfrac{(\bm{F}-\bm{I}\mu)^T\R^{-1}(\bm{F}-\bm{I}\mu)}{N},
+\label{optvar}
+\eeq
+can be obtained analytically, but they still depend on the hyper-parameters $\Theta$ influencing the spatial correlation function and thereby the correlation matrix $\R$. However, the problem is now reduced to finding the optimum hyper-parameters $\Theta$.
+By substituting Eqns.~\eqref{optmean} and \eqref{optvar} into Eq.~\eqref{lnlhood} and by ignoring constant values (since the optimum is not affected) a simplified ln-likelihood function (objective function) can be obtained:
+\beq
+\ln\{L(\Theta)\}\approx-\dfrac{N\ln({\sigma^2}^*) -\ln(|\R|)}{2},
+\eeq
+which in turn has to be maximized to find the optimum hyper-parameters $\Theta$.
+%
+The values of $\mu^*$ and ${\sigma^2}^*$ corresponding to the optimum hyper-parameters can then be found using Eqns.~\eqref{optmean} and \eqref{optvar}.
+Once these parameters are determined for a particular set of training data, the kriging model can be used to predict the function value at any given point $x$ which is described in more detail next.
+
+\subsubsection{Model Prediction}
+Once the correlation parameters are determined, kriging predicts the function value at any given location $x$ by maximizing the likelihood of ``observed data and prediction'' 
+by means of an augmented system similar to the one in Eq.~\eqref{lnlhood} which takes the simplified form (again ignoring constants),
+\beq
+\ln(L)\approx-\dfrac{\left(\begin{array}{c} \bm{F}-\bm{I}\mu^*\\ \widehat{f} - \mu^* \\ \end{array}\right)^T \left[ \begin{array}{cc} \bm{R} & \bm{r} \\ \bm{r}^T & 1 \\ \end{array} \right]^{-1} \left(\begin{array}{c} \bm{F}-\bm{I}\mu^*\\ \widehat{f} - \mu^* \\ \end{array}\right)}{2{\sigma^2}^*}.
+\label{auglnlhood}
+\eeq
+By differentiating,
+\beq
+\pd{\ln(L)}{\widehat{f}}=-\dfrac{(\widehat{f}-\mu^*)}{{\sigma^2}^*(1-\bm{r}^T\R^{-1}\bm{r})} + \dfrac{\bm{r}^T\bm{R}^{-1}(\bm{F}-\bm{I}\mu^*)}{{\sigma^2}^*(1-\bm{r}^T\R^{-1}\bm{r})}=0.
+\label{deriv_aug_lnlhood}
+\eeq
+The only unknown quantity in Eq.~\eqref{deriv_aug_lnlhood} is the kriging predicted function value $\widehat{f}$. Thus by rearranging, the kriging prediction at a given point $x$ can be mathematically written as:
+\beq
+\widehat{f}(x)={\mu}^* + \r^T\R^{-1}(\bm{F}-\bm{I}{\mu}^*),
+\label{krigpred}
+\eeq
+where ${\mu}^*$ is the generalized least-squares estimator of the term $\mu$ in Eq.~\ref{krigingeqn} modeling the mean behavior. The factor $\R^{-1}(\bm{F}-\bm{I}{\mu}^*)$ can be considered as a \emph{weighting vector} $\bm{w}$ and hence the predicted response is a weighted sum of the correlation vector $\bm{r}$, such that,
+\beq
+\widehat{f}(x)={\mu}^* + \r^T\bm{w}.
+%\label{krigpred}
+\eeq
+
+\subsubsection{Mean Squared Error}\label{MSE}
+The kriging model provides an error estimate (uncertainty bound) for its predictions in terms of a mean squared error (MSE) which can be written as:
+\bea\label{eq:mse}
+\begin{split}
+\textrm{MSE}[\widehat{f}(x)] &={\sigma^2}^*\left[1 -  \left(\begin{array}{c} \bm{r}\\ {1}\\ \end{array}\right)^T \left[ \begin{array}{cc}
+\bm{R} & \bm{I} \\
+\bm{I}^T & 0 \\
+\end{array} \right]^{-1} \left(\begin{array}{c} \bm{r}\\ {1}\\ \end{array}\right) \right]\\
+& = {\sigma^2}^*\left[ 1- \bm{r}^T\bm{R}^{-1}\bm{r} + \dfrac{(1-\bm{r}^T\bm{R}^{-1}\bm{r})^2}{\bm{I}^T\bm{R}^{-1}\bm{I}} \right].\\
+\end{split}
+\eea
+MSE is zero at training point locations and increases with the spatial distance from training points. Thus, MSE is more of a measure of space filling than the actual error in the approximation and it seldom matches the actual error in the model.
+
+\subsubsection{Expected Improvement}
+
+An expected improvement function (EI) quantifies the likely improvement in the objective function (when using kriging for optimization) in considering to evaluate the exact function at a trial location $x$. It takes the form:
+\beq\label{eq:EI}
+\textrm{EI}(x)=(f_{\min}-\widehat{f}(x))\phi\left(\dfrac{f_{\min}-\widehat{f}(x)}{\sigma^*(x)}\right)+\sigma^*(x)\varphi \left(\dfrac{f_{\min}-\widehat{f}(x)}{\sigma^*(x)}\right)
+\eeq
+Here, $f_{min}$ refers to the minimum among available training data $\bm{F}$, $\phi$ is the Gaussian density function and $\varphi$ is the Gaussian distribution function.
+The first term favors ``exploitation'' of high confidence regions, whereas the second term favors ``exploration'' of regions that have high uncertainty. Thus, EI can be seen as a figure of merit that balances local and global search for the optimum.
+
+%The kriging predictor at an untried location $x$ is a linear combination given by,
+%\beq
+%\widehat{f}(\x)=\bm{\lambda}^T \bm{F}
+%\label{eq:blup}
+%\eeq
+%where $\bm{\lambda{(\bm{X})}}=\{\lambda^{(1)},\lambda^{(2)},\ldots,\lambda^{(N)}\}$ are the weights that are computed minimizing a mean squared error subject to an unbiasedness condition. The minimization problem can be mathematically represented as follows:
+%\beq
+%\begin{aligned}
+%& \underset{\bm{\lambda}}{\text{\bf{Minimize}}}
+%& & \textrm{MSE}[\widehat{f}(\x)]=\textrm{E}[(\bm{\lambda}%^T\bm{F}-f(\x))^2] \\
+%& \text{\bf{subject to}}
+%& & \textrm{E}[\bm{\lambda}^T\bm{F}]= \textrm{E}[f(\x)].
+%\end{aligned}
+%\label{eq:krigingmseminprob}
+%\eeq
+%The kriging predictor given by Eq.~\eqref{eq:blup} is the best linear unbiased predictor due to the imposed unbiasedness condition.  The constrained optimization problem is converted into an unconstrained form using Lagrange multipliers $\beta$.
+
+\subsubsection{Summary}
+
+A short summary of the steps involved in constructing a kriging surrogate is provided as follows~\cite{Rosenbaum2013}:
+
+\begin{enumerate}
+\item Choose a design of experiments strategy for $\bm{X}=\{x^{(1)},x^{(2)},\ldots,x^{(N)}\}$  and evaluate the exact function values to obtain $\bm{F(\bm{X})}=\{f^{(1)},f^{(2)},\ldots,f^{(N)}\}$.
+\item Pick a spatial correlation function $R$.
+\item Find the unknown model and hyper-parameters using a maximum likelihood estimation approach.
+\item Solve the kriging linear system to find the weighting vector $\bm{w}$.
+\item Evaluate the model at a given location $x$ as $\widehat{f}(x)={\mu}^* + \r^T\bm{w}$. Additional information such as \emph{mean squared error} and \emph{expected improvement} can also be obtained.
+\end{enumerate}
+
+
+\subsection{Cokriging Models}
+\label{cokriging}
+
+Cokriging models are kriging models which also include derivative values of the exact function (e.g. gradients, Hessian) in their formulations. 
+Both, direct and indirect cokriging models have been developed and have shown to provide beneficial results~\cite{Rumpfkeil2010c,Yamazaki2008,Yamazaki2010}.
+
+\subsubsection{Indirect Cokriging}
+
+In the indirect cokriging approach additional training points are constructed around an actual training point by using Taylor series extrapolations. The kriging is then constructed using all available data points (actual and extrapolated).
+This approach is highly dependent on extrapolation step sizes specified by the user which can either cause  ill-conditioning of the correlation matrix if chosen too small or give poor Taylor series approximations if chosen too large.
+
+\subsubsection{Direct Cokriging}
+In the direct cokriging approach, the covariances between gradient and/or Hessian information are directly included in the correlation matrix and are modeled by differentiating the correlation function.
+The direct approach is preferable due to its lack of tunable parameters and better condition numbers of the correlation matrix. 
+The correlation matrix for a gradient-enhanced kriging model takes the form,
+\begin{eqnarray}
+\R = \left[ \begin{array}{cccccc}
+R(x^{(1)},x^{(1)})      &\cdots & R(x^{(1)},x^{(N)})  & \pd{R(x^{(1)},x^{(1)})}{x^{(1)}} & \cdots &  \pd{R(x^{(1)},x^{(N)})}{x^{(N)}} \\
+\vdots &\ddots &\vdots & \vdots & \ddots & \vdots \\
+R(x^{(N)},x^{(1)})      &\cdots & R(x^{(N)},x^{(N)}) &  \pd{R(x^{(N)},x^{(1)})}{x^{(1)}} & \cdots &  \pd{R(x^{(N)},x^{(N)})}{x^{(N)}} \\
+\pd{R(x^{(1)},x^{(1)})}{x^{(1)}} & \cdots &  \pd{R(x^{(1)},x^{(N)})}{x^{(N)}} & \pdt{R(x^{(1)},x^{(1)})}{x^{(1)}} &\cdots & \pdd{R(x^{(1)},x^{(N)})}{x^{(1)}}{x^{(N)}}\\
+\vdots &\ddots &\vdots & \vdots &\ddots &\vdots\\
+\pd{R(x^{(N)},x^{(1)})}{x^{(N)}} & \cdots &  \pd{R(x^{(N)},x^{(N)})}{x^{(N)}} & \pdd{R(x^{(N)},x^{(1)})}{x^{(N)}}{x^{(1)}} & \cdots &  \pdt{R(x^{(N)},x^{(N)})}{x^{(N)}} \\
+\end{array} \right].
+\label{eq:augcorrmatrix}
+\end{eqnarray} 
+The correlation vector takes the form,
+\begin{eqnarray}
+\r = \left[ \begin{array}{c}
+R(x^{(1)},x)\\
+\vdots \\ 
+R(x^{(N)},x) \\
+\pd{R(x^{(1)},x)}{x^{(1)}} \\
+\vdots \\
+\pd{R(x^{(N)},x)}{x^{(N)}} \\ 
+\end{array} \right].
+\label{eq:augcorrvec}
+\end{eqnarray} 
+The correlation matrix for Hessian-enhanced direct cokriging models are not shown here due to the complexity of its representation.
+The size of the correlation matrix increases to $N \cdot (1+M)$ when gradient-enhanced and $N \cdot (1+M+{\frac{M(M+1)}{2}}^2)$ when Hessian-enhanced.
+
+\subsection{Variable-Fidelity Kriging Model}
+
+It is known that the computational expenses with physics-based simulations can be very high. Even the reduced simulation requirements by surrogate models can become hard to obtain, 
+especially when the number of input variables (dimensions) increases. 
+A promising avenue is the use of variable-fidelity (also known as multi-fidelity) surrogate modeling.
+The general idea is to combine trends from low-fidelity data (e.g., coarser meshes, less sophisticated models) with interpolations of high-fidelity data (e.g., finer meshes, better models, experimental data).
+For example, low-fidelity data from Euler evaluations can be combined with a smaller amount of high-fidelity data from Navier-Stokes evaluations. 
+This indeed offers a great potential for savings since, for example, Euler evaluations are 50--100 times cheaper to obtain compared to equivalent RANS evaluations~\cite{dragprediction}. 
+The low-fidelity trends are connected with high-fidelity data by using a bridge function (also known as connection or scaling function) that can be multiplicative, additive or a hybrid (both multiplicative and additive)~\cite{Han2012}.
+
+Variable-fidelity kriging surrogate models have been introduced and have shown to provide a better computational efficiency compared to regular kriging surrogate models. 
+The reader is referred to Han~\etal~\cite{Han2012} and Yamazaki~\etal~\cite{Yamazaki2010,Yamazaki2012} for more mathematical background on this subject.
+
+
+\section{Polynomial Chaos Expansions}
+\label{polychaos}
+
+\emph{Polynomial chaos} refers to polynomial representation of uncertainty (chaos), where the stochastic quantities of the random process (e.g. mean and variance) are represented as spectral expansions of orthogonal polynomials. It can be classified into \emph{stochastic Galerkin} (intrusive) and \emph{stochastic collocation} (non-intrusive) methods. A spectral expansion of the solution \nom{$f$}{exact function value or simulation output} dependent on multidimensional random variable $\x$ takes the form,
+\bea
+f({\x})=\sum\limits_{k=0}^\infty{u_k\psi_k({\x})},
+\label{eq:spectral}
+\eea
+where $\psi(\x)$ denotes the selected basis function.
+
+\subsection{Original Polynomial Chaos}
+
+In the seminal work of Wiener~\cite{Wiener38}, a spectral expansion of Hermite polynomials for  Gaussian random variables were used to represent certain stochastic processes,
+ where a second-order random process admits a chaos representation of the following form~\cite{Knio2010}:
+\beq
+\begin{aligned}
+f({\x})& =  u_0H_0 + \sum\limits_{i_1=1}^{M}{u_{i_1}H_1({x}_{i_1})}+\sum\limits_{i_1=1}^{M}\sum\limits_{i_2=1}^{i_1}{u_{{i_1}{i_2}}H_2({x}_{i_1},{x}_{i_2})}\\
+& + \sum\limits_{i_1=1}^{M}\sum\limits_{i_2=1}^{i_1}\sum\limits_{i_3=1}^{i_2}{u_{{i_1}{i_2}{i_3}}H_3({x}_{i_1},{x}_{i_2},{x}_{i_3})} + \ldots.
+\end{aligned}
+\label{eq:pcherm}
+\eeq
+The basis is formed by Hermite polynomials $H_p$ of order $p$ and  ${x}_{ij},~j=1,2,\ldots,M$ is the set of multidimensional Gaussian random variables.
+The Hermite chaos expansion has been an effective tool for solving stochastic differential equations with Gaussian normal inputs~\cite{Xiu2002,Xiu2003,Xiu2010}.
+However, Cameron and Martin~\cite{Martin47} showed that the original chaos expansion is applicable to any functional and will converge in a mean-square sense (or $L_2$ sense).
+The original chaos expansion has also been used to solve inputs with a log-normal distribution~\cite{Ghanem91}.
+
+\subsection{Generalized Polynomial Chaos}
+
+The Wiener-Askey scheme of polynomials~\cite{Ghanem91,Walters2003} include various orthogonal polynomials whose weighting functions are identical to the probability density function (PDF) of the distributions of the random variable $\x$. Each type of polynomial in the Wiener-Askey scheme corresponds to a particular probability distribution as shown in Table~\ref{polynomial and distribution}~\cite{Elred2008}. Hermite polynomials used in the original polynomial chaos is a subset of the Wiener-Askey scheme of polynomials. The correct choice of random distribution polynomial as the basis function $\psi$ is shown to exhibit optimal convergence rates~\cite{Xiu2002}.
+\begin{table}[h]
+\caption[Wiener-Askey scheme polynomials.]{Wiener-Askey scheme polynomials with their corresponding weighing functions.}
+\medskip
+\centering 
+\scalebox{0.85}{\begin{tabular}{c c c c c}
+\hline\hline
+Distribution & PDF & Polynomial & Weight & Range \\
+\hline\hline
+Normal & $\dfrac{1}{\sqrt{2\pi}} e^{\frac{-{x}^2}{2}}$ & Hermite $H_p({x})$ &  $e^{\frac{-{x}^2}{2}}$ & $[-\infty, \infty]$\\
+\hline
+Uniform & $\dfrac{1}{2}$ & Legendre $P_p({x})$ & 1 & $[-1, 1]$ \\
+\hline
+Exponential & $e^{-{x}}$ & Laguerre $L_p({x})$ & $e^{-{x}}$ &  $[0, \infty]$\\
+\hline
+Beta & $\dfrac{(1-{x})^\alpha (1+{x})^\beta}{2^{\alpha+\beta+1}~B(\alpha+1, \beta+1)}$ & Jacobi ${J_p}^{\alpha,~\beta}({x})$ & $(1-{x})^\alpha (1+{x})^\beta$ &$[-1, 1]$\\%
+\hline
+Gamma & $\dfrac{{x}^\alpha e^{-{x}}}{\Gamma(\alpha+1)}$ & Generalized Laguerre $L_p^{\alpha}({x})$ & ${{x}^\alpha e^{-{x}}}$ & $[0, \infty]$\\
+\hline
+\end{tabular}}
+\label{polynomial and distribution}
+\end{table}
+%}
+
+
+
+Xiu and Karniadakis~\cite{Xiu2002} advanced the original (also called Hermite) polynomial chaos into a generalized polynomial chaos or Wiener-Askey polynomial chaos, where the random variable ${\x}$  can be associated with different measures. The generalized polynomial chaos expansion (PCE) is given as follows,
+\beq
+\begin{aligned}
+f({\x})& =  u_0\psi_0 + \sum\limits_{i_1=1}^{M}{u_{i_1}\psi_1({x}_{i_1})}+\sum\limits_{i_1=1}^{M}\sum\limits_{i_2=1}^{i_1}{u_{{i_1}{i_2}}\psi_2({x}_{i_1},{x}_{i_2})}\\
+& + \sum\limits_{i_1=1}^{M}\sum\limits_{i_2=1}^{i_1}\sum\limits_{i_3=1}^{i_2}{u_{{i_1}{i_2}{i_3}}\psi_3({x}_{i_1},{x}_{i_2},{x}_{i_3})} + \ldots,
+\end{aligned}
+\label{eq:pcgen}
+\eeq
+where ${\psi_p}$ is the polynomial basis of order $p$ taken
+from the Wiener-Askey scheme depending on the probability distribution
+of multidimensional random variables ${x}_{i_j},~j=1,2,\ldots,M$.
+
+\subsubsection*{Multidimensional Basis Functions}
+
+Multidimensional orthogonal polynomial bases can be easily obtained by
+tensorization of the corresponding one-dimensional polynomial bases using a multi-index notation~\cite{Knio2010,Ghanem2002,Xiu2010},
+\beq
+\psi_k(\x)=~\bm{\psi}_k({x}_1,{x}_2,\ldots,{x}_M)=\prod\limits_{i=1}^{M}\psi_{{\alpha_{i}^k}}({x}_i),
+\label{eq:mindex}
+\eeq
+where the multi-index ${{\alpha_{i}^k}}$ denotes the order of the one-dimensional polynomial. As an example, a two-variable chaos expansion is shown below:
+\bea
+\begin{split}
+f(x_1,x_2) & = u_0\psi_0(x_1)\psi_0(x_2)\\
+& + u_1\psi_1({x}_{1})\psi_0(x_2) + u_2\psi_0({x}_{1})\psi_1(x_2)\\
+&+ u_{11}\psi_2({x}_{1})\psi_0(x_2) + u_{21}\psi_1({x}_{1})\psi_1({x}_{2}) +
+u_{22}\psi_0({x}_{1})\psi_2(x_2)\\
+&+ u_{111}\psi_3({x}_{1})\psi_0(x_2) + u_{211}\psi_2({x}_{1})\psi_1({x}_{2}) +
+u_{221}\psi_1({x}_{1})\psi_2({x}_{2})+  u_{222}\psi_0({x}_{1})\psi_3(x_2)\\
+&+ u_{1111}\psi_4({x}_{1})\psi_0(x_2) + \ldots,
+\label{eq:pcgen2}
+\end{split}
+\eea
+where $\bm{u}=\{u_0, u_1, u_2, u_{11}, u_{22}, \ldots\}$ is the vector of coefficients.
+
+\subsubsection*{A Compact and Truncated Form}
+
+For simplicity of notation a compact form of the expansion in Eq.~(\ref{eq:pcgen}) given by:
+\beq
+f({\x})~=~\sum\limits_{k=0}^{\infty}u_k\psi_k(\x),% \qquad {x} = \{{x}_1, {x}_2, \ldots \}
+\label{eq:pcgencompact}
+\eeq
+will be used throughout, where $\psi_k(\x)$ is defined by Eq.~\ref{eq:mindex}. For computational purposes, the infinite expansion in Eq.~(\ref{eq:pcgencompact}) can be truncated and represented as,
+\beq
+{\widehat f({\x})}~=~\sum\limits_{k=0}^{P}u_k{\psi_k(\bm{x})},% + \epsilon(M,p),
+\label{eq:truncated} 
+\eeq
+where the total number of terms \nom{$T$}{number of terms in polynomial chaos expansion} is given by~\cite{Xiu2002},
+\beq
+T=P+1=\dfrac{(M+p)!}{M! p!}.
+\label{numberofterms}
+\eeq
+
+
+\subsection{{Intrusive and Non-intrusive forms of PCE}}
+The computation of  polynomial chaos coefficients (weights) \nom{$\u$}{polynomial chaos coefficients or weights} falls into two categories as intrusive and non-intrusive methods~\cite{Jones2013}. 
+This work is focused on non-intrusive methods and the reader is referred to the literature for a more detailed review on intrusive methods than given here~\cite{Knio2010,Ghanem2002,Xiu2010}.
+
+%\paragraph{Intrusive methods:}
+
+\subsubsection*{Intrusive Methods}
+
+Intrusive methods, also referred to as the stochastic Galerkin (SG) methods require the formulation and solution of the stochastic version of the original model. The deterministic code has to be altered through the substitution 
+of polynomial chaos expansions.
+A Galerkin projection in random space is applied to derive the equations in weak form, which generates a  system of coupled state equations. The expansion coefficients $\u$ can then  be obtained by solving the linear system of state equations~\cite{Ghanem2002,Xiu2010}.
+The requirement to modify existing source code quite extensively can make the implementation of intrusive PCE difficult or even impossible. 
+%The coefficients readily yield the stochastic quantities.
+% The mean and variance are available as~\cite{Elred2009}:
+%\beq
+%\mu_f=\langle{f}\rangle\simeq\sum_{k=0}^{P}u_k\langle\psi(\x)\rangle=u_0,
+%\label{eq:mean_intrusive}
+%\eeq
+
+%\beq
+%\sigma_f^2=\langle{(f-\mu_f)^2}\rangle \simeq \sum_{k=1}^{P}u_k\langle{\psi_k^2(\x)}\rangle.
+%\label{eq:var_intrusive}
+%\eeq
+
+\subsubsection*{Non-intrusive Methods}
+
+Non-intrusive methods, also referred to as the stochastic collocation (SC), use interpolation methods and projections of a set of deterministic simulations onto a polynomial basis~\cite{Tatang1997}.
+In doing so, the residual of the governing equations are required to be zero at discrete nodes in the domain which are called collocation points~\cite{Xiu2010}.
+The weights $\u$ of the multivariate spectral expansions in Eq.~(\ref{eq:pcgencompact}) are computed by practices that do not mandate the modification of existing deterministic solvers and they can be used as a black-box. Similar to SG methods, SC methods achieve fast convergence when the solutions possess sufficient smoothness in the random space.
+Stochastic collocation can be further classified as \emph{pseudo-spectral integration} or \emph{response surface method} (also known as point collocation, linear regression methods)~\cite{Xiu2010,Elred2009}.
+In the pseudo-spectral approach, the inputs ${\x}$ are chosen deterministically at quadrature nodes~\cite{Knio2010,Ghanem2002,Xiu2010} or sparse grids.
+In the response surface approach, the inputs can be evaluated at random locations ${\x}$ and the coefficients $\u$ are obtained by solving the linear system formed by Eq.~(\ref{eq:pcgencompact}).
+The non-intrusive approach (polynomial regression) developed by Roderick~\etal~\cite{Mihai2010} is adopted in this work and is discussed in more detail in the following paragraphs.  The random collocation points are referred to as training points in this work.
+
+\subsection{Constructing Polynomial Chaos Response Surface}
+A regression procedure for obtaining the best polynomial approximation in the presence of function, gradient, and Hessian information is discussed below. 
+
+\begin{enumerate}
+\item \textbf{Setting up the linear system:}
+Polynomial fitting conditions are enforced at the training points $\x^{(j)},~j=1,2,\ldots,N$, resulting in a linear system with $N$ equations and $T$ unknowns. It is required that ${N}\geq{T}$ to be able to solve the linear system.
+ Legendre orthogonal polynomials are employed as the basis function in this work.
+\begin{eqnarray}
+\left[ \begin{array}{cccc}
+\psi_0({\x}^{(1)}) & \psi_1({\x}^{(1)})      &\cdots & \psi_P({\x}^{(1)}) \\
+\psi_0({\x}^{(2)}) & \psi_1({\x}^{(2)})      &\cdots & \psi_P({\x}^{(2)}) \\
+\vdots  & \vdots &\ddots &\vdots\\
+\psi_0({\x}^{(N)}) & \psi_1({\x}^{(N)})      &\cdots & \psi_P({\x}^{(N)}) \\
+\end{array} \right]%_{(m \times m)}
+~\left\{ \begin{array}{c}
+{u}_0\\
+{u}_1\\
+\vdots \\
+{u}_P\\
+\end{array} \right\}=~\left\{ \begin{array}{c}
+f({\x}^{(1)})\\
+f({\x}^{(2)})\\
+\vdots \\
+f({\x}^{(N)})\\
+\end{array} \right\}
+\label{eq:linsys}
+\end{eqnarray}
+
+\item \textbf{Solving the linear system:}
+ The linear system given in Eq.~(\ref{eq:linsys}) enforces polynomial interpolation at the $N$ training points, when the amount of available data is equal to the number of coefficients to solve for (\ie~$N=T$). 
+To improve the conditioning of the basis matrix, an oversampling factor of two (smallest integer greater than one) is recommended in the literature~\cite{Elred2008} and is adopted in this work as well.
+When oversampling (\ie~${N}>{T}$) is enforced, the linear system can only be solved in a least-squares sense and the resulting response surface is a regression model. 
+\item \textbf{Evaluating the response surface:}
+Once the coefficients $\bm{u}$ are solved for, the PCE response surface defined by Eq.~(\ref{eq:truncated}) is successfully obtained. It can now be used to get the approximated function value at any given location $\x$, and the surrogate model is ready for its potential applications such as uncertainty quantification and optimization.
+In addition, gradient \nom{$\bnabla\widehat{f}$}{surrogate approximated gradients} and Hessian approximations \nom{${\bnabla}^2\widehat{f}$}{surrogate approximated Hessian} from the PCE surrogate model at any location $\x$ are readily obtained by differentiating Eq.~(\ref{eq:truncated}) which can facilitate, for example, Newton-based optimization strategies. Mathematically,
+\beq
+{\bnabla}\widehat{f}=\sum\limits_{k=0}^{P}u_k\pd{{\psi}_k(\x)}{\x}
+\label{eq:pcgrad} 
+\eeq
+and
+\beq
+{\bnabla}^2{\widehat{f}}=\sum\limits_{k=0}^{P}u_k\pdt{{\psi}_k(\x)}{\x},
+\label{eq:pchess} 
+\eeq
+where $\pd{{\psi}_k(\x)}{\x}$ and $\pdt{{\psi}_k(\x)}{\x}$
+involve again the multi-index notation given by Eq.~\ref{eq:mindex}.
+\end{enumerate}
+\begin{table}[h]
+\caption[Orthogonal polynomials with derivatives.]{Selected orthogonal polynomials with their first and second derivatives and recursive relation.}
+%\begin{minipage}[t]{0.3\linewidth}
+\medskip
+\centering 
+\scalebox{0.80}{\begin{tabular}{c|cc|cc|cc}
+\hline\hline
+Order     & Hermite      &  Legendre       & Hermite                                        &  Legendre                                       & Hermite              & Legendre \\
+{}    &$H_p({x})$&  $P_p({x})$ & $\pd{H_p({x})}{{x}}$ & $\pd{P_p({x})}{{x}}$  &  $\pdt{H_p({x})}{{x}}$ &  $\pdt{P_p({x})}{{x}}$ \\
+\hline\hline
+0 & 1  &  1&   0 &  0 & 0  & 0	 \\
+1 & ${x}$ &${x}$&  $1$ &$1$ & 0 & 0 \\
+2 & ${x}^2-1$ & 	$\frac{3{x}^2-1}{2}$  & $2{x}$ & $3{x}$& 2 & 3 \\
+3 & ${x}^3-3x$&	  $\frac{5{x}^3-3{x}}{2}$  & $3{x}^2-3$& $\frac{15{x}^2-3}{2}$ & $6{x}$ & $15{x}$\\
+\vdots  & \vdots &  \vdots & \vdots & \vdots &  \vdots & \vdots \\
+p  & ${x} H_{p-1}({x})$   &  $\frac{{(2p-1)}{{x}}P_{p-1}({x})}{p}$   & $pH_{p-1}({x})$ &  $-\frac{(p+1) {x} P_p({x})}{{x}^2-1}$ & $p(p-1)H_{p-2}$ & $\footnotesize\frac{(p+1)[(p+2) x^2+1] P_p(x)}{\left(x^2-1\right)^2}$\\
+{} & $-(p-1)H_{p-2}({x})$ &  $-\frac{(p-1)P_{p-2}({x})}{p}$             & {}               &  $+\frac{(p+1)P_{p+1}({x})}{{x}^2-1}$&{}  & $-\frac{(p+1)(2p+5)xP_{p+1}(x)}{\left(x^2-1\right)^2}$\\
+{}&{}&{}&{}&{}&{}&$+\frac{(p+1)(p+2)P_{p+2}(x)}{\left(x^2-1\right)^2}$\\
+\hline
+\end{tabular}}
+\label{pandg}
+%\end{minipage}
+\end{table}
+
+
+\subsection{Enhancing PCE with Derivative Information}
+The polynomial chaos has been enhanced to incorporate gradient information which  has shown promising results to reduce the curse of dimensionality (see Roderick~\etal~\cite{Mihai2010, Mihai2011}). The authors have named their approach \emph{polynomial regression with derivative
+information} (PRD). As a straight-forward extension here, it will be enhanced with Hessian information as well.
+The required first and second derivatives of the orthogonal polynomials \nom{$\psi$}{orthogonal basis function} are shown in Table~\ref{pandg}.
+
+
+
+\subsubsection{Gradient-Enhanced Polynomial Chaos}
+
+When the linear system in Eq.~(\ref{eq:linsys}) is augmented with gradient information, each row of the basis matrix gives rise to $M$ additional rows, where $M$ is the number of components in \nom{$\x$}{surrogate training point location}.
+Thus, if there are $N$ training points the size of the basis matrix
+becomes~${N^\prime}~\times~{T}$, where ${N}^\prime=N \cdot (1+M)$.
+\begin{eqnarray}\nonumber
+\left[\begin{array}{c}
+\left(\begin{array}{cccc}
+\psi_0({\x}^{(1)}) & \psi_1({\x}^{(1)})      &\cdots & \psi_P({\x}^{(1)}) \\
+\pd{\psi_0(\x^{(1)})}{x_1} & \pd{\psi_1(\x^{(1)})}{x_1} & \cdots &\pd{\psi_P(\x^{(1)})}{x_1} \\
+\vdots  & \vdots &\ddots &\vdots\\
+\pd{\psi_0(\x^{(1)})}{x_M} & \pd{\psi_1(\x^{(1)})}{x_M} & \cdots &\pd{\psi_P(\x^{(1)})}{x_M}\\
+\end{array}\right)\\
+
+\vdots  \\%\vdots &\vdots &\vdots\\
+\end{array}\right]%_{(m \times m)}
+\left\{ \begin{array}{c}
+{u}_0\\
+{u}_1\\
+\vdots \\
+{u}_P\\
+\end{array} \right\}=~\left\{ \begin{array}{c}
+\left(\begin{array}{c}
+f(\x^{(1)})\\
+\pd{f(\x^{(1)})}{x_1}\\
+\vdots \\
+\pd{f(\x^{(1)})}{x_M}\\
+\end{array}\right)\\
+\vdots \\
+\end{array} \right\}
+\label{eq:gradlinsys}
+\end{eqnarray}
+
+
+
+\subsubsection{Hessian-Enhanced Polynomial Chaos}
+When the linear system is augmented with Hessian information too, the size of the basis matrix becomes~${N^\prime}~\times~{T}$, where ${N}^\prime= N \cdot (1+M+{\frac{M(M+1)}{2}})$
+\begin{eqnarray}\nonumber
+\left[ \begin{array}{c}
+\left(\begin{array}{cccc}
+\psi_0(\x^{(1)}) & \psi_1(\x^{(1)})      &\cdots & \psi_P(\x^{(1)}) \\
+\pd{\psi_0(\x^{(1)})}{x_1} & \pd{\psi_1(\x^{(1)})}{x_1} & \cdots &\pd{\psi_P(\x^{(1)})}{x_1} \\
+\vdots  & \vdots &\ddots &\vdots\\
+\pd{\psi_0(\x^{(1)})}{x_M} & \pd{\psi_1(\x^{(1)})}{x_M} & \cdots &\pd{\psi_P(\x^{(1)})}{x_M} \\
+\pdt{\psi_0(\x^{(1)})}{x_1} & \pdt{\psi_1(\x^{(1)})}{x_1} & \cdots &\pdt{\psi_P(\x^{(1)})}{x_1} \\
+\vdots  & \vdots &\ddots &\vdots\\
+\pdd{\psi_0(\x^{(1)})}{x_1}{x_M} & \pdd{\psi_1(\x^{(1)})}{x_1}{x_M} & \cdots &\pdd{\psi_P(\x^{(1)})}{x_1}{x_M}\\
+\vdots  & \vdots &\ddots &\vdots\\
+\pdt{\psi_0(\x^{(1)})}{x_M} & \pdt{\psi_1(\x^{(1)})}{x_M} & \cdots &\pdt{\psi_P(\x^{(1)})}{x_M} \\
+\end{array}\right)\\
+\vdots\\%  & \vdots &\vdots &\vdots\\
+\end{array} \right]%_{(m \times m)}
+~\left\{ \begin{array}{c}
+{u}_0\\
+{u}_1\\
+\vdots \\
+{u}_P\\
+\end{array} \right\}=~\left\{ \begin{array}{c}
+\left(\begin{array}{c}
+f(\x^{(1)})\\
+\pd{f(\x^{(1)})}{x_1}\\
+\vdots \\
+\pd{f(\x^{(1)})}{x_M}\\
+\pdt{f(\x^{(1)})}{x_1}\\
+\vdots \\
+\pdd{f(\x^{(1)})}{x_1}{x_M}\\
+\vdots \\
+\pdt{f(\x^{(1)})}{x_M}\\
+\end{array}\right)\\
+\vdots \\
+\end{array} \right\}
+\label{eq:hesslinsys}
+\end{eqnarray}
+The approach (polynomial regression/interpolation) is non-intrusive as only the right hand side of the equation needs function, gradient and Hessian evaluations, and a black box approach can be used to obtain them.
+When gradients and Hessian are included, the linear system is generally over-determined (contains more data than needed) and it can be solved only in a least-squares sense resulting in a regression model.
+
+
+
+\section{Multivariate Interpolation and Regression}
+\label{mir}
+
+\subsection{Mathematical Formulation}\label{MIRmaths}
+
+Wang~\etal~\cite{Qiqi2010a,Qiqi2010b} proposed a multivariate interpolation and regression (MIR) scheme where each data point is represented as a Taylor series expansion, and the higher-order derivatives in the Taylor series are treated as random variables.
+Mathematically, the exact function, $f$, in an $M$-dimensional design space is approximated as~\cite{Qiqi2010a,Qiqi2010b},
+\beq
+{\widehat f(\x)}= \sum_{i = 1}^{N_v}{a_{vi}(\x)\tilde{f}(\x_{vi})+ \sum_{i = 1}^{N_g}{\bm{a}_{gi}}(\x)\bm{\nabla}{\tilde{f}}(\x_{gi})},
+\label{mireqn}
+\eeq
+where $N_v$ is the number of function data points and $N_g$ is the number of gradient data points (if used).
+The approximation coefficients $a_{vi}$ and $\bm{a}_{gi}$ are then chosen by solving an equality constrained least-squares problem such that $\sum_{i=1}^{N_v}a_{vi} =1$.
+$\tilde{f}$ and ${\bm{\nabla}}{\tilde{f}}$ are the function, $f$, and gradient values, ${\bm{\nabla}}{f}$, added with their corresponding measurement errors $\sigma_{vi}$ and $\bm{\sigma}_{gi}$ (if any).
+The scheme produces an interpolatory response surface when the data points are  exact, or a regression model when non-zero measurement errors are associated with the data points. 
+
+
+\subsection{Parameters of MIR}
+
+
+MIR comes with a few parameters that influence the approximation. They are discussed in the following paragraphs.
+
+
+\subsubsection{Magnitude Parameter}\label{magnitude}
+
+The magnitude parameter $\beta$ affects the solution of the equality constrained least-squares problem in determining the MIR coefficients, but only when measurement errors are present.
+The magnitude of variation of the target function, $\beta$, can be estimated as the standard deviation of available data values as shown below,
+\beq
+\beta=\sqrt{\dfrac{\sum_{i=1}^{N_v}(f(\x_{vi})-\bar{f})^2}{{N_v}-1}},\;\textrm{where}\;\bar{f}=\sum_{i=1}^{N_v} \dfrac{f(\x_{vi})}{{N_v}}.
+\eeq
+In the presence of measurement errors, $f(\x_{vi})$ are unknown, so it is recommended to use the following equation instead,
+\beq
+\beta=\sqrt{\dfrac{\sum_{i=1}^{N_v}(\tilde{f}(\x_{vi})-\bar{\tilde{f}})^2}{{N_v}-1}},\;\textrm{where}\;\bar{\tilde{f}}=\sum_{i=1}^{N_v} \dfrac{\tilde{f}(\x_{vi})}{{N_v}}.
+\eeq
+The value of $\beta$ reflects the magnitude of variation of the exact function $f(\x)$ and determines the sensitivity of the approximated function value to available data. When $\beta$ is small the response surface is less sensitive to available data and looks like a nonlinear regression deviating from the data points by a larger threshold. When $\beta$ is large the response surface essentially goes through every data point.  
+In this work, the measurement errors are assumed to be absent leading to an interpolatory response surface.
+
+\subsubsection{Wave Number Parameter}\label{wavenumber}
+The wave number  $\gamma$ determines the smoothness of the response surface. An optimum wave number is attained when the magnitude of estimated approximation error $|f(\x_{vi})-\widehat{f}(\x_{vi})|$ (using a leave-one-out approach described in section~\ref{loocve}) and the prediction interval (computed by the scheme) are the same. The upper and lower bounds of gamma are determined from the smallest and largest distance between the data points, that is, $\gamma\in[\gamma_{min},\gamma_{max}]$. A logarithmic bisection procedure is employed on this interval to find the actual $\gamma$ that corresponds to the equality of approximation error and prediction interval.
+A higher wave number tends to produce a smoother response surface almost like a piecewise lower order polynomial. On the contrary, a lower wave number tends to produce overshoots in the response surface.
+
+\subsubsection{Taylor Order Parameter}
+The Taylor order, $n$, defines the order of the Taylor series expansion employed in MIR. The choice of an optimum Taylor order is difficult as it depends on the function to be modeled as well as its dimensionality. 
+Though it is expected that a higher Taylor order would lead to an improved approximation, round-off errors originating from the solution of  the least-squares problem in determining the coefficients, tend to propagate to the approximated function value via Eq.~(\ref{mireqn}) and deteriorate its accuracy. 
+Therefore, a higher Taylor order does not always guarantee an improved approximation.
+
+
+
+The first two parameters discussed in sections~\ref{wavenumber} and ~\ref{magnitude} are computed automatically by the scheme whereas the Taylor order is user specified.
+
+\subsection{Summary}
+A brief overview of the MIR approximation scheme is provided as follows:
+\begin{itemize}
+\item \textbf{Input of data and parameters:}~The training data $(\x_{vi},\tilde{f}(\x_{vi}))$ and $(\x_{gi},\bm{\nabla}\tilde{f}(\x_{gi}))$ is gathered along with their corresponding user-specified measurement errors (if any). 
+\item \textbf{Computation of parameters:}~The user specifies the Taylor order parameter. The remaining two parameters of the scheme, namely the magnitude and wave number, are then determined by the scheme using the input data.
+\item \textbf{Prediction:}~For each location $\x$ at which the approximated function value is desired, an equality constrained least-squares problem is solved to yield the coefficients $a_{vi}$ and $\bm{a}_{gi}$. 
+The approximated function value ${\widehat f(\x)}$ is then given by Eq.~\eqref{mireqn}.
+\end{itemize}
+
+
+\subsection{Computational Cost and Limitations}
+
+The total computational cost involved in building and evaluating the MIR response surface for $m$ arbitrary points (locations where the function is to be predicted) is of the order of $\bm{O(}(K \cdot N_V + m) (N_V^2+M \cdot N_G)^3)\bm{)}$, where $K$ is the number of required bisection iterations for finding the optimum $\gamma$, \nom{$M$}{number of variables or dimensions} is the number of dimensions, and the other parameters are the same as discussed in section~\ref{MIRmaths}. This operation count shows that MIR scheme is computationally more expensive than most existing schemes.  Nevertheless, they recommend the scheme for applications requiring a higher accuracy rather than computational efficiency. Wang~\etal~\cite{Qiqi2010a,Qiqi2010b} also emphasize the importance of preventing close spacing of training points that can lead to possible linear dependence in matrix operations.
+
+In this work, multivariate interpolation and regression is used only to construct local approximations over the sub-domains of the global surrogate models (kriging and polynomial chaos), and forms an integral part of the proposed framework for training point selection and error estimation. The term ``local'' signifies the reduced surrogate domain (sub-domain) and its associated training data (the use of closest existing training points). The pertaining discussions on the framework are postponed to chapter~\ref{TPSFramework}.
+
+
+

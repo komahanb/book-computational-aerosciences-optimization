@@ -1,0 +1,1833 @@
+\chapter{Mathematical Preliminaries of Uncertainty Analysis -- A Linear Algebra Approach}\label{chapter:uq_math_review}
+\paragraph*{Introduction.}
+The goal of this chapter is to provide the mathematical preliminaries underlying uncertainty propagation techniques.
+% for different stages of uncertainty analysis -- modeling, propagation and quantification.
+The chapter is structured such that for each probability distribution type:
+\begin{enumerate}
+\item the transformation of probability spaces
+\item the numerical approximation of integrals through quadrature
+\item the construction of orthonormal basis functions
+\end{enumerate}
+are discussed. A detailed review of probability theory is beyond the
+scope of this work; however, for the presentation of sampling and
+projection-based uncertainty propagation, this chapter provides
+sufficient background. A simpler presentation of UQ techniques
+discussed in this thesis is attributed to the fact that we perform
+probabilistic computations from a linear algebra perspective using
+concepts such as \emph{weighted-inner-products}.
+We lay out this
+chapter with an interpretation that the probability density functions
+are the weighting kernel functions of the definition of inner
+products.
+
+%An emphasis is on elucidating the mathematical structure and connections involved throughout the framework.
+%For each probability distribution type, we define the probability functions, transformation of variables for easing numerical calculations, we use the probability functions and derive corresponding orthonormal polynomials, evaluation of inner products through quadrature approximations.
+%These inner products yield the coefficient of decomposition of a random function, which are usually the unknown in the stochastic problem.
+
+\section[PDF in Physical and Standard Spaces]{Probability Distribution Functions in Physical and Standard Spaces}\label{sec:probability_distributions}
+Probability distribution functions such as the \underline{probability density function (PDF)} and the \underline{cumulative distribution function (CDF)} characterize the distribution of a random variable (denoted as $y$) in stochastic (probabilistic) domain ${\mathcal{Y}}$.
+%Before we look at the definition of PDF and CDF for different kinds of probability distribution, let us see how these are used in computing/defining mathematical quantities of interest in an analysis problem involving functions of interest.
+%These quantities are referred to as statistical measures.
+%% The cumulative distribution function (CDF) specifies the probability
+%% that the random variable takes a value less than a specified value
+%% \begin{equation}
+%%   \mathbb{P}[y \leq a] = 1 - \int_{a}^{\infty} \rho(y)~dy
+%% \end{equation}
+%% The PDF exists only if the CDF is differentiable everywhere
+%% \begin{equation}
+%%   \td{\Phi(y)}{y} = \rho(y)
+%% \end{equation}
+%%
+% If the random variable is a vector $\y \in \mathbb{R}^N$, then we
+%refer to PDF and CDF respectively as joint-PDF and joint-CDF,
+%respectively.
+%\subsection{{General} and Standard Stochastic Spaces}
+%Often we standardize the stochastic space with selected choice of
+%parameters. For example, in the case of normal distribution we define
+%$\mu=0$ and $\sigma=1$ as parameters corresponding to
+%the standard normal stochastic space ${\mathcal{Z}}$, and similarly the
+%parameters $a=0$ and $b=1$ define the standard uniform stochastic
+%space.
+Let us denote the standard stochastic space as $\mathcal{Z}$ and the corresponding standard random variable be denoted as $z$.
+There is a convention that the standard form of a probability distribution is one that has \emph{location parameter as zero} and \emph{scale parameter as one}.
+Therefore, by shifting and scaling standard distributions we obtain the corresponding general physically-applicable distribution and viceversa.
+Let us denote the {physical} stochastic space as $\mathcal{Y}$ and the corresponding {physical} random variable be denoted as $y$.
+Although, we should work with {physical} probability spaces for physical relevance, the standard probabilistic domains are very useful in efficient numerical computations.
+For instance, numerical tools such as random number generators (to produce random samples), quadrature nodes and weights (to evaluate integrals), orthogonal polynomials (to construct stochastic vector space) are built based on standard probability density functions defined on ${\mathcal{Z}}$, and simple transformation of variables and bounds can be applied to make these techniques applicable for the physical stochastic space ${\mathcal{Y}}$.
+%The standard probabilistic domains are very useful in efficient numerical computations.
+%It is common in statistical software packages to only compute the standard form of the distribution.
+%There are formulas for converting from the standard form to the form with other location and scale parameters by using simple shifting and scaling affine transformations.
+Often, some numerical packages (e.g., Python based \texttt{NumPy}) apply different rules for standardization, and provide nodes and weights to evaluate integrals using quadrature. % rules based on them.
+Therefore, in this work,  the probabilistic quadrature space is referred to as ${\mathcal{X}}$ with $x$ as the corresponding variable.
+An illustration of relation between different probabilistic spaces is shown in Figure~\ref{fig:demo-prob-spaces}.
+Therefore, one must be cognizant of the fact that different standardization are used with the derivation of orthonormal polynomials and quadrature libraries, and appropriate transformations ought to be carried out.
+If quadrature capabilities are solely developed based on standard distributions, we will be able to omit the nonstandard space and work within standardized and physical probability spaces in computations.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.65\linewidth]{probability-spaces.pdf}
+  \caption{Probabilistic spaces their roles (shown in red) in UQ computations.}
+  \label{fig:demo-prob-spaces}
+\end{figure}
+
+\subsection{Uniform Distribution}
+The uniform distribution of a random variable $y \in [a,b] \subset \mathbb{R} $ is denoted as ${{\mathcal{U}}(y;a,b)}$.
+Its probability density function is the mapping $\rho_u^y(y) : [a,b] \rightarrow [0,1]$ defined as
+\begin{equation}
+  \label{eqn:uniform-pdf}
+  \rho_u^y(y) = \rho_u^y(y; a, b) := \dfrac{1}{b-a}.
+\end{equation}
+In the case of uniform distribution the transformation between standard uniform $z\in{\mathcal{Z}}$ and {physical} uniform random variable  $y\in{\mathcal{Y}}$ is
+\begin{equation}
+  y =  a + (b-a) z
+\end{equation}
+and the corresponding inverse transformation is
+\begin{equation}
+  z = \dfrac{y-a}{b-a}.
+\end{equation}
+%Its cumulative distribution function is the mapping $\Phi_u^y(y) : [a,b] \rightarrow [0,1]$ defined as
+%\begin{equation}
+%  \label{eqn:uniform-cdf}
+%  \Phi_u^y(y; a, b) := \dfrac{y-a}{b-a}.
+%\end{equation}
+Note that the standardized stochastic domain is denoted as ${{\mathcal{Z}}=[0,1]}$.
+The standard uniform probability density function is
+\begin{equation}
+  \label{eqn:standard-uniform-pdf}
+        {\rho}_u^z(z) =  {\rho}_u^z(z; 0, 1) := {1}.
+\end{equation}
+
+\subsection{Normal Distribution}
+Normal or Gaussian distribution of random variable $y \in [-\infty,\infty]$ is denoted as ${{\mathcal{N}}(y;\mu,\sigma^2)}$ where $\mu$ and $\sigma^2$ are fixed parameters characterizing the location and stretch of the distribution, and $y$ is the {physical} random variable.
+The {physical} normal probability density function is
+\begin{equation}
+  \label{eqn:normal-pdf}
+  \rho_n^y(y) = \rho_n^y(y; \mu, \sigma^2) := \dfrac{1}{\sigma \sqrt{2\pi}} \exp\left[{-\dfrac{1}{2}\left(\dfrac{y-\mu}{\sigma}\right)^2}\right]. % : [-\infty,\infty] \rightarrow [0,1]
+\end{equation}
+The transformation between standard normal $z\in{\mathcal{Z}}$ and {physical} normal random variable $y\in{\mathcal{Y}}$ is
+\begin{equation}
+  y = \mu +  \sigma z
+\end{equation}
+and the corresponding inverse transformation is
+\begin{equation}
+  z = \dfrac{y-\mu}{\sigma}.
+\end{equation}
+When the random variable has zero mean and unit variance (a rule for standardization), it results in standard normal PDF
+\begin{equation}
+  \label{eqn:standard-normal-pdf}
+        {\rho}_n^z(z) = {\rho}_n^z(z; 0, 1) := \dfrac{1}{\sqrt{2\pi}} \exp \left( {-\dfrac{1}{2}{z}^2}\right). % : [-\infty,\infty] \rightarrow [0,1].
+\end{equation}
+Note that ${1}/{\sqrt{2\pi}}$ refers to the area under the curve $\exp({-{z}^2/2})$.
+
+%The normal cumulative distribution function is the mapping defined as
+%\begin{equation}\label{eqn:normal-cdf}
+%\Phi_n^y(y;\mu, \sigma^2) = \dfrac{1}{2} \left[ 1 + \mathrm{erf}\left(\dfrac{y-\mu}{\sigma \sqrt{2}}\right) \right] : [-\infty,\infty] \rightarrow [0,1].
+%\end{equation}
+
+%\subsection{Lognormal  Distribution}
+%Lognormal distribution of random variable $y \in (0,\infty)$ is represented as ${{\mathcal{L}}(y;\mu,\sigma^2)}$ where $\mu$ and $\sigma^2$ are fixed parameters and $y$ is the random variable.
+%The {physical} probability density function is the mapping $\rho_l^y(y) : [0,\infty] \rightarrow [0,1]$ defined as
+%\begin{equation}
+%  \label{eqn:lognormal-pdf}
+%  \rho_l^y(y; \mu, \sigma^2) := \dfrac{1}{y \sigma \sqrt{2\pi}} \exp\left[{-\dfrac{1}{2}\left(\dfrac{\ln y-\mu}{\sigma}\right)^2}\right] . %& \forall y \in  (0,\infty) .
+%\end{equation}
+%The cumulative distribution function is the mapping $\Phi_l^y(y): \mathbb{R} \rightarrow [0,1]$
+%defined as
+%\begin{equation}
+%  \label{eqn:lognormal-cdf}
+%  \Phi_l^y(y; \mu, \sigma^2) :=      \dfrac{1}{2} +  \dfrac{1}{2} \mathrm{erf} \left(\dfrac{\ln y-\mu}{\sigma \sqrt{2}}\right)
+%  \begin{cases}
+%    0 & \forall y \in (-\infty, 0] \\
+ %     & \forall y \in  (0,\infty) .
+%\end{cases}
+%\end{equation}
+
+\subsection{Exponential Distribution}
+% https://www.itl.nist.gov/div898/handbook/eda/section3/eda3667.htm
+We denote an exponential distribution of random variable $y \in [\mu,\infty) \subset \mathbb{R} $   as ${{\mathcal{E}}(y;\mu,\beta)}$.
+Its probability density function is the mapping $\rho_e^y(y) : [\mu,\infty) \rightarrow [0,1]$ defined as
+\begin{equation}
+  \label{eqn:exponential-pdf}
+  \rho_e^y(y) = \rho_e^y(y; \mu, \beta) := \frac{1}{\beta}\exp\left[-\left(\frac{y-\mu}{\beta}\right)\right].
+\end{equation}
+The standard exponential distribution pertains to $\mu=0$ (location) and $\beta=1$ (scale). The standard exponential probability density function is
+\begin{equation}
+  \label{eqn:standard-exponential-pdf}
+        {\rho}_e^z(z) =  {\rho}_e^z(z; 0, 1) := \exp(-z).
+\end{equation}
+%\paragraph*{Transformation of variables and domain:}
+The transformation between standard exponential $z \in {\mathcal{Z}}$ and {physical} exponential random variable $y \in {\mathcal{Y}}$ is
+\begin{equation}
+  y =  \mu + \beta z
+\end{equation}
+and the corresponding inverse transformation is
+\begin{equation}
+  z = \dfrac{y-\mu}{\beta}.
+\end{equation}
+Note that the standardized stochastic domain is denoted as ${{\mathcal{Z}}=[0,\infty)}$.
+  \paragraph*{Summary.} The PDFs introduced here play the role of weighting kernel functions used in inner products.
+  We recall that inner products are evaluated using integrals, which in turn are numerically approximated using quadrature rules.
+  The domain (independent-axis) of the kernel functions acts as the lower and upper bound on the integrals.
+  Note that the domain (or limits) is not always from $[-\infty, +\infty]$, and depends on the distribution type.
+  Therefore, one must exercise caution in evaluating these integrals, particularly when more random variables are present, with each variable (probabilistic dimension) possibly having different domains.
+
+\section{Statistical Measures as Inner Products}\label{sec:statistical-measures}
+Now, we formally define the probabilistic measures of interest that are used in the
+formulation of optimization under uncertainty problem~\eqref{eqn:ouu-formulation}.
+\subsection{Probability}
+The PDFs are useful in evaluating the probability of occurrence of random events.
+If one considers a random event as the occurrence of random variable within the interval $[a,b]$, then the probability of occurrence of the random event is
+\begin{equation}
+  \mathbb{P}[a \le y \le b] = \sinner{1}{1}_{{\rho^y}(y)}^{\mathcal{Y}} = \int_{a}^b \rho^y(y)~dy.
+\end{equation}
+where $\rho^y(y)$ is the probability density function of the random variable $y\in{\mathcal{Y}}$.
+This probability is the area under the PDF within the lower and upper limits of integration.
+
+\subsection{First Moment: Mean/Expectation}
+If the distribution of random variable $y \in \mathcal{Y}$ admits a probability density function $\rho^y(y)$, then the expectation of  $y$ is defined as
+\begin{equation}
+  \mathbb{E}[y] = \sinner{1}{y}_{{\rho^y}(y)}^{\mathcal{Y}} =  \int_{{\mathcal{Y}}} y~\rho^y(y) \,dy.
+\end{equation}
+Similarly, we can define the expectation (first moment) of a \underline{function} of random variable $f(y,\cdot)$ (referred to as random function) as
+\begin{equation}
+  \mathbb{E}[f(y,\cdot)] = \sinner{1}{f(y,\cdot)}_{{\rho^y}(y)}^{\mathcal{Y}} =  \int_{{\mathcal{Y}}} f(y,\cdot)~\rho^y(y) \,dy.
+\end{equation}
+
+\paragraph*{Remark on the role of random variables and functions in differential equations:}
+Differential equations often contain unknown parameters that are
+specified as inputs to run the numerical solution method to solve for
+the state variables. To accurately represent certain physical
+scenarios, we model the unknown parameters to be a function of
+probabilistic random variables. As a consequence, the state functions
+acquire the dependence of random variables and become probabilistic
+random functions.  It is of use to refer to
+Figure~\ref{fig:mathematical-developments-scope} outlining the
+solution process in abstract form, where $\xi$ refers to the input
+parameters that emerge from the probabilistic domain under the premise that they are uncertain and dependent on random variable $y$ with some known probability distribution.  As
+a result we obtain the random state functions such as $u(y(\xi),
+\cdot)$, where $\cdot$ signifies the possible presence/absence of
+other domains (e.g., temporal, spatial).
+
+\subsection{Second Moment: Variance}
+If the distribution of random variable $y \in \mathcal{Y}$ admits a
+probability density function $\rho^y(y)$, then the variance (second
+moment) of $y$ is defined as
+\begin{equation}
+  \begin{aligned}
+    \mathbb{V}[y] &= \sinner{\left(\mathbb{E}[y] - y\right)}{\left(\mathbb{E}[y] - y\right)}_{{\rho^y}(y)}^{\mathcal{Y}} \\ & = \int_{{\mathcal{Y}}} \left( \mathbb{E}[y] - y \right)^2 \rho^y(y) \,dy.
+  \end{aligned}
+\end{equation}
+With algebraic simplifications, the variance of $y$ can be written equivalently as
+\begin{equation}
+  \mathbb{V}[y] = \mathbb{E}[y^2] - \mathbb{E}[y]^2.
+\end{equation}
+Similarly, variance of a \underline{random function} $f(y,\cdot)$ is defined as
+\begin{equation}
+  \begin{aligned}
+    \mathbb{V}[f(y,\cdot)] & = \sinner{\mathbb{E}[f(y,\cdot)] - f(y,\cdot)}{\mathbb{E}[f(y,\cdot)] - f(y,\cdot)}_{{\rho^y}(y)}^{\mathcal{Y}} \\ & = \int_{{\mathcal{Y}}} (\mathbb{E}[f(y,\cdot)] - f(y,\cdot))^2 \rho^y(y)\,dy.\\
+  \end{aligned}
+\end{equation}
+With algebraic simplifications, the variance of $f(y,\cdot)$ can be written equivalently as
+\begin{equation}
+  \mathbb{V}[f(y,\cdot)] = \mathbb{E}[f(y,\cdot)^2] - \mathbb{E}[f(y,\cdot)]^2.
+\end{equation}
+If the above integrals/inner products could not be evaluated by analytical means, quadrature rules discussed in Section~\ref{sec:quadrature_rules} are useful in obtaining numerical estimates.
+
+\section{Types of Random Variables}
+\subsection{Independent Random Variables}
+Let $y_1$ and $y_2$ be two random variables. They are independent of each other if
+\begin{equation}
+  \mathbb{P}[y_1,y_2] = \mathbb{P}[y_1] \mathbb{P}[y_2].
+\end{equation}
+This is a consequence of the independence of probability density functions on each other leading to the construction of the joint PDF as product of individuals PDFs
+\begin{equation}
+  {\rho^y}(y_1,y_2) = \rho^y_1 (y_1) \times \rho^y_2 (y_2).
+\end{equation}
+
+\subsection{Uncorrelated Random Variables}
+Let $y_1$ and $y_2$ be two random variables. They are uncorrelated of each other if
+\begin{equation}
+  \mathbb{E}[y_1, y_2] = \mathbb{E}[y_1] \mathbb{E}[y_2]
+\end{equation}
+%\footcite{https://www.themathcitadel.com/2017/07/20/uncorrelated-and-independent-related-but-not-equivalent/}
+Independent random variables are uncorrelated, but uncorrelated random variables are not always independent.
+In this work, the random variables are assumed to be independent as a simplifying assumption. 
+In the general case, we ought to work with joint probability distributions of the form $\rho^y(y_1,y_2)$ and follow the mathematical steps.
+
+%{discuss about extensions}
+
+\section[Quadrature in {Physical} and Standard Spaces]{Quadrature Rules for Inner Products in Probabilistic Spaces}\label{sec:quadrature_rules}
+%\subsection{Definition of Stochastic Inner Products}
+For random variable $y$ from {physical} probabilistic domain ${\mathcal{Y}}$ with probability density function $\rho^y(y)$, we define inner product as follows
+\begin{equation}\label{eqn:stochastic-inner-product-form}
+  \sinner{g_1(y)}{g_2(y)}_{\rho^y(y)}^{{\mathcal{Y}}} = \int_{{\mathcal{Y}}} g_1(y) \rho^y(y) g_2(y)\,dy .
+\end{equation}
+%For standard random variable $z$ from standard domain ${\mathcal{Z}}$ with probability density function $\rho^z(z)$ acting as the inner product weight, we define inner product as follows
+%\begin{equation}
+%  \sinner{g_3(z)}{g_4(z)}_{\rho^z(z)}^{{\mathcal{Z}}} = \int_{{\mathcal{Z}}} g_3(z) \rho^z(z) g_4(z)\,dz.
+%\end{equation}
+The probabilistic measures in Section~\ref{sec:statistical-measures} are defined using inner products of the form~\eqref{eqn:stochastic-inner-product-form}.
+Thus the evaluation of inner products of the form~\eqref{eqn:stochastic-inner-product-form} is of natural interest in stochastic computations.
+\subsection{Quadrature Approximation of Inner Products}
+%\label{sec:transformation-of-inner-products}
+%Let us derive transformation equations between {physical} and standard
+%and stochastic inner products defined above. This will allow us to
+%evaluate inner products in a domain of convenience which is usually
+%not known apriori, but rather dictated by the availability of
+%numerical tools such as quadratures and orthogonal polynomials.
+Quadrature rules are used for numerical approximation of integrals arising from inner products using a \underline{finite} number of evaluations of the integrand. In stochastic computations, quadrature rules are useful in many scenarios such as:
+\begin{itemize}
+\item the evaluation of probabilities as
+\begin{equation}
+  \sinner{1(y)}{1(y)}_{{\rho^y}(y)}^{\mathcal{Y}} =  \int_{\mathcal{Y}} 1(y) \rho^y(y) 1(y) \, dy \approx \sum_{i=1}^M \alpha_i^y 1(y_i) 1(y_i)
+\end{equation}
+\item the evaluation of statistical moments of $f(y)$; for example, the mean is
+\begin{equation}
+  \sinner{1}{f(y)}_{{\rho^y}(y)}^{\mathcal{Y}} =  \int_{\mathcal{Y}} 1(y) \rho^y(y) f(y) \, dy \approx \sum_{i=1}^M \alpha_i^y 1(y_i) f(y_i).
+\end{equation}
+\item the formation of $(i,j)^{th}$ entry in Jacobian matrices with two corresponding basis elements $\psi_i(y)$ and
+  $\psi_j(y)$ as
+\begin{equation}
+  \sinner{\psi_i(y)}{\psi_j(y)}_{{\rho^y}(y)}^{\mathcal{Y}} =  \int_{\mathcal{Y}} \psi_i(y) \rho^y(y) \psi_j(y) \, dy \approx \sum_{i=1}^M \alpha_i^y \psi_i(y_i) \psi_j(y_i).
+\end{equation}
+\end{itemize}
+The effect of $\rho^y(y)$ is accounted within the weights $\alpha^y$, and by our construction the sum of weights is \emph{unity}: $\sum_{i=1}^M \alpha_i^y = 1$.
+%\paragraph*{Invariant Evaluation in Standard Space}
+%The inner products defined above can be evaluated in standard space $\mathcal{Z}$ (if necessary) by applying the identities derived in Section~\ref{sec:transformation-of-inner-products}.
+%
+%\paragraph*{Number of quadrature points:}
+The number of quadrature points $M$ can be determined based on the polynomial degree, $d$, of the \underline{full integrand}.
+We may use the fact that quadrature rules with $M$ nodes exactly evaluates polynomial integrands of degree upto $2d-1$.
+On the other hand, when the integrand $f(y)$ does not admit a known functional form, the number of evaluations $M$ is usually chosen based on computational budget considerations or iterative convergence criteria.
+The weight $\alpha_i^y$ and nodes $y_i$ are chosen based on probability distribution of random variable $y \in {\mathcal{Y}}$.
+%Some common quadrature rules are detailed along with transformations necessary to adapt to the actual form of integration we employ in this work.
+
+\subsection{Normal Distribution : Gauss--Hermite Quadrature}
+Consider two random functions $f_1(y)$ and $f_2(y)$ where $y \sim {{\mathcal{N}}(\mu,\sigma^2)} \in {\mathcal{Y}}$. Using the definition of inner product
+and transformation of variables
+\begin{equation}
+  \begin{aligned}
+    \sinner{f_1(y)}{f_2(y)}_{\rho_n^y(y)}^{{\mathcal{Y}}} & = \int_{-\infty}^{+\infty} f_1(y) \frac{\exp\left(-\frac{1}{2}\left(\frac{y-\mu}{\sigma}\right)^2\right)}{\sigma \sqrt{2\pi}}  f_2(y) \, dy  \\
+    & = \int_{-\infty}^{+\infty} f_1\left( \mu + \sigma z \right) \frac{\exp\left(-\frac{1}{2}\left(z\right)^2\right)}{\sqrt{2\pi}}  f_2\left( \mu + \sigma z \right) \, dz \\
+    & = \sinner{f_1\left( \mu + \sigma z \right)}{f_2\left( \mu + \sigma z \right)}_{{\rho}_n^z(z)}^{{\mathcal{Z}}}\\
+%    & = \sinner{\underline{f_1}\left( z \right)}{\underline{f_2}\left(  z \right)}_{{\rho}_n^z(z)}^{{\mathcal{Z}}}
+  \end{aligned}
+\end{equation}
+%Consider two functions $f_3(z)$ and $f_4(z)$ where $z \sim {{\mathcal{N}}(0,1)} \in {\mathcal{Z}}$. Using the definition of
+%inner product and transformation of variables
+%\begin{equation}
+%  \begin{aligned}
+%    \sinner{f_3\left(z\right)}{f_4\left(z\right)}_{{\rho}_n^z(z)}^{{\mathcal{Z}}} & = \int_{-\infty}^{+\infty} f_3 \left(z\right) \frac{\exp\left(-\frac{1}{2}\left(z\right)^2\right)}{\sqrt{2\pi}}  f_4\left(z\right) \, dz \\
+%    & = \int_{-\infty}^{+\infty} f_3 \left(\frac{y-\mu}{\sigma}\right) \frac{\exp\left(-\frac{1}{2}\left(\frac{y-\mu}{\sigma}\right)^2\right)}{\sigma \sqrt{2\pi}}  f_4 \left(\frac{y-\mu}{\sigma}\right) \, dy \\
+%    & = \sinner{f_3\left( \frac{y-\mu}{\sigma} \right)}{f_4\left( \frac{y-\mu}{\sigma} \right)}_{\rho_n^y(y)}^{{\mathcal{Y}}} \\
+%    & = \sinner{\underline{f_3}\left( y \right)}{\underline{f_4}\left(y \right)}_{\rho_n^y(y)}^{{\mathcal{Y}}}
+%  \end{aligned}
+%\end{equation}
+Let $y$ be a normally distributed random variable in domain
+${\mathcal{Y}}$ with mean $\mu$ and standard deviation
+$\sigma$. Gauss-Hermite quadrature rule provides nodes $y_i$ and
+weights $\alpha_i^y$ for optimal numerical approximation of integrals such as
+\begin{equation}\label{eqn:hermite-quadrature-form}
+  \int_{-\infty}^{\infty} f(y) \underbrace{\frac{\mathrm{e}^{-\frac{1}{2}\left(\frac{y-\mu}{\sigma}\right)^2}}{\sigma \sqrt{2\pi}}}_{\rho_n^y(y)}\,dy \approx \sum_{i=1}^M \alpha_i^y f(y_i).
+\end{equation}
+where $\rho_n^y{(y)}$ is the Gaussian probability density function.
+%Moreover, the weights, {physical}ly, are not normalized in the sense that
+%they do not add to unity. Thus we need to scale the weights by
+%dividing by the area of the gaussian probability density
+%function~\eqref{} which is $\sigma\sqrt{2\pi}$.
+
+\subsubsection{Transforming Nonstandard to {Physical} Quadrature}
+%\paragraph{Transformation of variables and scaling of weights.}
+%Many existing numerical implementations of
+Gauss--Hermite quadrature approximates inner products/integrals such as
+\begin{equation}\label{eqn:physicist-hermite-quadrature-form}
+  \sinner{1(\xi)}{f(\xi)}_{\rho_n^\xi(\xi)}^{{\mathcal{X}}} = \int_{-\infty}^{\infty} \underbrace{{\mathrm{e}^{-\xi^2}}}_{\rho_n^\xi (\xi)} f(\xi)\,d\xi \approx \sum_{i=1}^M \alpha_i^\xi f(\xi_i)
+\end{equation}
+and provide corresponding nodes $\xi_i$ and weights $\alpha_i^\xi$ -- which can not be directly applied to inner products/integrals arising in {physical} probabilistic domain ${\mathcal{Y}}$.
+In this case, notice that $\xi \in {\mathcal{X}} = [-\infty, \infty]$ is the same domain of integration in~\eqref{eqn:hermite-quadrature-form}, but a nonstandard density function of $\exp(-\xi^2)$ used to derive the nodes $\xi_i$ and weights $\alpha_i^\xi$.
+Although we have obtained the identities relating ${\mathcal{Y}}$ and ${\mathcal{Z}}$, we are left with the task of identifying transformation from nonstandard space ${\mathcal{X}}$ to standard space ${\mathcal{Y}}$.
+For this, let us perform transformation of variables by defining
+\begin{equation}
+  \begin{aligned}
+    \xi = \frac{y - \mu}{\sigma \sqrt{2}} && \mathrm{and} && d\xi = \frac{dy}{\sigma\sqrt{2}}.
+  \end{aligned}
+\end{equation}
+Rearranging this, we get
+\begin{equation}
+  \begin{aligned}
+    y = \mu +  \sigma \sqrt{2} \xi && \mathrm{and} && dy = \sigma \sqrt{2} d\xi.
+  \end{aligned}
+\end{equation}
+With this transformation~\eqref{eqn:hermite-quadrature-form} becomes
+\begin{equation}
+  \begin{aligned}
+    \int_{-\infty}^{\infty} f(y) \frac{\mathrm{e}^{-\frac{1}{2}\left(\frac{y-\mu}{\sigma}\right)^2}}{\sigma \sqrt{2\pi}}\,dy & =
+    \int_{-\infty}^{\infty} f(\mu + \xi \sigma \sqrt{2}) \frac{\mathrm{e}^{-\xi^2}}{\sigma \sqrt{2\pi}}~(\sigma \sqrt{2})\,d\xi \\
+%    & = \int_{-\infty}^{\infty} f(\mu + \xi \sigma \sqrt{2}) \frac{\mathrm{e}^{-\xi^2}}{\sqrt{\pi}}\,d\xi \\
+    & \approx \frac{1}{\sqrt{\pi}} \sum_{i=1}^M \alpha_i^\xi f(\mu +  \sigma \sqrt{2} \xi_i).
+\end{aligned}
+\end{equation}
+%Now, let us define a new integrand with scaled and shifted
+%\begin{equation}
+%  g(\xi) = f(\mu + \xi \sigma \sqrt{2})
+%\end{equation}
+%Thus we have derived an equivalent representation
+%of~\eqref{eqn:hermite-quadrature-form} which facilitates comparison
+%with form~\eqref{eqn:physicist-hermite-quadrature-form}
+%Thus we have
+%\begin{equation}
+%  \begin{aligned}
+%    \int_{-\infty}^{\infty} f(y) \underbrace{ \frac{\mathrm{e}^{-\frac{1}{2}\left(\frac{y-\mu}{\sigma}\right)^2}}{\sigma \sqrt{2\pi}} }_{\rho_n(y)}\,dy & = \int_{-\infty}^{\infty} f(\mu + \sigma \sqrt{2} \xi) \frac{\mathrm{e}^{-\xi^2}}{\sqrt{\pi}}\,d\xi \\
+%     & \approx \frac{1}{\sqrt{\pi}} \sum_{i=1}^M \alpha_i^\xi f(\mu +  \sigma \sqrt{2} \xi_i).
+%\end{aligned}
+%\end{equation}
+Recognizing the new weights as
+\begin{equation}
+  \alpha_i^y = {\alpha_i^\xi}/{\sqrt{\pi}}
+\end{equation}
+results in the following quadrature form
+\begin{equation}
+  \begin{aligned}
+    \int_{-\infty}^{\infty} f(y) \underbrace{ \frac{\mathrm{e}^{-\frac{1}{2}\left(\frac{y-\mu}{\sigma}\right)^2}}{\sigma \sqrt{2\pi}} }_{\rho_n^y(y)}\,dy & \approx \sum_{i=1}^M \alpha_i^y f(y_i) =  \sum_{i=1}^M \frac{\alpha_i^\xi}{\sqrt{\pi}} f(\mu +  \sigma \sqrt{2} \xi_i).
+\end{aligned}
+\end{equation}
+Note that the weight $\alpha_i^y$ add up to unity : $\sum_i \alpha_i^y = 1$.
+
+\subsubsection{Transforming {Physical} Quadrature to Standard Quadrature}
+Let us now determine the weights $\alpha_i^z$ and nodes $\z_i$ for
+performing numerical integration in standard stochastic domain
+${\mathcal{Z}}$. Using the transformation $z=\frac{y-\mu}{\sigma}$ we
+obtain
+\begin{equation}
+  \begin{aligned}
+    \int_{-\infty}^{\infty} f(y) { \frac{\mathrm{e}^{-\frac{1}{2}\left(\frac{y-\mu}{\sigma}\right)^2}}{\sigma \sqrt{2\pi}} }\,dy  = \int_{-\infty}^{\infty} f(\mu + \sigma z)  { \frac{\mathrm{e}^{-\frac{1}{2}\left(z\right)^2}}{ \sqrt{2\pi}} }\,dz.
+\end{aligned}
+\end{equation}
+Thus the corresponding quadrature approximations follow the relation
+\begin{equation}
+  \begin{aligned}
+    \sum_{i=1}^M \alpha_i^y f(y_i) = \sum_{i=1}^M \alpha_i^z f(\mu + \sigma z).
+\end{aligned}
+\end{equation}
+We summarize the relations observed from the above development as follows
+\begin{equation}
+  \begin{gathered}
+    \sum_{i=1}^M \alpha_i^y f(y_i) = \sum_{i=1}^M \alpha_i^z f(\mu + \sigma z) =  \sum_{i=1}^M \frac{\alpha_i^\xi}{\sqrt{\pi}} f(\mu +  \sigma \sqrt{2} \xi_i) \\
+    \alpha_i^y = \alpha_i^z = \alpha_i^\xi/\sqrt{\pi} \\
+    y_i = \mu + \sigma z_i = \mu + \sigma \sqrt{2}\xi_i
+\end{gathered}
+\end{equation}
+%Note that we may performing integration directly in ${\mathcal{Y}}$ domain or in
+%other domains.
+%Some
+%integrands are defined on the standard domain (e.g. orthonormal
+%Hermite polynomials)
+
+\subsection{Uniform Distribution : Gauss--Legendre Quadrature}
+Consider two random functions $f_1(y)$ and $f_2(y)$ where $y \sim {{\mathcal{U}}(a,b)} \in {\mathcal{Y}}$. Using the definition of
+inner product and transformation of variables
+\begin{equation}
+  \begin{aligned}
+    \sinner{f_1(y)}{f_2(y)}_{\rho_u^y(y)}^{{\mathcal{Y}}} & = \int_{a}^{b} f_1(y) \left( \frac{1}{b-a}\right)  f_2(y) \, dy \\
+    & = \int_{0}^{1} f_1 \left( a + (b-a)z \right) (1)  f_2 \left( a + (b-a)z \right) \, dz \\
+    & = \sinner{f_1\left( a + (b-a)z \right)}{f_2\left( a + (b-a)z \right)}_{{\rho}_u^z(z)}^{{\mathcal{Z}}} \\
+ %   & = \sinner{\underline{f_1}\left( z \right)}{\underline{f_2}\left(z\right)}_{{\rho}_u^z(z)}^{{\mathcal{Z}}}
+  \end{aligned}
+\end{equation}
+%Consider two functions $f_3(z)$ and $f_4(z)$ where $z \sim {{\mathcal{U}}(0,1)} \in {\mathcal{Z}}$. Using the definition of
+%inner product and transformation of variables
+%\begin{equation}
+%  \begin{aligned}
+%    \sinner{f_3\left(z\right)}{f_4\left(z\right)}_{\bar{\rho}_u(z)}^{{\mathcal{Z}}} & =  \int_{0}^{1} f_3 \left(z\right) (1)  f_4\left(z\right) \, dz \\
+%    & = \int_{a}^{b} f_3 \left(\frac{y-a}{b-a}\right) \left( \frac{1}{b-a} \right) f_4\left(\frac{y-a}{b-a}\right) \, dy \\
+%    & = \sinner{f_3\left( \frac{y-a}{b-a} \right)}{f_4\left( \frac{y-a}{b-a} \right)}_{\rho_u(y)}^{{\mathcal{Y}}}\\
+%    & = \sinner{\underline{f_3}\left( y \right)}{\underline{f_4}\left(y\right)}_{\rho_u(y)}^{{\mathcal{Y}}}
+% \end{aligned}
+%\end{equation}
+%The choice of either identity is dictated by the support/domain of the
+%participating functions in the inner product.
+%
+Let $y$ be a uniformly distributed random variable in domain
+${\mathcal{Y}}=[a,b]$. Gauss-Legendre quadrature rule provides nodes $y_i$
+and weights $\alpha_i^y$ for optimal numerical approximation of
+integrals such as
+\begin{equation}
+  \label{eqn:legendre-quadrature-form}
+  \int_{a}^{b} \underbrace{\frac{1}{b-a}}_{\rho_u^y(y)} f(y)\,dy \approx \sum_{i=1}^M \alpha_i^y f(y_i).
+\end{equation}
+\subsubsection{Transforming Nonstandard to {Physical} Quadrature}
+%\paragraph{Transformation of variables and scaling of weights.}
+Numerical implementations of Gauss--Legendre quadrature assume the form
+\begin{equation}
+  \label{eqn:legendre-quadrature-numerical-form}
+   \sinner{1(\xi)}{f(\xi)}_{\rho_u^\xi(\xi)}^{{\mathcal{X}}} = \int_{-1}^{1} \underbrace{(1)}_{weight} f(\xi)\,d\xi \approx \sum_{i=1}^M \alpha_i^\xi f(\xi_i).
+\end{equation}
+The domain of integration ${{\mathcal{X}}} = [-1,1]$ is different than ${\mathcal{Y}} = [a,b]$.
+Let us scale and shift the nonstandard probabilistic space ${\mathcal{X}}$ as follows
+\begin{equation}
+  \begin{aligned}
+    y = \underbrace{\frac{b+a}{2}}_{\mathrm{shift}} + \underbrace{\frac{b-a}{2}}_{\mathrm{scale}} \xi && \mathrm{and} && dy = \frac{b-a}{2}\,d\xi.
+  \end{aligned}
+\end{equation}
+Using the above transformation in~\eqref{eqn:legendre-quadrature-form} results in
+\begin{equation}
+  \begin{aligned}
+    \int_{a}^{b}  \underbrace{\frac{1}{b-a}}_{\rho_u^y(y)} f(y)\,dy &= \int_{-1}^{+1} \frac{1}{b-a} f \left( \frac{b+a}{2} + \frac{b-a}{2} \xi \right)~\frac{b-a}{2}\,d\xi \\
+    & \approx \frac{1}{2} \sum_{i=1}^M \alpha_i^\xi f\left(\frac{b+a}{2} + \frac{b-a}{2} \xi_i\right) \\
+  \end{aligned}
+\end{equation}
+Comparing with~\eqref{eqn:legendre-quadrature-form} we recognize the new weights as
+\begin{equation}
+  \alpha_i^y = {\alpha_i^\xi}/{2}
+\end{equation}
+which leads to the following discrete approximation for the
+original integral
+\begin{equation}
+  \int_{a}^{b}  \underbrace{\frac{1}{b-a}}_{\rho_u^y(y)} f(y)\,dy \approx \sum_{i=1}^M \alpha_i^y f(y_i) .
+\end{equation}
+\subsubsection{Transforming {Physical} Quadrature to Standard Quadrature}
+Let us now determine the weights $\alpha_i^z$ and nodes $\z_i$ for
+performing numerical integration in standard stochastic domain
+${\mathcal{Z}}$ for uniform distribution in $[a,b]$. Using the transformation
+$z=\frac{y-a}{b-a}$ we obtain
+\begin{equation}
+  \begin{aligned}
+    \int_{a}^{b} f(y)~{\frac{1}{b-a}}\,dy = \int_{0}^{1} f(a + (b-a) z)  { (1)}\,dz.
+\end{aligned}
+\end{equation}
+Thus the corresponding quadrature approximations follow the relation
+\begin{equation}
+  \begin{aligned}
+    \sum_{i=1}^M \alpha_i^y f(y_i) = \sum_{i=1}^M \alpha_i^z f(a + (b-a) z).
+\end{aligned}
+\end{equation}
+We summarize the relations observed from the above development as follows
+\begin{equation}
+  \begin{gathered}
+    \sum_{i=1}^M \alpha_i^y f(y_i) = \sum_{i=1}^M \alpha_i^z f(a + (b-a) z_i) =  \frac{1}{2} \sum_{i=1}^M \alpha_i^\xi f\left(\frac{b+a}{2} + \frac{b-a}{2} \xi_i\right) \\
+    \alpha_i^y = \alpha_i^z = \alpha_i^\xi/{2} \\
+    y_i = a + (b-a) z_i = \frac{b+a}{2} + \frac{b-a}{2} \xi_i
+\end{gathered}
+\end{equation}
+
+\subsection{Exponential Distribution : Gauss--Laguerre Quadrature}
+Consider two random functions $f_1(y)$ and $f_2(y)$ where $y \sim {{\mathcal{E}}(\mu,\beta)} \in {\mathcal{Y}}$. Using the definition of inner product and transformation of variables
+\begin{equation}
+  \begin{aligned}
+    \sinner{f_1(y)}{f_2(y)}_{\rho_e^y(y)}^{{\mathcal{Y}}} & = \int_{\mu}^{+\infty} f_1(y) \frac{1}{\beta} \exp\left( - \frac{y - \mu}{\beta}\right)f_2(y) \, dy  \\
+    & = \int_{-\infty}^{+\infty} f_1\left( \mu + \sigma z \right) \frac{\exp\left(-\frac{1}{2}\left(z\right)^2\right)}{\sqrt{2\pi}}  f_2\left( \mu + \sigma z \right) \, dz \\
+    & = \sinner{f_1\left( \mu + \sigma z \right)}{f_2\left( \mu + \sigma z \right)}_{{\rho}_e^z(z)}^{{\mathcal{Z}}}\\
+%    & = \sinner{\underline{f_1}\left( z \right)}{\underline{f_2}\left(  z \right)}_{{\rho}_e^z(z)}^{{\mathcal{Z}}}
+  \end{aligned}
+\end{equation}
+%% Consider two functions $f_3(z)$ and $f_4(z)$ where $z \sim {{\mathcal{N}}(0,1)} \in {\mathcal{Z}}$. Using the definition of
+%% inner product and transformation of variables
+%% \begin{equation}
+%%   \begin{aligned}
+%%     \sinner{f_3\left(z\right)}{f_4\left(z\right)}_{{\rho}_e^z(z)}^{{\mathcal{Z}}} & = \int_{-\infty}^{+\infty} f_3 \left(z\right) \frac{\exp\left(-\frac{1}{2}\left(z\right)^2\right)}{\sqrt{2\pi}}  f_4\left(z\right) \, dz \\
+%%     & = \int_{-\infty}^{+\infty} f_3 \left(\frac{y-\mu}{\sigma}\right) \frac{\exp\left(-\frac{1}{2}\left(\frac{y-\mu}{\sigma}\right)^2\right)}{\sigma \sqrt{2\pi}}  f_4 \left(\frac{y-\mu}{\sigma}\right) \, dy \\
+%%     & = \sinner{f_3\left( \frac{y-\mu}{\sigma} \right)}{f_4\left( \frac{y-\mu}{\sigma} \right)}_{\rho_e^y(y)}^{{\mathcal{Y}}} \\
+%%     & = \sinner{\underline{f_3}\left( y \right)}{\underline{f_4}\left(y \right)}_{\rho_e^y(y)}^{{\mathcal{Y}}}
+%%   \end{aligned}
+%% \end{equation}
+%%
+\subsubsection{Transforming Nonstandard to {Physical} Quadrature}
+Gauss--Laguerre quadrature provides approximation for integrals of the form
+\begin{equation}\label{eqn:laguerre-quadrature-form}
+  \sinner{1(x)}{f(x)}_{\rho_e^x(x)}^{{\mathcal{X}}} = \int_{0}^{\infty} \exp(-x)f(x)\,dx \approx \sum_{i=1}^M \alpha_i^x f(x_i).
+\end{equation}
+The Gauss--Laguerre quadrature provides corresponding nodes $x_i$ and weights $\alpha_i^x$. % -- which can not be directly applied to inner products/integrals arising in the context of stochastic computations as these are defined in {physical} probabilistic domain ${\mathcal{Y}}$.
+Let us consider the transformation of the above integral from $\mathcal{X}$ to $\mathcal{Y}$.
+For this let us perform transformation of variables by defining
+\begin{equation}
+  \begin{aligned}
+    x = \frac{y - \mu}{\beta} && \mathrm{and} && dx = \frac{dy}{\beta}.
+  \end{aligned}
+\end{equation}
+Rearranging this, we get
+\begin{equation}
+  \begin{aligned}
+    y = \mu +  \beta x && \mathrm{and} && dy = \beta dx.
+  \end{aligned}
+\end{equation}
+Using the above transformations, the integral becomes
+\begin{equation}
+  \int_{0}^{\infty} \exp(-x)f(x)\,dx = \int_{0}^{\infty} \frac{1}{\beta}\exp\left(-\frac{y-\mu}{\beta}\right)f\left(\frac{y-\mu}{\beta}\right)\,dy
+\end{equation}
+
+%% With this transformation~\eqref{eqn:hermite-quadrature-form} becomes
+%% \begin{equation}
+%%   \begin{aligned}
+%%     \int_{-\infty}^{\infty} f(y) \frac{\mathrm{e}^{-\frac{1}{2}\left(\frac{y-\mu}{\sigma}\right)^2}}{\sigma \sqrt{2\pi}}\,dy & =
+%%     \int_{-\infty}^{\infty} f(\mu + x \sigma \sqrt{2}) \frac{\mathrm{e}^{-x^2}}{\sigma \sqrt{2\pi}}~(\sigma \sqrt{2})\,dx \\
+%% %    & = \int_{-\infty}^{\infty} f(\mu + x \sigma \sqrt{2}) \frac{\mathrm{e}^{-x^2}}{\sqrt{\pi}}\,dx \\
+%%     & \approx \frac{1}{\sqrt{\pi}} \sum_{i=1}^M \alpha_i^x f(\mu +  \sigma \sqrt{2} x_i).
+%% \end{aligned}
+%% \end{equation}
+%%
+%%
+
+\subsubsection{Transforming {Physical} Quadrature to Standard Quadrature}
+For this let us perform transformation of variables by defining
+\begin{equation}
+  \begin{aligned}
+    z = \frac{y - \mu}{\beta} && \mathrm{and} && dz = \frac{dy}{\beta}.
+  \end{aligned}
+\end{equation}
+Rearranging this, we get
+\begin{equation}
+  \begin{aligned}
+    y = \mu +  \beta z && \mathrm{and} && dy = \beta dz.
+  \end{aligned}
+\end{equation}
+Using the above transformations, the integral becomes
+\begin{equation}
+  \int_{0}^{\infty} \exp(-z)f(z)\,dz = \int_{0}^{\infty} \frac{1}{\beta}\exp\left(-\frac{y-\mu}{\beta}\right)f\left(\frac{y-\mu}{\beta}\right)\,dy
+\end{equation}
+We summarize the relations observed from the above development as follows
+\begin{equation}
+  \begin{gathered}
+    \sum_{i=1}^M \alpha_i^y f(y_i) = \sum_{i=1}^M \alpha_i^z f(\mu + \beta z_i) =  \sum_{i=1}^M \alpha_i^x f\left( \mu + \beta x_i \right) \\
+    \alpha_i^y = \alpha_i^z = \alpha_i^x \\
+    y_i = \mu + \beta z_i = \mu + \beta x_i
+\end{gathered}
+\end{equation}
+
+%\subsection{Process of determining the weights and nodes}
+%{Add notes from Dr. Grinfeld lectures}
+
+\section{Orthonormal Polynomials as Basis Functions}
+%\subsection{Orthonormal Basis Spanning the Probabilistic Space}
+%Any function space space can be spanned using a set of distinct basis functions and
+Our ultimate goal is to construct the probabilistic space  ${\cal{Y}}$ using a set of $N$ basis functions as
+\begin{equation}
+  {\mathcal{Y}} = \mathrm{span}\{\widehat{\psi}_0^y({y}), \widehat{\psi}_1^y({y}), \ldots, \widehat{\psi}_N^y({y})\}.
+\end{equation}
+Here, the notation $\widehat{\cdot}$ represents the orthogonality and normality of polynomials, similar in purpose to Cartesian unit vectors $\widehat{e}_x, \widehat{e}_y$, and $\widehat{e}_z$, 
+and the superscript denotes the variable $y$ that acts as argument.
+There are numerous possibilities for the choice of basis functions and their corresponding supports (local and global supports).
+We consider only polynomial functions with global support in this work.
+%An univariate basis can be extended to multivariate basis using tensor product and other procedures.
+Although we can select any set of independent basis functions (for example ${\mathcal{Y}} = \mathrm{span}\{1, y, y^2, \ldots, y^N \}$), by construction we intend to make the basis functions $\widehat{\psi}^y(y)$ orthonormal to one another, which turns out to be efficient when decomposing (comparing) two stochastic functions, say $f(y)$ and $g(y)$ from the probabilistic domain with PDF as the weight.
+The decomposition coefficients are directly obtained in an orthonormal basis compared to a non-orthonormal basis where a system of equations needs to be solved to obtain such coefficients.
+Orthonormality of two basis functions $\widehat{\psi}_i^y(y)$ and $\widehat{\psi}_j^y(y)$ is mathematically written as
+\begin{equation}
+  \label{eqn:orthonormality_definition_1}
+  \sinner{\widehat{\psi}_i^y(y)}{\widehat{\psi}_j^y(y)}_{w^y(y)}^{\mathcal{Y}}
+  = \int_{\mathcal{Y}} \widehat{\psi}_i^y(y) w^y(y) \widehat{\psi}_j^y(y)~dy
+  = \begin{cases}
+    1 & \mathrm{if}  \, i = j
+    \\
+    0 & \mathrm{if} \, i \neq j
+  \end{cases},
+\end{equation}
+where $w^y(y) \geq 0$ for $y \in {\mathcal{Y}}$ is a non-zero weighting function in probabilistic domain ${\mathcal{Y}}$.  The inner product~\eqref{eqn:orthonormality_definition_1} can be interpreted as a \emph{weighted-inner product} corresponding to a positive definite weight function $w^y(y)$.
+If $w^y(y)=1$ we get the standard inner product.
+The probability density functions (PDF) (denoted as $\rho^y(y)$) are very useful choice for weight functions as they are positive-define.
+%Moreover, if we use the PDF as weighting function in evaluating inner products, we are essentially encoding probability information into the construction of space itself.
+The orthonormal polynomial set is derived for standard distributions and transformation of variables is used to apply them for {physical} domain.
+The standardization is usually done with zero location and unit stretch as distribution parameters.
+The PDFs used in this work are listed in Table~\ref{tab:pdf-functions}.
+\begin{table}[h!]
+  \caption{{Physical} and standard probability density functions.}
+  \centering
+  \scalebox{0.9}{
+  \begin{tabular}{ccccc}
+    \toprule
+    Distribution    & Notation & $\rho^y(y)$ & Standardization & $\rho^z(z)$ \\
+    \midrule
+    Gaussian/Normal & ${{\mathcal{N}}(y;\mu,\sigma)}$
+    & $\dfrac{1}{\sigma \sqrt{2\pi}} \exp\left[{-\dfrac{1}{2}\left(\dfrac{y-\mu}{\sigma}\right)^2}\right]$
+    & $z = \dfrac{y-\mu}{\sigma}$ & $\dfrac{1}{\sqrt{2\pi}} \exp \left( {-\dfrac{1}{2}{z}^2}\right)$ \\\\
+    Uniform         & ${{\mathcal{U}}(y;a,b)}$ & $\dfrac{1}{b-a}$ & $z = \dfrac{y-a}{b-a}$ & 1 \\\\
+    Exponential     & ${{\mathcal{E}}(y;\mu,\beta)}$ & $\frac{1}{\beta}\exp\left[-\left(\frac{y-\mu}{\beta}\right)\right]$ & $z = \dfrac{y-\mu}{\beta}$ & $\exp(-z)$ \\
+    \bottomrule
+  \end{tabular}}
+  \label{tab:pdf-functions}
+\end{table}
+
+%\section{Construction of Probabilistic Space}
+%% %%
+%% %% Let the ${\mathcal{X}}$ spatial domain, ${\mathcal{T}}$ be the temporal domain
+%% %% and ${\mathcal{Y}}$ be the probabilistic domain.  Let the corresponding
+%% %% vector spaces be $\mathbb{X}$, $\mathbb{T}$, and $\mathbb{Y}$.
+%% %% Probabilistic processes can be conveniently expressed within a
+%% %% probabilistic vector space. This vector space can be spanned using a
+%% %% set of distinct basis functions. Infact, there are numerous
+%% %% possibilities for the choice of basis functions and their
+%% %% corresponding supports (local and global). An univariate basis can be
+%% %% extended to multivariate basis using tensor product and other
+%% %% procedures.
+%% %%
+%% %% %\subsection{Univariate Basis}
+%% %% Let $\theta_d(y) : \mathbb{R} \rightarrow \mathbb{R}$ be a monomial of
+%% %% degree $d$ defined as $$\theta_d(y) = \theta(y;d) := y^d.$$ A univariate
+%% %% probabilistic basis set can be formed by defining a set of monomials
+%% %% $\mathcal{M} = \{\theta_d(y)\}_{d=0}^D$, where $D$ is the highest
+%% %% degree of the monomial functions. For example, one possible set is
+%% %% $\mathcal{M} = \{y^0,y^1,y^2,\ldots,y^D\}$ \textcolor{red}{representing a one
+%% %% dimensional probabilistic domain ${\mathcal{Y}}^1$ within a vector space
+%% %% $\mathbb{Y}^D$.} It is noted that $D$ is the number of probabilistic
+%% %% degrees of freedom in this univariate case. If the basis set $\mathcal{M} = \{1\}$
+%% %% one recovers the deterministic case where the random variable is a
+%% %% mere constant, corresponding to zero probabilistic degree of freedom.
+%% %% Choosing a higher degree allows for increased flexibility in
+%% %% representation of the behaviour of random variable. However, the
+%% %% required degree of expansion is not known aproiri, but in practice
+%% %% comes from computational budget considerations.
+%% %%
+%% %%
+
+%% \begin{table}
+%%   \caption{Orthogonal Hermite and Legendre polynomials from
+%%     Gram-Schmidt processing using PDF as weight functions.}
+%%   \medskip
+%%   \centering \scalebox{1.0}{
+%%     \begin{tabular}{c|cc}
+%%       \toprule
+%%       Weight & Gaussian & Uniform \\
+%%       \midrule
+%%       Degree $d$ & Hermite & Legendre \\
+%%       \midrule
+%%       Notation & $H_d(y)$ & $P_d(y)$ \\
+%%       \midrule
+%%       0 & $1$ & $1$ \\
+%%       1 & $y$ & $y$ \\
+%%       2 & $y^2-1$ & $(3y^2-1)/2$ \\
+%%       3 & $y^3-3x$ & $(5y^3-3y)/2$ \\
+%%       \vdots & \vdots & \vdots \\
+%%       d & $yH_{d-1}(y)-(d-1)H_{d-2}(y)$ &  $\dfrac{(2d-1) y P_{d-1}(y) - (d-1)P_{d-2}(y)}{d}$\\
+%%       \bottomrule
+%%     \end{tabular}
+%%   }
+%%   \label{tab:butcher_tableau_dirk}
+%% \end{table}
+%%
+
+\subsection{Orthonormal Hermite Polynomials}\label{sec:hermite-polynomials}
+Let $z$ be the standardized normal random variable $z = \frac{y-\mu}{\sigma}$.
+The applicable weight function is the standardized probability density function~\eqref{eqn:standard-normal-pdf}.
+The first five Hermite polynomials are
+\begin{equation}
+  \begin{aligned}
+    \overline{H}_0^z(z) & = 1 \\
+    \overline{H}_1^z(z) & = z \\
+    \overline{H}_2^z(z) & = z^2 - 1 \\
+    \overline{H}_3^z(z) & = z^3 - 3z \\
+    \overline{H}_4^z(z) & = z^4 - 6z^2 + 3 \\
+  \end{aligned}
+\end{equation}
+These Hermite polynomials follow two term recursive relation
+\begin{equation}
+  \overline{H}_d^z(z) = z~\overline{H}_{d-1}^z(z)-(d-1)\overline{H}_{d-2}^z(z)
+\end{equation}
+where $d$ is the degree of the polynomial.
+
+\paragraph*{Orthogonality of Hermite polynomials.}
+It is easy to see that these Hermite polynomials are orthogonal to each other with Gaussian PDF as the weight.
+For example
+\begin{equation}
+  \begin{aligned}
+    \sinner{\overline{H}_0^z(z)}{\overline{H}_1^z(z)}_{{\rho}_n^z(z)}^{\mathcal{Z}} & = \int_{-\infty}^{\infty} (1) \left(\frac{\exp^{-\frac{{z}^2}{2}}}{\sqrt{2\pi}} \right)  ^z(z) ~ dz  = 0 \\
+    \sinner{\overline{H}_1^z(z)}{\overline{H}_2^z(z)}_{{\rho}_n^z(z)}^{\mathcal{Z}} & = \int_{-\infty}^{\infty} (z) \left(\frac{\exp^{-\frac{{z}^2}{2}}}{\sqrt{2\pi}} \right)  (z^2-1) ~ dz  = 0 \\
+    \sinner{\overline{H}_3^z(z)}{\overline{H}_2^z(z)}_{{\rho}_n^z(z)}^{\mathcal{Z}} & = \int_{-\infty}^{\infty} (z^3-3z) \left(\frac{\exp^{-\frac{{z}^2}{2}}}{\sqrt{2\pi}} \right)  (z^2-1) ~ dz  = 0 \\
+  \end{aligned}
+\end{equation}
+This is due to the symmetry of the integrand with respect to the horizontal $z$-axis.
+
+\paragraph*{Normality  of Hermite polynomials.}
+The squared length (norm) of each polynomial can be found as
+\begin{equation}
+  \begin{aligned}
+    \sinner{\overline{H}_0^z(z)}{\overline{H}_0^z(z)}_{{\rho}_n^z(z)}^{\mathcal{Z}} & = \int_{-\infty}^{\infty} (1) \left(\frac{\exp^{-\frac{{z}^2}{2}}}{\sqrt{2\pi}} \right)  (1) ~ dz  = 0 = 0! \\
+    \sinner{\overline{H}_1^z(z)}{\overline{H}_1^z(z)}_{{\rho}_n^z(z)}^{\mathcal{Z}} & = \int_{-\infty}^{\infty} (z) \left(\frac{\exp^{-\frac{{z}^2}{2}}}{\sqrt{2\pi}} \right)  ^z(z) ~ dz  = 1 = 1! \\
+    \sinner{\overline{H}_2^z(z)}{\overline{H}_2^z(z)}_{{\rho}_n^z(z)}^{\mathcal{Z}} & = \int_{-\infty}^{\infty} (z^2-1) \left(\frac{\exp^{-\frac{{z}^2}{2}}}{\sqrt{2\pi}} \right)  (z^2-1) ~ dz  = 2 = 2! \\
+    \sinner{\overline{H}_3^z(z)}{\overline{H}_3^z(z)}_{{\rho}_n^z(z)}^{\mathcal{Z}} & = \int_{-\infty}^{\infty} (z^3-3z) \left(\frac{\exp^{-\frac{{z}^2}{2}}}{\sqrt{2\pi}} \right)  (z^3-3z) ~ dz  = 6 = 3! \\
+    \sinner{\overline{H}_4^z(z)}{\overline{H}_4^z(z)}_{{\rho}_n^z(z)}^{\mathcal{Z}} & = \int_{-\infty}^{\infty} (z^4 - 6z^2 + 3) \left(\frac{\exp^{-\frac{{z}^2}{2}}}{\sqrt{2\pi}} \right)  (z^4 - 6z^2 + 3) ~ dz  = 24 = 4! \\
+  \end{aligned}
+\end{equation}
+Thus we have the norm of Hermite polynomial of order $d$ as
+\begin{equation}
+  \sinner{\overline{H}_d^z(z)}{\overline{H}_d^z(z)}_{{\rho}_n^z(z)}^{\mathcal{Z}} = d!
+\end{equation}
+Note that the the basis elements $\overline{H}_i^z(z)$ are not of unit length.
+Therefore, we divide each element by its length to make it unit length.
+The resulting orthonormal Hermite polynomials are,
+\begin{equation}
+  \begin{aligned}
+    \widehat{H}_0^z(z) & = 1/\sqrt{0!} \\
+    \widehat{H}_1^z(z) & = z/\sqrt{1!} \\
+    \widehat{H}_2^z(z) & = (z^2 - 1)/\sqrt{2!} \\
+    \widehat{H}_3^z(z) & = (z^3 - 3z)/\sqrt{3!} \\
+    \widehat{H}_4^z(z) & = (z^4 - 6z^2 + 3)/\sqrt{4!} \\
+  \end{aligned}
+\end{equation}
+Thus we have the following property about Hermite polynomials depending upon whether they are normalized
+\begin{equation}
+  \sinner{\overline{H}_i^z(z)}{\overline{H}_j^z(z)}_{{\rho}_n^z(z)}^{\mathcal{Z}} = i!\times\delta_{ij} =
+\begin{cases}
+  i! \quad \mathrm{if~i=j} \\
+  0  \quad \mathrm{~if~i \neq j} \\
+\end{cases}
+\end{equation}
+and
+\begin{equation}
+  \sinner{\widehat{H}_i^z(z)}{\widehat{H}_j^z(z)}_{{\rho}_n^z(z)}^{\mathcal{Z}} = \delta_{ij} =
+\begin{cases}
+  1 \quad \mathrm{if~i=j} \\
+  0 \quad \mathrm{if~i\neq j} \\
+\end{cases}
+\end{equation}
+Figure~\ref{fig:hermite-polynomials} shows the first six Hermite polynomials in normalized and unnormalized forms.
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{hermite-polynomials.pdf}
+    \caption{Hermite}
+  \end{subfigure}
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{unit-hermite-polynomials.pdf}
+    \caption{Unit Hermite}
+  \end{subfigure}
+  \caption{Plot of Hermite and unit Hermite polynomials.}
+  \label{fig:hermite-polynomials}
+\end{figure}
+
+\subsection{Orthonormal Legendre Polynomials}\label{sec:legendre-polynomials}
+By using the uniform probability density function ${\rho}_u^z(z) = 1$ defined in the interval $z \in [0,1]$ we obtain \emph{Legendre orthogonal polynomials} using Gram-Schmidt process.
+The affine transformation $z=\frac{y-a}{b-a}$ can be used for transforming {physical} random variable $y\in [a,b]$ to standard uniform random variable $z \in [0,1]$.
+The first five Legendre polynomials are
+\begin{equation}
+  \begin{aligned}
+    \overline{P}_0^z(z) & = 1 \\
+    \overline{P}_1^z(z) & = 2z-1 \\
+    \overline{P}_2^z(z) & = 6z^2 -6z + 1 \\
+    \overline{P}_3^z(z) & = 20z^3 - 30z^2 +12z - 1 \\
+    \overline{P}_4^z(z) & = 70z^4 - 140z^3 +90z^2 -20z + 1 \\
+  \end{aligned}
+\end{equation}
+The Legendre polynomials can be obtained using the relation
+\begin{equation}
+  \overline{P}_d^z(z) = (-1)^d \sum_{k=0}^d \begin{pmatrix}d \\ k\end{pmatrix} \begin{pmatrix} d + k \\ k\end{pmatrix} (-z)^k
+\end{equation}
+where $d$ is the degree of the polynomial.
+
+\paragraph*{Orthogonality of Legendre polynomials.}
+It is easy to see that these Legendre polynomials are orthogonal to each other when weighed using the standard uniform probability density function ${\rho}_u^z(z)$.
+For example
+\begin{equation}
+  \begin{aligned}
+    \sinner{\overline{P}_0^z(z)}{\overline{P}_1^z(z)}_{{\rho}_u^z(z)}^{\mathcal{Z}} & = \int_{0}^{1} (1) (1) (2z-1) ~ dz  = 0 \\
+    \sinner{\overline{P}_1^z(z)}{\overline{P}_2^z(z)}_{{\rho}_u^z(z)}^{\mathcal{Z}} & = \int_{0}^{1} (2z-1) (1) (6z^2 -6z + 1) ~ dz  = 0 \\
+    \sinner{\overline{P}_3^z(z)}{\overline{P}_2^z(z)}_{{\rho}_u^z(z)}^{\mathcal{Z}} & = \int_{0}^{1} (20z^3 - 30z^2 +12z - 1) (1) (6z^2 -6z + 1) ~ dz  = 0 \\
+  \end{aligned}.
+\end{equation}
+This is due to the symmetry of the integrand with respect to the midpoint of the interval $[0,1]$ which is $0.5$.
+
+\paragraph*{Normality of Legendre polynomials.}
+The squared length (norm) of each Legendre polynomial can be found as
+\begin{equation}
+  \begin{aligned}
+    \sinner{\overline{P}_0^z(z)}{\overline{P}_0^z(z)}_{{\rho}_u^z(z)}^{\mathcal{Z}} & = \int_{0}^{1} (1)(1)(1)~ dz  = 1 = \frac{1}{2(0)+1} \\
+    \sinner{\overline{P}_1^z(z)}{\overline{P}_1^z(z)}_{{\rho}_u^z(z)}^{\mathcal{Z}} & = \int_{0}^{1} (2z-1)(1)(2z-1)~ dz  = \frac{1}{3} = \frac{1}{2(1)+1} \\
+    \sinner{\overline{P}_2^z(z)}{\overline{P}_2^z(z)}_{{\rho}_u^z(z)}^{\mathcal{Z}} & = \int_{0}^{1} (6z^2 -6z + 1)(1)(6z^2 -6z + 1)~ dz  = \frac{1}{5} = \frac{1}{2(2)+1} \\
+  \end{aligned}
+\end{equation}
+Thus we have the norm of Legendre polynomial of order $d$ as
+\begin{equation}
+  \sinner{\overline{P}_d^z(z)}{\overline{P}_d^z(z)}_{{\rho}_u^z(z)}^{\mathcal{Z}} = \frac{1}{2(d)+1}.
+\end{equation}
+Therefore, we can define unit orthogonal Legendre polynomials using normalization
+\begin{equation}
+  \begin{aligned}
+    \widehat{P}_d^z(z) & =  \overline{P}_d^z(z) \sqrt{(2(d)+1)}.
+  \end{aligned}
+\end{equation}
+Following the above rule, the first few orthonormal Legendre polynomials are the following
+\begin{equation}
+  \begin{aligned}
+    \widehat{P_0^z}(z) & = \sqrt{1}(1) \\
+    \widehat{P_1^z}(z) & = \sqrt{3}(2z-1) \\
+    \widehat{P_2^z}(z) & = \sqrt{5}(6z^2 -6z + 1) \\
+    \widehat{P_3^z}(z) & = \sqrt{7}(20z^3 - 30z^2 +12z - 1) \\
+    \widehat{P_4^z}(z) & = \sqrt{9}(70z^4 - 140z^3 +90z^2 -20z + 1)\\
+  \end{aligned}
+\end{equation}
+In summary, we have the following property about orthogonal and orthonormal Legendre polynomials
+\begin{equation}
+  \sinner{\overline{P}_i^z(z)}{\overline{P}_j^z(z)}_{{\rho}_u^z(z)}^{\mathcal{Z}} = \frac{1}{2(i)+1}\times\delta_{ij} =
+  \begin{cases}
+    \frac{1}{2(i)+1} \quad \mathrm{if~i=j} \\
+    0  \quad \mathrm{~if~i \neq j} \\
+  \end{cases}
+\end{equation}
+and
+\begin{equation}
+  \sinner{\widehat{P}_i^z(z)}{\widehat{P}_j^z(z)}_{{\rho}_u^z(z)}^{\mathcal{Z}} = \delta_{ij} =
+  \begin{cases}
+    1 \quad \mathrm{if~i=j} \\
+    0 \quad \mathrm{if~i \neq j} \\
+  \end{cases}
+\end{equation}
+Figure~\ref{fig:legendre-polynomials} shows the first six Legendre polynomials in normalized and unnormalized forms.
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{legendre-polynomials.pdf}
+    \caption{Legendre}
+  \end{subfigure}
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{unit-legendre-polynomials.pdf}
+    \caption{Unit Legendre}
+  \end{subfigure}
+  \caption{Plot of Legendre and unit Legendre polynomials.}
+  \label{fig:legendre-polynomials}
+\end{figure}
+
+\subsection{Orthonormal Laguerre Polynomials}\label{sec:laguerre-polynomials}
+The Laguerre polynomials are derived using standard exponential
+PDF~\eqref{eqn:standard-exponential-pdf} as the weight function for
+orthogonalization. The first five orthogonal Laguerre polynomials are
+\begin{equation}
+  \begin{aligned}
+    \overline{L}_0^z(z) & = +1 \\
+    \overline{L}_1^z(z) & = -z + 1 \\
+    \overline{L}_2^z(z) & = +z^2 - 4z + 2  \\
+    \overline{L}_3^z(z) & = -z^3 + 9z^2  - 18z + 6 \\
+    \overline{L}_4^z(z) & = +z^4 - 16z^3 + 72z^2 -96z + 24 \\
+  \end{aligned}
+\end{equation}
+
+\paragraph*{Orthogonality of Laguerre polynomials.}
+It is easy to see that these Laguerre polynomials are orthogonal to each other.
+For example
+\begin{equation}
+  \begin{aligned}
+    \sinner{\overline{L}_0^z(z)}{\overline{L}_1^z(z)}_{{\rho}_e^z(z)}^{\mathcal{Z}} & = \int_{0}^{\infty} (1) \exp\left( {-z} \right) (-z+1) ~ dz  = 0 \\
+    \sinner{\overline{L}_1^z(z)}{\overline{L}_2^z(z)}_{{\rho}_e^z(z)}^{\mathcal{Z}} & = \int_{0}^{\infty} (-z+1) \exp \left( {-z} \right) (+z^2 - 4z + 2) ~ dz  = 0 \\
+    \sinner{\overline{L}_3^z(z)}{\overline{L}_2^z(z)}_{{\rho}_e^z(z)}^{\mathcal{Z}} & = \int_{0}^{\infty} (-z^3 + 9z^2  - 18z + 6) \exp\left( {-z} \right)  (+z^2 - 4z + 2) ~ dz  = 0 \\
+  \end{aligned}
+\end{equation}
+
+\paragraph*{Normality  of Laguerre polynomials.}
+The squared length (norm) of each Laguerre polynomial can be found as
+\begin{equation}
+  \begin{aligned}
+    \sinner{\overline{L}_0^z(z)}{\overline{L}_0^z(z)}_{{\rho}_e^z(z)}^{\mathcal{Z}} & = \int_{0}^{\infty} (1)^2 \exp \left( -z \right)~dz  = 0!^2  \\
+    \sinner{\overline{L}_1^z(z)}{\overline{L}_1^z(z)}_{{\rho}_e^z(z)}^{\mathcal{Z}} & = \int_{0}^{\infty} (-z+1)^2 \exp \left( -z \right)~dz  = 1!^2  \\
+    \sinner{\overline{L}_2^z(z)}{\overline{L}_2^z(z)}_{{\rho}_e^z(z)}^{\mathcal{Z}} & = \int_{0}^{\infty} (+z^2 - 4z + 2)^2 \exp \left( -z \right)~dz = 2!^2 \\
+    \sinner{\overline{L}_3^z(z)}{\overline{L}_3^z(z)}_{{\rho}_e^z(z)}^{\mathcal{Z}} & = \int_{0}^{\infty} (-z^3 + 9z^2  - 18z + 6)^2 \exp \left( -z \right)~dz = 3!^2 \\
+    \sinner{\overline{L}_4^z(z)}{\overline{L}_4^z(z)}_{{\rho}_e^z(z)}^{\mathcal{Z}} & = \int_{0}^{\infty} (+z^4 - 16z^3 + 72z^2 -96z + 24)^2 \exp \left( -z \right)~dz = 4!^2 \\
+  \end{aligned}
+\end{equation}
+Thus we have the norm of Laguerre polynomial of order $d$ as
+\begin{equation}
+  \sinner{\overline{L}_d^z(z)}{\overline{L}_d^z(z)}_{{\rho}_e^z(z)}^{\mathcal{Z}} = d!^2.
+\end{equation}
+Therefore, we can define unit orthogonal Laguerre polynomials using normalization
+\begin{equation}
+  \begin{aligned}
+    \widehat{L}_d^z(z) & = \frac{\overline{L}_d^z(z)}{d!}.
+  \end{aligned}
+\end{equation}
+Following the above rule, the first few orthonormal Laguerre polynomials are the following
+\begin{equation}
+  \begin{aligned}
+    \widehat{L}_0^z(z) & = \frac{1}{0!}(1) \\
+    \widehat{L}_1^z(z) & = \frac{1}{1!}(-z + 1) \\
+    \widehat{L}_2^z(z) & = \frac{1}{2!}(+z^2 - 4z + 2) \\
+    \widehat{L}_3^z(z) & = \frac{1}{3!}(-z^3 + 9z^2  - 18z + 6) \\
+    \widehat{L}_4^z(z) & = \frac{1}{4!}(+z^4 - 16z^3 + 72z^2 -96z + 24) \\
+  \end{aligned}
+\end{equation}
+In summary, we have the following property about orthogonal and orthonormal Laguerre polynomials
+\begin{equation}
+  \sinner{\overline{L}_i^z(z)}{\overline{L}_j^z(z)}_{{\rho}_e^z(z)}^{\mathcal{Z}} = {i!}^2 \times \delta_{ij} =
+  \begin{cases}
+    {i!}^2 \quad \mathrm{if~i=j} \\
+    0  \quad \mathrm{~if~i \neq j} \\
+  \end{cases}
+\end{equation}
+and
+\begin{equation}
+  \sinner{\widehat{L}_i^z(z)}{\widehat{L}_j^z(z)}_{{\rho}_e^z(z)}^{\mathcal{Z}} = \delta_{ij} =
+  \begin{cases}
+    1 \quad \mathrm{if~i=j} \\
+    0 \quad \mathrm{if~i \neq j} \\
+  \end{cases}
+\end{equation}
+The orthonormal Laguerre polynomials follow two term recursive relation
+\begin{equation}\label{eqn:laguerre-recursion}
+  \widehat{L}_d^z(z) = \dfrac{(2d-1-z)~\widehat{L}_{d-1}^z(z) - (d-1)~\widehat{L}_{d-2}^z(z)}{d}
+\end{equation}
+where $d$ is the degree of the polynomial.
+If one uses the recursion~\eqref{eqn:laguerre-recursion}, there is no additional normalization necessary.
+Figure~\ref{fig:laguerre-polynomials} shows the first six Laguerre polynomials in normalized and unnormalized forms.
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{laguerre-polynomials.pdf}
+    \caption{Laguerre}
+  \end{subfigure}
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{unit-laguerre-polynomials.pdf}
+    \caption{Unit Laguerre}
+  \end{subfigure}
+  \caption{Plot of Laguerre and unit Laguerre polynomials.}
+  \label{fig:laguerre-polynomials}
+\end{figure}
+
+\subsubsection{Orthonormal Basis Set via Gram-Schmidt Process}
+Given a set of initial \emph{non-orthonormal} polynomials spanning the
+standard probabilistic space ${\mathcal{Z}}$, we construct an
+\emph{orthogonal} and \emph{orthonormal} set of polynomial basis
+functions spanning the same space ${\mathcal{Z}}$
+\begin{equation}
+  {\mathcal{Z}} = \underset{initial~set}{\mathrm{span} \{\psi_{i}(z)\}_{i=1}^N} = \underset{orthogonal~set}{\mathrm{span} \{\overline{\psi}_{i}(z)\}_{i=1}^N} = \underset{orthonormal~set}{\mathrm{span}\{{\widehat{\psi}}_{i}(z)\}_{i=1}^N}
+\end{equation}
+This is done using a Gram--Schmidt process. The first step is orthogonalization of initial basis functions which is
+\begin{equation}
+  \overline{\psi}_k^z(z) = {\psi}_k^z(z)  - \sum_{j=1}^{k-1} \left( \dfrac{ \sinner{{\psi}_k^z(z)}{\overline{\psi}_j^z(z)}_{w^z(z)}^{\mathcal{Z}} }{ \sinner{\overline{\psi}_j^z(z)}{\overline{\psi}_j^z(z)}_{w^z(z)}^{\mathcal{Z}} } \right) \overline{\psi}_j^z(z) \quad \forall k = 1, 2, \ldots, N.
+\end{equation}
+The resulting orthogonal polynomial functions $\overline{\psi}_k^z(z)$ need not be of unit length. Thus, the second and final step of Gram--Schmidt process is normalization of
+orthogonal set $\{\overline{\psi}_k^z(z)\}_{k=1}^N$ which is
+\begin{equation}
+  {\widehat{\psi}}_k^z(z) = {\overline{\psi}_k^z(z)}\Bigg/{\sqrt{\sinner{ \overline{\psi}_k^z(z) }{  \overline{\psi}_k^z(z) }_{w^z(z)}^{{\mathcal{Z}}}}} \quad \forall~k = 1, 2, \ldots, N.
+\end{equation}
+Although we can construct an orthonormal set numerically using the above procedure given an initial set of functions and a PDF as weight, it is efficient to derive orthonormal polynomial functions for convenient choices of weighting functions.
+We summarize the orthonormal polynomials derived using Gram--Schmidt process using probability density functions $\rho^z(z)$ as weighting functions $w^z(z)$ in Table~\ref{tab:orthonormal-polynomials}.
+%\begin{landscape}
+\begin{table}[h!]
+  \caption{Orthonormal polynomials for standard probability distributions.}
+  \centering
+  \scalebox{0.85}{
+  \begin{tabular}{ccccc}
+    \toprule
+     {}      & Hermite & Legendre & Laguerre \\
+     \midrule
+     notation &  ${\widehat{H}}_d(z)$ & ${\widehat{P}}_d(z)$ & ${\widehat{L}}_d(z)$ \\
+     weight  & $\dfrac{1}{\sqrt{2\pi}} \exp \left( {-\dfrac{1}{2}{z}^2}\right)$ & 1 &  $\exp(-z)$\\
+     distribution & ${{\mathcal{N}}(z;\mu=0,\sigma=1)}$  & ${{\mathcal{U}}(z;a=0,b=1)}$ & ${{\mathcal{E}}(z;\mu=0,\beta=1)}$ \\
+     \midrule
+     orthogonal set & ${\overline{H}}_d(z)$ & ${\overline{P}}_d(z)$ & ${\overline{L}}_d(z)$ \\
+     \midrule
+     0  & $1$   & $1$      & $1$ \\
+     1  & $z$ & $2z-1$ & $-z +1$\\
+     \vdots &      \vdots &     \vdots &      \vdots \\
+     $d$  & $z\overline{H}_{d-1}^z(z) - (d-1)\overline{H}_{d-2}^z(z)$ & $(-1)^d \sum_{k=0}^d \begin{pmatrix}d \\ k\end{pmatrix} \begin{pmatrix} d + k \\ k\end{pmatrix} (-z)^k$ & $\dfrac{(2d-1-z)~\overline{L}_{d-1}^z(z)}{d} $\\
+         &                                                         &                                                                                                       & $ - \dfrac{(d-1) \overline{L}_{d-2}^z(z)}{d}$ \\
+     \midrule
+     normalization & ${\widehat{H}}_d^z(z) = \overline{H}_d^z(z)/\sqrt{d!}$  &  ${\widehat{P}}_d^z(z) = \overline{P}_d^z(z) \sqrt{2d+1}$ & ${\widehat{L}}_d^z(z) = \overline{L}_d^z(z)$ \\
+    \bottomrule
+  \end{tabular}
+  }
+  \label{tab:orthonormal-polynomials}
+\end{table}
+%\end{landscape}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%    construction of probabilistic space                             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Construction of Multivariate Basis from Univariate Bases}
+There is no ambiguity in basis construction when there is only one variable : we select polynomials of increasing degree.
+However, when there are more probabilistic random variables, basis construction can take multiple routes.
+For this discussion, let us assume that there are two probabilistic random variables.
+Let $y_1$ be the first probabilistic random variable of assumed degree $d_1$ giving rise to $N_1 = 1 + d_1$ univariate basis entries,
+$y_2$ be the second probabilistic random variable of assumed degree $d_2$ giving rise to $N_2 = 1 + d_2$.
+
+\subsubsection{Tensor Product Rule}
+If we use the tensor product to construct the bivariate basis ${\cal{Y}} = {\cal{Y}}_1 \otimes {\cal{Y}}_2$ we have $N = N_1 \times N_2 = (1 + d_1) \times (1 + d_2)$ bivariate basis functions of the form $\widehat{\psi}^y(y_1,y_2)$.
+In general, if there are $M$ probabilistic random variables we will generate
+\begin{equation}
+  N = \prod_{i=1}^M (1 + d_i)
+\end{equation}
+$M-$variate basis functions of the form  $\widehat{\psi}^y(y_1,y_2,\ldots,y_M)$.
+Clearly, the selection of degree for each probabilistic random variables has a strong impact on the number of terms in the entire basis set, and we must be cautious of the associated computational expenses when solving
+stochastic PDEs.
+
+\subsubsection{Complete Polynomial Rule}
+Let $d_{max} = \mathrm{max}\{ d_1, d_2\}$ be the maximum degree among all random variables.
+We construct the bivariate basis set such that for any basis entry, the sum of degrees does not exceed the maximum degree, that is  $d_1 + d_2 \le d_{max}$.
+This offers a better construction of basis set compared to tensor product construction.
+
+\paragraph*{Illustrative Example:}
+Let $y_1 \sim {\cal{N}(\mu, \sigma)}$ with $d_1 = 2$, and $y_2 \sim {\cal{U}}(a, b)$ with $d_2 = 3$.
+We obtain the following basis set using tensor and complete polynomial based constructions
+\begin{equation}
+  \widehat{\psi}(y_1,y_2) =
+  \begin{pmatrix}
+    \mathrm{\textbf{basis~function}}  & \mathrm{\textbf{total~degree}} & \mathrm{\textbf{construction~type}} \\
+    \widehat{H_0^y}(y) \widehat{P_0^y}(y) & 0 & \mathrm{tensor, complete} \\
+    \widehat{H_0^y}(y) \widehat{P_1^y}(y) & 1 & \mathrm{tensor, complete} \\
+    \widehat{H_1^y}(y) \widehat{P_0^y}(y) & 1 & \mathrm{tensor, complete} \\
+    \widehat{H_0^y}(y) \widehat{P_2^y}(y) & 2 & \mathrm{tensor, complete} \\
+    \widehat{H_1^y}(y) \widehat{P_1^y}(y) & 2 & \mathrm{tensor, complete}\\
+    \widehat{H_2^y}(y) \widehat{P_0^y}(y) & 2 & \mathrm{tensor, complete} \\
+    \widehat{H_0^y}(y) \widehat{P_3^y}(y) & 3 & \mathrm{tensor, complete} \\
+    \widehat{H_1^y}(y) \widehat{P_2^y}(y) & 3 & \mathrm{tensor, complete} \\
+    \widehat{H_2^y}(y) \widehat{P_1^y}(y) & 3 & \mathrm{tensor, complete} \\
+    \widehat{H_1^y}(y) \widehat{P_3^y}(y) & 4 & \mathrm{tensor}  \\
+    \widehat{H_2^y}(y) \widehat{P_2^y}(y) & 4 & \mathrm{tensor}  \\
+    \widehat{H_2^y}(y) \widehat{P_3^y}(y) & 5 & \mathrm{tensor} \\
+  \end{pmatrix}
+\end{equation}
+
+\chapter{Adjoint Based Optimization Under Uncertainty Using Projection and Sampling}\label{ch:ouu-semi-intrusive}
+\setlength{\epigraphwidth}{0.70\textwidth}
+\epigraph{\textit{Because philosophy arises from awe, a philosopher is bound in his way to be a lover of myths and poetic fables. Poets and philosophers are alike in being big with wonder.}}{\textit{Thomas Aquinas}}
+
+\paragraph*{Introduction.}
+We are interested in solving OUU problems embedding optimality, robustness and reliability considerations of the form
+\begin{equation}\label{eqn:ouu-formulation-1}
+  \begin{aligned}
+    & \underset{\xi}{\text{minimize}} & & (1-\alpha) \cdot \mathbb{E}[{F(\xi,\cdot)}] + \alpha \cdot \mathbb{S}[{F(\xi,\cdot)}] \\
+    & \text{subject to}               & & {\mathbb{E}[{G(\xi,\cdot)}] + \beta \cdot       \mathbb{S}[{G(\xi,\cdot)}} ] \le 0 \\
+    &                                 & & \mathbb{E}[{H(\xi,\cdot)}]                                                   =  0 \\
+    & \text{require}                  & & \td{\mathbb{E}[F(\xi,\cdot)]}{\xi},  \td{\mathbb{E}[G(\xi,\cdot)]}{\xi}, \td{\mathbb{E}[H(\xi,\cdot)]}{\xi} \\
+    &                                 & & \td{\mathbb{S}[F(\xi,\cdot)]}{\xi},  \td{\mathbb{S}[G(\xi,\cdot)]}{\xi} \\
+  \end{aligned}
+\end{equation}
+Here, the notation $F(\xi,\cdot)$ is the short hand notation for $F(y(\xi),u(y(\xi)),\dot{u}(y(\xi)),\ddot{u}(y(\xi)))$, acknowledging the presence of state variables and their time derivatives.
+In this chapter, let us explore the computation of the quantities necessary to solve~\eqref{eqn:ouu-formulation-1}, that are the probabilistic moments $\mathbb{E}[F]$, $\mathbb{V}[F]$ , $\mathbb{S}[F]$, and design-variable derivatives of probabilistic moments $\td{\mathbb{E}[F]}{\xi}$, $\td{\mathbb{V}[F]}{\xi}$, $\td{\mathbb{S}[F]}{\xi}$.
+The evaluation of derivatives using the adjoint method has been  discussed in
+Chapters~\ref{ch:background}, \ref{chapter:semianalytical-stationary},
+\ref{chapter:adjoint-ode}, in the context of stationary systems and
+time dependent systems.
+In this chapter, the extension of adjoint method for probabilistic
+systems is presented along the line of sampling and
+semi-intrusive projection.
+
+\section{Nonintrusive Sampling Method}
+\label{sec:non-intrusive-sampling-details}
+The principle of nonintrusive methods is to repeatedly evaluate the function of interest
+at predetermined nodes $y_i$ to compute the probabilistic moments and derivatives.
+The number of quadrature nodes $M$ is chosen based on the computational budget at hand.
+
+%\subsection{Evaluation of Moments and Derivatives}
+
+\subsection{Expectation}
+The expectation of function is
+\begin{equation}
+  \begin{aligned}
+    \mathbb{E}[F(y(\xi),\cdot)] & = \int_{{\mathcal{Y}}} \rho^y(y) F(y(\xi),\cdot) \,dy = \sinner{1(y(\xi))}{F(y(\xi),\cdot)}_{{\rho^y}(y)}^{\mathcal{Y}} \\
+    & \approx \sum_{i=1}^M \alpha_i^y \times 1(y_i) \times F(y_i(\xi),\cdot).
+  \end{aligned}
+\end{equation}
+The derivative of expectation of function with respect to design variables $\xi$ is
+\begin{equation}
+  \begin{aligned}
+    \td{\mathbb{E}[F(y(\xi),\cdot)] }{\xi}
+    & = \td{}{\xi} \left( \int_{{\mathcal{Y}}} \rho^y(y) F(y(\xi),\cdot)  \,dy \right)
+    = \int_{{\mathcal{Y}}} \pd{\left(\rho^y(y) F(y(\xi),\cdot) \right)}{\xi} \,dy \\
+    & = \int_{{\mathcal{Y}}} \rho^y(y) \pd{F(y(\xi),\cdot)}{\xi} \,dy \\
+    & = \mathbb{E}\left[\pd{F(y(\xi),\cdot)}{\xi}\right]  \\
+    &\approx \sum_{i=1}^M \alpha_i^y \times 1(y_i) \times \pd{F(y_i(\xi),\cdot)}{\xi} \\
+    %    & = \td{F}{\xi}_1 \\
+  \end{aligned}
+\end{equation}
+
+\subsection{Variance}
+%\paragraph*{(2)~Variance:}
+The variance of function is
+\begin{equation}
+  \begin{aligned}
+    \mathbb{V}[F(y(\xi),\cdot)] & = \mathbb{E}[F(y(\xi),\cdot) \times F(y(\xi),\cdot)] & - &&\mathbb{E}[F(y(\xi),\cdot)] \times \mathbb{E}[F(y(\xi),\cdot)] \\
+    & = \sinner{1(y(\xi))}{F^2(y(\xi),\cdot)}_{{\rho^y}(y)}^{\mathcal{Y}} & - &&\left( \sinner{1(y(\xi))}{F(y(\xi),\cdot)}_{{\rho^y}(y)}^{\mathcal{Y}} \right)^2 \\
+    & \approx \sum_{i=1}^M \alpha_i^y \times F^2(y_i(\xi),\cdot) & - &&\left( \sum_{i=1}^M \alpha_i^y \times F(y_i(\xi),\cdot) \right)^2
+  \end{aligned}
+\end{equation}
+The derivative of variance is
+\begin{equation}
+  \begin{aligned}
+    \td{ \mathbb{V}[F(y(\xi),\cdot)] }{\xi} & = \mathbb{E}\left[2F(y(\xi),\cdot)\times\pd{F(y(\xi),\cdot)}{\xi}\right] - 2 \mathbb{E}[F(y(\xi),\cdot)] \times \pd{\mathbb{E}[F(y(\xi),\cdot)]}{\xi} \\
+    & = \mathbb{E}\left[2F(y(\xi),\cdot)\times\pd{F(y(\xi),\cdot)}{\xi}\right] - 2 \mathbb{E}[F(y(\xi),\cdot)] \times \mathbb{E}\left[\pd{F(y(\xi),\cdot)}{\xi}\right] \\
+    %    &  \approx \left( \sum_{i=1}^M \alpha_i^y \times 2F(y_i(\xi),\cdot)\times\pd{F(y(\xi),\cdot)}{\xi}\right) \\
+    & \begin{aligned}
+        \approx \left( \sum_{i=1}^M \alpha_i^y \times 2F(y_i(\xi),\cdot)\times\pd{F(y_i(\xi),\cdot)}{\xi}\right) & - 2 \left(\sum_{i=1}^M \alpha_i^y \times F(y_i(\xi),\cdot) \right)  \\
+        & \times \left(\sum_{i=1}^M \alpha_i^y \times \pd{F(y_i(\xi),\cdot)}{\xi} \right)
+      \end{aligned}
+    %    & = \sum_{j=2}^N \td{F}{\xi}_j \\
+  \end{aligned}
+\end{equation}
+
+\subsection{Standard Deviation}
+%\paragraph*{(3)~Standard Deviation:}
+The standard deviation of function is
+\begin{equation}\label{eqn:std-dev-nonintrusive}
+  \begin{aligned}
+    \mathbb{S}[F(y(\xi),\cdot)] & = \sqrt{\mathbb{V}[F(y(\xi),\cdot)} %& = \sum_{j=1}^N \td{F}{\xi}_j \\
+  \end{aligned}
+\end{equation}
+The derivative of standard deviation is
+\begin{equation}\label{eqn:std-dev-deriv-nonintrusive}
+  \begin{aligned}
+    \td{\mathbb{S}[F(y(\xi),\cdot)]}{\xi} & =  \frac{1}{2\,\sqrt{\mathbb{V}[F(y(\xi),\cdot)]}}  \times \pd{\mathbb{V}[F(y(\xi),\cdot)]}{\xi} \\
+  \end{aligned}
+\end{equation}
+The standard deviation and its derivative need no new additional evaluations. % and can be formed from the quantities obtained for the variance.
+Note that all three probabilistic moments and its derivatives are obtained by repeatedly evaluating: $F(y(\xi),\cdot)$, $F^2(y(\xi),\cdot)$ and $\pd{F(y(\xi),\cdot)}{\xi}$.
+No modifications are necessary  to existing source code that computes $F$ and $\pd{F}{\xi}$; therefore, this method is referred to as nonintrusive.
+Figure~\ref{fig:sampling-illustration} illustrates this process; the red band indicates the nonlinear solution process at each node and the green band denotes the summation involved in the computation of quantities of interest.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\linewidth]{sampling-nocolor.pdf}
+  \caption{Graphical illustration of stochastic sampling with four quadrature nodes. }
+  \label{fig:sampling-illustration}
+\end{figure}
+
+
+
+
+
+\section{Semi-Intrusive Stochastic Galerkin Projection Method}\label{sec:semi-intrusive-sgm}
+In this section, we present the mathematical details of a semi-intrusive method of performing Galerkin projection in probabilistic domain to solve OUU problems governed by stochastic partial differential equations.
+We apply the finite element method for spatial discretization, implicit time marching methods for temporal discretization and discrete-adjoint method for sensitivity analysis~\cite{Boopathy2019:Adjoint,Boopathy:2017:SciTech}.
+Our goal is to devise a strategy that parallels the solution process of deterministic problems and extending it into a stochastic analysis framework.
+This will enable the programming implementations to reuse the deterministic capabilities for spatial and temporal discretizations, while addressing the additional probabilistic domain.
+
+
+
+\subsection{Probabilistic Parameters, Basis and Quadrature}
+The creation of probabilistic parameters, setup of multivariate basis functions and quadrature rules used in this work are summarized next (see Chapter~\ref{chapter:uq_math_review} for details).
+
+\paragraph{Probabilistic Parameters:}
+We begin with a deterministic framework for PDEs where we specify coefficients for physical properties, initial and boundary conditions, as well as forcing functions. %, as mathematical model to particular physical scenario.
+In order to incorporate the effect of uncertainties, we model the PDE inputs as variables that follow certain probability distribution types (see Table~\ref{tab:pdf-functions-summary-new}).
+This leaves us with a vector of random variables $y= [y_1, y_2, \ldots, y_M]$, where $M$ is the total number of probabilistically modeled random variables in the problem.
+Note that the random variables do not take the role of PDE inputs, but instead the PDE inputs are \underline{functions of random variables} --  the PDE inputs emerge from probabilistic parameter space.
+
+
+%\begin{landscape}
+\medskip
+\begin{table*}[ht]
+  \caption{Probability distributions, their standardized forms and orthonormal polynomials.}
+  \centering
+  \scalebox{0.8}{
+  \begin{tabular}{c|c|c|c|c}
+    \toprule
+    Distribution    & PDF & \tiny{Standardization} & Standard PDF & Orthonormal Polynomials \\
+    \midrule
+    Gaussian &  $\dfrac{1}{\sigma \sqrt{2\pi}} \exp\left[{-\dfrac{1}{2}\left(\dfrac{y-\mu}{\sigma}\right)^2}\right]$
+    & $z = \dfrac{y-\mu}{\sigma}$ & $\dfrac{1}{\sqrt{2\pi}} \exp \left( {-\dfrac{1}{2}{z}^2}\right)$ & ${\frac{1}{0!}, \frac{z}{1!}, \frac{z^2-1}{2!}}$ \\
+                                 &                                                                  &                                                     &   & (Hermite) \\
+    Uniform          & $\dfrac{1}{b-a}$ & $z = \dfrac{y-a}{b-a}$ & 1 &  ${\sqrt{1}, (2z-1)\sqrt{3}, (6z^2-6z+1)\sqrt{5}}$ \\
+                                 &                                                                  &                                                   &  & (Legendre)    \\
+    Exponential      & $\frac{1}{\beta}\exp\left[-\left(\frac{y-\mu}{\beta}\right)\right]$ & $z = \dfrac{y-\mu}{\beta}$ & $\exp(-z)$ &  ${ \frac{1}{0!}, \frac{-z + 1}{1!}, \frac{z^2 - 4z + 2}{2!}}$ \\
+                                 &                                                                  &                                                   &  & (Laguerre)    \\
+    \bottomrule
+  \end{tabular}}
+  \label{tab:pdf-functions-summary-new}
+\end{table*}
+%\end{landscape}
+
+\paragraph{Probabilistic Basis:}
+We select a set of orthonormal polynomials from the sequence of polynomials listed in Table~\ref{tab:pdf-functions-summary-new}, to serve as univariate basis functions along each probabilistic dimension based on the distribution type.
+The simplest option is to limit the highest allowed degree for each probabilistic variable. %, although advance adaptive selection is also possible.
+An univariate basis can be extended to multivariate basis using tensor product rule, complete polynomial rule or others.
+%Thus, opportunities for reduction of the size of basis section is available both in the selection of univariate set and its extension to multivariate set.
+% The basis function can be interpreted as probabilistic modes
+%Although there is a scope for adaptive selection of these basis functions to potentially reduce the size of the basis set, we resort to the simple strategy where we select basis functions based on degree of polynomials.
+%This is done by picking a highest degree for each parameter
+% Since the scope of this article is to simplify the projection of functions onto a chosen basis, rather than addressing the question of optimal selection of basis, we resort to the simplest method.
+% However, we note that the num
+%In {physical}, given a set of initial \emph{non-orthonormal} polynomials spanning the {physical} probabilistic space ${\mathcal{Y}}$, we can construct an \emph{orthogonal} and \emph{orthonormal} set of polynomial basis functions spanning the same space ${\mathcal{Y}}$ using Gram--Schmidt process such that
+%\begin{equation}
+%  {\mathcal{Y}} = \underset{initial~set}{\mathrm{span} \{\psi_{i}(y)\}_{i=1}^N} = \underset{orthogonal~set}{\mathrm{span} \{\overline{\psi}_{i}(y)\}_{i=1}^N} = \underset{orthonormal~set}{\mathrm{span}\{{\widehat{\psi}}_{i}(y)\}_{i=1}^N}
+%\end{equation}
+Finally, we obtain the following orthonormal multivariate basis set
+\begin{equation}
+  \widehat{\psi}(y) = \{ \widehat{\psi}_{1}(y), \widehat{\psi}_{2}(y), \ldots, \widehat{\psi}_{N}(y) \},
+\end{equation}
+where $N$ is the total number of multivariate basis functions that act as stochastic degrees of freedom that are associated with each deterministic spatio-temporal degrees of freedom.
+%$N$ multiplies the number of spatio-temporal degrees of freedom to define stochastis-spatio-temporal degrees of freedom.
+As a consequence of this property, a trivial unicardinal basis set $\widehat{\psi}(y) = \{ 1 \}$ simply recovers the deterministic problem, which is handy during the verification and validation of stochastic Galerkin framework.
+%The univariate polynomials listed in Table~\ref{} and their multivariate constructions obey orthonormality with respect to the PDF.
+The orthonormality of any two basis functions $\widehat{\psi}_i(y)$ and $\widehat{\psi}_j(y)$ is mathematically defined as
+\begin{equation}
+  \label{eqn:orthonormality_definition}
+  \sinner{\widehat{\psi}_i(y)}{\widehat{\psi}_j(y)}_{\rho^y(y)}^{\mathcal{Y}}
+  = \int_{\mathcal{Y}} \widehat{\psi}_i(y) \rho^y(y) \widehat{\psi}_j(y)~dy
+  = \begin{cases}
+    1 & \mathrm{if}  \;\; i = j
+    \\
+    0 & \mathrm{if} \;\; i \neq j
+  \end{cases},
+\end{equation}
+where $\rho^y(y) \geq 0$ for $y \in {\mathcal{Y}}$ is the probability density function. % corresponding to the distribution type of the random variable $y$.
+%The orthonormal polynomials for probability distribution types used in this work are listed in Table~\ref{tab:pdf-functions} for a standard probabilistic variable $z$ from the standard probabilistic space ${\cal{Z}}$.
+Since, the orthonormal polynomial set is derived based on the standard random variable $z \in {\cal{Z}}$ (see Table~\ref{tab:pdf-functions-summary-new}), the calculus rules for transformation of variables must be used when evaluating inner products in the {physical} probabilistic domain ${\cal{Y}}$.
+Note that the standardization is usually done with zero location and unit stretch as distribution parameters.
+
+\paragraph{Probabilistic Quadrature:}
+We obtain one dimensional quadrature points based on the distribution type and perform tensor product along each dimension to setup multivariate quadrature to approximate integrals arising in projection.
+We refer to the resulting set of weights and quadrature points as $\{\alpha_q, y_q\}_{q=1}^Q$,
+where
+$\alpha_q$ refers to the $q-th$ scalar weight,
+$y_q$ refers to the $q-th$ quadrature point vector, and
+$Q$ is the total number of quadrature points.
+Instead of full tensor product, the sparse quadrature methods can also be used when appropriate smoothness justifications can be made; but these are not explored in this work.
+
+
+%%
+%% \subsection{Deterministic and Stochastic Solution Process:}
+%% In the deterministic process, the spatial discretization of nonlinear PDEs using the finite element method results in a system of nonlinear ordinary differential equations (ODEs) in time of {physical} abstract form $R(t,y(\xi),u(t,y(\xi)),\dot{u}(t,y(\xi)),\ddot{u}(t,y(\xi)))$, where $u(t,\xi)$ are the functions characterizing the physical state of the system, with their corresponding first and second time derivatives, $\dot{u}(t,\xi)$ and $\ddot{u}(t,\xi)$, respectively.
+%% Note that $t$ is the temporal variable from time domain ${\cal{T}}$ and $\xi$ is the design variable from design parameter domain ${\cal{D}}$.
+%% The process of solving these nonlinear ODEs involve solving nonlinear algebraic system of equations at discrete time values.
+%% % The solution of nonlinear ODEs is performed via implicit time integration techniques, where the nonlinear algebraic system at each time step is solved using a  Newton--Raphson technique which requires the formation of residuals and Jacobian matrices.
+%% % The full details of these time integration techniques and their corresponding adjoint implementation are described in Boopathy and Kennedy~\cite{Boopathy2019:Adjoint,Boopathy:2017:SciTech}.
+%% The solution to these nonlinear ODEs is then used for the evaluation of metrics of interest, which are denoted as $F(t,y(\xi),u(t,y(\xi)),\dot{u}(t,y(\xi)),\ddot{u}(t,y(\xi)))$.
+%% %These steps can be stated mathematically as:
+%% %\begin{equation}
+%% %  \begin{aligned}
+%% %    & \underset{u(t,\xi), \dot{u}(t,\xi), \ddot{u}(t,\xi)}{\text{solve}} &  &  R(t,\xi,u(t,\xi),\dot{u}(t,\xi),\ddot{u}(t,\xi)) = 0 & \\
+%% %    & \text{evaluate} &  &   F(t,\xi,u(t,\xi),\dot{u}(t,\xi),\ddot{u}(t,\xi)).  & \\
+%% %  \end{aligned}
+%% %\end{equation}
+%% %In this work, we employ implicit time marching methods described in Boopathy and Kennedy~\cite{Boopathy2019:Adjoint,Boopathy:2017:SciTech}.
+%% %Our goal is to develop a solution methodology that follows a similar setup. Therefore, we follow the process of applying finite element method for the spatial discretization of stochastic PDEs resulting in stochastic ODE system.
+%% In the stochastic analysis process, we have the stochastic PDE models where the input functions are random.
+%% %With this usual solution process in mind, the solution of stochastic PDEs that
+%% %With the inclusion of probabilistically modeled uncertainties, the deterministic ODEs become stochastic ODEs.
+%% %The stochastic analysis problem can be stated mathematically as follows
+%% %\begin{equation}\label{eqn:stochatic-equations}
+%% %  \begin{aligned}
+%% %    & \underset{u(t,y(\xi)), \dot{u}(t,y(\xi)), \ddot{u}(t,y(\xi))}{\text{solve}} &  &  R(t,y(\xi),u(t,y(\xi)),\dot{u}(t,y(\xi)),\ddot{u}(t,y(\xi))) = 0 & \\
+%% %    & \text{evaluate}                     &  &   \mathbb{E}\left[F(t,y(\xi),u(t,y(\xi)),\dot{u}(t,y(\xi)),\ddot{u}(t,y(\xi)))\right]   & \\
+%% %    &                                     &  &   \mathbb{V}\left[F(t,y(\xi),u(t,y(\xi)),\dot{u}(t,y(\xi)),\ddot{u}(t,y(\xi)))\right]   & \\
+%% %    &                                     &  &   \mathbb{S}\,\left[F(t,y(\xi),u(t,y(\xi)),\dot{u}(t,y(\xi)),\ddot{u}(t,y(\xi)))\right]   & \\
+%% %  \end{aligned}
+%% %\end{equation}
+%% %Once the unknown stochastic state fields $u(t,y(\xi))$, $\dot{u}(t,y(\xi))$ and $\ddot{u}(t,y(\xi))$ are determined, the probabilistic moments such as the mean $\mathbb{E}\left[F\right]$, variance $\mathbb{V}\left[F\right]$ and standard deviation $\mathbb{S}\left[F\right]$ can be evaluated.
+%%
+%% The spatial discretization of stochastic PDEs result in stochastic ODE models.
+%%
+%% \begin{figure}[h!]
+%%   \centering
+%%   \includegraphics[width=0.6\linewidth]{analysis-mathematical-view-nocolor.pdf}
+%%   \caption{
+%%     abstract governing equations and metrics of interest.
+%%     foundational solution process, {physical} solution process}
+%%   \label{}
+%% \end{figure}
+%%
+%%
+%two approximations \\
+\subsection{Temporal Physical Analysis}
+The residual of the stochastic governing equations can be written in implicit form as
+\begin{equation}\label{eqn:stochatic-governing-equations-implicit}
+  \begin{aligned}
+    {R}\left(t,y,u(t,y),\dot{u}(t,y),\ddot{u}(t,y)\right) & = 0 \\
+    u(0,y) & = u_0(y) \\
+    \dot{u}(0,y) & = \dot{u}_0(y) \\
+  \end{aligned}
+\end{equation}
+where $u(t,y)$ are the functions characterizing the physical state of the stochastic system, with their corresponding first and second time derivatives, $\dot{u}(t,y)$ and $\ddot{u}(t,y)$, respectively.
+Note that $t$ is the temporal variable from time domain ${\mathcal{T}}$, and $y$ is the random variable from probabilistic domain ${\mathcal{Y}}$. % design variable from design parameter domain ${\mathcal{D}}$ which lies in the probabilistic domain is suppresse for simplicity of notation.
+% The design variables emerge from the probabilistic domain,
+
+%The forward analysis of physics is to determine the unknown state variables and their time derivatives.
+%This process involves the repeated evaluation of residuals of the governing equations and Jacobian matrices driven by Newton--Raphson iterations.
+%We discuss the implicit formation of stochastic states, residuals and Jacobians from their deterministic counterparts as follows.
+
+\subsubsection{Formation of Stochastic States}
+We begin the solution process to~\eqref{eqn:stochatic-governing-equations-implicit} with the following hypothesis for stochastic state functions:
+\begin{equation}
+  \label{eqn:spectral-state-expansion-hypothesis}
+  \begin{aligned}
+    u(t,y)  \approx \sum\limits_{i=1}^N u_{i}(t)\widehat{\psi_i}(y) \\
+    \dot{u}(t,y)  \approx \sum\limits_{i=1}^N \dot{u}_{i}(t)\widehat{\psi_i}(y) \\
+    \ddot{u}(t,y)  \approx \sum\limits_{i=1}^N \ddot{u}_{i}(t)\widehat{\psi_i}(y)
+  \end{aligned}
+\end{equation}
+Eq.~\eqref{eqn:spectral-state-expansion-hypothesis} applies the principle of \emph{superposition} and \emph{separation of variables} for solving differential equations.
+Due to global support of the basis functions $\widehat{\psi}(y)$ used in this work, these can be referred to as spectral expansion of stochastic fields (polynomial chaos expansions).
+%Alternatively, $\widehat{\psi}(y)$ can be constructed so as to have compact support, resulting in a treatment similar to finite-element methodology.
+
+\subsubsection{Formation of Stochastic Residual}\label{sec:stochastic-residuals}
+The stochastic residual vector can be computed using repeated evaluations of the deterministic residual vector for each quadrature point.
+%In principle, the stochastic residuals are formed by projecting deterministic residuals onto each basis function $\widehat{\psi_i}(y)$ in the basis set spanning the probabilistic space ${\mathcal{Y}}$.
+The $i$-th stochastic residual component is the coefficient resulting from the projection of~\eqref{eqn:stochatic-governing-equations-implicit} on the $i$-th basis set component $\widehat{\psi_i}(y)$:
+\begin{equation}\label{eqn:residual-projection-i}
+  \begin{aligned}
+    {\mathcal{R}}_i
+    &\triangleq  \sinner{\widehat{\psi_i}(y)}{R(t, y,  u(t,y),\dot{u}(t,y),\ddot{u}(t,y))}_{{\rho^y}(y)}^{\mathcal{Y}}     \\
+    &\approx \sum\limits_{q=1}^Q \underbrace{\alpha_q  {\widehat{\psi_i}(\pre{y}{q})}}_{\mathrm{scalar}} \underbrace{{R(t,\pre{y}{q}, u(t,\pre{y}{q}),\dot{u}(t,\pre{y}{q}),\ddot{u}(t,\pre{y}{q}))}}_{\mathrm{deterministic~residual~evaluated~at~}\pre{y}{q}}. \\
+  \end{aligned}
+\end{equation}
+We use numerical quadrature to approximate this inner product with $Q$ quadrature points from the probabilistic space ${\mathcal{Y}}$.
+The number of quadrature points necessary can sometimes be determined \emph{a priori} from the polynomial degree of the integrand, and can be used to optimize computations.
+The full stochastic residual vector takes the form:
+\begin{equation}
+  \label{eqn:residual-projection-physical}
+  {\mathcal{R}} =
+  \begin{bmatrix}
+    \pre{\mathcal{R}}{1} \\
+    \pre{\mathcal{R}}{2} \\
+    \vdots \\
+    \pre{\mathcal{R}}{N}
+  \end{bmatrix}
+  =
+  \begin{bmatrix}
+    \sum\limits_{q=1}^Q \alpha_q  {\widehat{\psi}_1(\pre{y}{q})}  {R(t,\pre{y}{q}, u(t,\pre{y}{q}),\dot{u}(t,\pre{y}{q}),\ddot{u}(t,\pre{y}{q}))} \\
+    \sum\limits_{q=1}^Q \alpha_q  {\widehat{\psi}_2(\pre{y}{q})}  {R(t,\pre{y}{q}, u(t,\pre{y}{q}),\dot{u}(t,\pre{y}{q}),\ddot{u}(t,\pre{y}{q}))} \\
+    \vdots \\
+    \sum\limits_{q=1}^Q \alpha_q  {\widehat{\psi}_N(\pre{y}{q})}  {R(t,\pre{y}{q}, u(t,\pre{y}{q}),\dot{u}(t,\pre{y}{q}),\ddot{u}(t,\pre{y}{q}))}\\
+  \end{bmatrix}
+\end{equation}
+The Newton-Raphson iterative process for nonlinear solution~\cite{Boopathy2019:Adjoint,Boopathy:2017:SciTech} of governing equations~\eqref{eqn:stochatic-governing-equations-implicit} uses assumed stochastic state values ${\mathbb{U}}(t) = [u_1(t), u_2(t), \ldots, u_N(t)]$, based on which $u(t,\pre{y}{q})$ are evaluated following~\eqref{eqn:spectral-state-expansion-hypothesis}.
+The size of the stochastic residual vector is $N$ times the size of deterministic residual vector, as a direct consequence of the setup of the probabilistic basis functions.
+In physics-based simulations, one works with element-wise residuals and assembled system-wide residuals; the approach that we present here applies to system-wide \emph{and} element-wise residuals.
+%\item The nonlinearity of the deterministic equations does not impact the implicit process as nonlinearity is encapsulated within
+Based on Eqs.~\eqref{eqn:residual-projection-i} and \eqref{eqn:residual-projection-physical}, we show that the stochastic residual can be computed implicitly using repeated evaluations of the deterministic residual at predetermined parameter values $\pre{y}{q}$.
+When one applies sampling-based approach for uncertainty propagation, the deterministic code is evaluated for samples points $y_q$ based on which statistics of the output metrics are computed as discussed in Section~\ref{sec:non-intrusive-sampling-details}, referring to the class of methods as ``non-intrusive''.
+%Our approach presented here is an amalgamation of
+We refer to our approach as ``semi''-intrusive, because the deterministic simulation codes should have the flexibility to update parameters so as to recompute residuals, which may or may not have been be implemented \emph{a priori} based on the software architecture.
+%The Newton--Raphson iteration for the stochastic system is similar to the
+
+\subsubsection{Formation of Stochastic Jacobian}
+The stochastic Jacobian matrix (the Jacobian matrix of the stochastic ODE/DAE) can be computed using repeated evaluations of the deterministic Jacobian (the Jacobian matrix of the deterministic ODE/DAE) for each quadrature point.
+The block component of the stochastic Jacobian is
+\begin{equation}\label{eqn:jacobianij-projection}
+  \begin{aligned}
+    {\mathcal{J}}_{i,\,j}  %\pd{R_{i}}{u_{j}} =
+    &\triangleq \stinner{\widehat{\psi_i}(y)}{J(t, y,  u(t,y),\dot{u}(t,y),\ddot{u}(t,y))}{\widehat{\psi_j}(y)}_{{\rho^y}(y)}^{\mathcal{Y}}   \\
+    &\approx \sum\limits_{q=1}^Q \underbrace{\alpha_q {\widehat{\psi}_i}(\pre{y}{q}) {\widehat{\psi}_j}(\pre{y}{q})}_{\mathrm{scalar}} \underbrace{J(t,\pre{y}{q}, u(t,\pre{y}{q}),\dot{u}(t,\pre{y}{q}),\ddot{u}(t,\pre{y}{q}))}_{\mathrm{deterministic~Jacobian~evaluated~at~}\pre{y}{q}}
+  \end{aligned}
+\end{equation}
+where $J$ is the deterministic Jacobian and $Q$ is the number of quadrature points.
+The full stochastic Jacobian matrix takes the form
+\begin{equation}\label{eqn:jacobian-projection-physical}
+  {\mathcal{J}} =
+  \begin{bmatrix}
+        {\mathcal{J}}_{1,\,1} & {\mathcal{J}}_{1,\,2} & \ldots & {\mathcal{J}}_{1,\,N} \\
+        {\mathcal{J}}_{2\,1} & {\mathcal{J}}_{2,\,2} & \ldots & {\mathcal{J}}_{2,\,N} \\
+    {\vdots}               & {\vdots}               & \ddots & {\vdots}              \\
+        {\mathcal{J}}_{N,\,1} & {\mathcal{J}}_{N,\,2} & \ldots & {\mathcal{J}}_{N,\,N} \\
+  \end{bmatrix}.
+\end{equation}
+
+\paragraph*{A graphical illustration and scope for parallelism:}
+The formation of stochastic residual and Jacobian through projection is illustrated in Figure~\ref{fig:project-residual-jacobian}.
+As it can be seen, the required items are the basis functions, quadrature nodes with weights and deterministic residual/Jacobian counterparts. 
+The green band refers to the summation involved in quadrature approximation of inner products. 
+Depending on the implementation of the underlying deterministic code, the formation of stochastic residuals and Jacobians can be done in parallel.
+\begin{figure}[h!]
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{projection-residual-nocolor.pdf}
+    \caption{Projection of residual}
+  \end{subfigure}
+  \begin{subfigure}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{projection-jacobian-nocolor.pdf}
+    \caption{Projection of Jacobian}
+  \end{subfigure}
+  \caption{The formation of stochastic residual and Jacobian entries using inner products approximated using quadrature.}
+  \label{fig:project-residual-jacobian}
+\end{figure}
+
+% Notice that there are as many off-diagonal bands as the polynomial degree of the random variable.
+% In this work we use full tensor product space for simplicity, although other constructions such as complete polynomials may be efficient.
+\paragraph*{Sparsity and symmetry:} 
+The question of the sparsity and symmetry of the stochastic Jacobian matrix arises naturally in the interest of efficient computations.
+Since we use normalized basis functions for projection (orthonormal polynomials), we have a symmetry stochastic Jacobian.
+The nonzero entries (sparse entries) of the Jacobian can be determined, if the polynomial degree of the probabilistically modeled PDE inputs is known. This can offer significant computational savings and pave way for matrix-free implementations that are suitable for parallel scaling.
+The sparsity is also dependent on the choice of basis functions, and their ordering.
+The study of sparsity of stochastic Galerkin matrices is reported in \citet{2010:Ernst:SGM}.
+In Section~\ref{sec-jacobian-sparsity}, we perform a study on the sparsity patterns
+resulting from basis selection using tensor-product rule and basis
+selection using complete polynomial rule for different stateless
+Jacobians.
+
+
+%Exploiting this sparsity can eliminate unnecessary computations in the assembly of stochastic Jacobians.
+%Apart from deducing conditions on when the coefficients are nonzero, we also study the numerical aspects such as the minimum possible number of quadrature points for optimal evaluation of inner products.
+%% \begin{figure*}[h!]
+%%   \centering
+%%   \begin{subfigure}{0.49\textwidth}
+%%     \includegraphics[width=\linewidth]{sparsity-y1y2y3y4-neuu-tensor.pdf}
+%%   \end{subfigure}
+%%   \begin{subfigure}{0.49\textwidth}
+%%     \includegraphics[width=\linewidth]{sparsity-y1y2y3y4-neuu-complete.pdf}
+%%   \end{subfigure}
+%%   \caption{Sparsity patterns of the Jacobian matrices resulting from $\ltinner{\widehat{\psi_i}(y)}{y_1 y_2 y_3 y_4}{\widehat{\psi_j}(y)}_{{\rho^y}(y)}^{\mathcal{Y}}$
+%%     for basis sets created using tensor-polynomial rule (left) and complete-polynomial rule (right).}
+%%   \label{fig:jacobian-sparsity}
+%% \end{figure*}
+%%
+
+\subsubsection{Initial Conditions}
+The initial conditions of the stochastic ODE can be formed by reevaluating the deterministic initial conditions for each quadrature point.
+The i-th component of the stochastic initial condition vector is formed as
+\begin{equation}
+  \label{eqn:ic-projection}
+  \sinner{\widehat{\psi}_i({y})}{ u_0(y) }_{\rho^y({y})}^{\mathcal{Y}}
+  \approx \sum\limits_{q=1}^Q \underbrace{\alpha_q \widehat{\psi}_i(\pre{y}{\,q})}_{\mathrm{scalar}} \underbrace{{u_0(\pre{y}{q})}}_{\mathrm{deterministic~ICs~for~}\pre{y}{q}}
+\end{equation}
+The treatment of boundary conditions of the PDE follow in a similar fashion.
+
+% \subsubsection{Boundary Conditions}
+\subsection{Adjoint Sensitivity Analysis}
+% The governing equations for adjoint equations are linear in nature, due to the formation of the Lagrangian  as a linear combination of residuals and quantities of interest.
+For solving the probabilistic OUU problem~\eqref{eqn:ouu-formulation}, we require the derivatives of the expectation, standard deviation and variance of the metrics of interest, with respect to the design variables.
+The adjoint sensitivity analysis involves solving the adjoint equations and forming the total derivative based on the adjoint variables.
+We detail the extension of deterministic adjoint formulation to stochastic adjoint by reusing the deterministic capabilities.
+The deterministic adjoint formulations used here are published in~\citet{Boopathy2019:Adjoint,Boopathy:2017:SciTech}.
+
+%The mathematical relations for the evaluation of probabilistic moments and its derivatives are derived first.
+\subsubsection{Expectation Operator}
+The expectation of metric of interest $F(t, y, u(t,y),\dot{u}(t,y),\ddot{u}(t,y)) )$ denoted as $F(y,\cdot)$ is
+\begin{equation}
+  \begin{aligned}
+    \mathbb{E}[F(y,\cdot)] &= \sinner{\widehat{\psi}_{1}(y)}{F(y,\cdot)}_{{\rho^y}(y)}^{\mathcal{Y}}
+    & \approx \sum\limits_{q=1}^Q \underbrace{ \alpha_q \widehat{\psi}_1(\pre{y}{q})}_{\mathrm{scalar}}\underbrace{{F(\pre{y}{q},\cdot)}}_{\mathrm{deterministic}}
+  \end{aligned}
+\end{equation}
+The deterministic metric is evaluated repeatedly at points corresponding to probabilistic quadrature to obtain the expectation operator.
+The derivative of expectation of the metric with respect to the design variables follows as
+\begin{equation}
+  \td{\mathbb{E}\left[F(y,\cdot)\right]}{\xi} = \sinner{\widehat{\psi}_{1}(y)}{\td{F(y,\cdot)}{\xi}}_{{\rho^y}(y)}^{\mathcal{Y}} \approx \sum\limits_{q=1}^Q \underbrace{\alpha_q \widehat{\psi}_1(\pre{y}{q})}_{\mathrm{scalar}} \underbrace{\td{F(\pre{y}{q},\cdot)}{\xi}}_{\mathrm{deterministic}} .\\
+\end{equation}
+The deterministic adjoint derivative of $F(\pre{y}{q},\cdot)$ is evaluated as
+\begin{equation}
+  \td{F(\pre{y}{q}, \cdot)}{\xi} = \pd{F(\pre{y}{q}, \cdot)}{\xi} + \lambda^T (t, \pre{y}{q}) \pd{R(\pre{y}{q}, \cdot)}{\xi},
+\end{equation}
+where the stochastic adjoint states
+\begin{equation}
+  \begin{aligned}
+    \lambda(t,y)  \approx \sum\limits_{i=1}^N \lambda_{i}(t)\widehat{\psi_i}(y)
+  \end{aligned}
+\end{equation}
+are solved from the linear system
+\begin{equation}\label{eqn:adjoint-system-expectation}
+\begin{bmatrix}
+        {\mathcal{J}}_{1,\,1} & {\mathcal{J}}_{1,\,2} & \ldots & {\mathcal{J}}_{1,\,N} \\
+        {\mathcal{J}}_{2\,1} & {\mathcal{J}}_{2,\,2} & \ldots & {\mathcal{J}}_{2,\,N} \\
+        {\vdots}               & {\vdots}               & \ddots & {\vdots} \\
+        {\mathcal{J}}_{N,\,1} & {\mathcal{J}}_{N,\,2} & \ldots & {\mathcal{J}}_{N,\,N} \\
+  \end{bmatrix}^{T}
+  \begin{bmatrix}
+    \pre{\lambda}{1} \\
+    \pre{\lambda}{2} \\
+    {\vdots} \\
+    \pre{\lambda}{N} \\
+  \end{bmatrix}
+  = -
+  \begin{bmatrix}
+    \pre{ \left(\partial{F(\cdot)} / \partial{u} \right) }{1} \\
+    \pre{ \left(\partial{F(\cdot)} / \partial{u} \right) }{2} \\
+    {\vdots} \\
+    \pre{ \left(\partial{F(\cdot)} / \partial{u} \right) }{N} \\
+  \end{bmatrix}
+\end{equation}
+The right hand side terms are formed by projecting deterministic terms as
+\begin{equation}
+  \begin{aligned}
+    \pre{ \left( \partial{F}/\partial{u} \right) }{i} &= \sinner{\widehat{\psi}_{1}(y)}{\partial{F(y,\cdot)}/\partial{u}}_{{\rho^y}(y)}^{\mathcal{Y}}  \\
+    & \approx \underbrace{\alpha_q \widehat{\psi}_1(\pre{y}{q})}_{\mathrm{scalar}} \underbrace{\partial {F(\pre{y}{q},\cdot)}/\partial{u}}_{\mathrm{determinisic~rhs~at}~\pre{y}{q}} \\
+  \end{aligned}
+\end{equation}
+In time dependent adjoint formulations, the right hand side terms are composed of contributions that are not solely the partial derivatives of metrics $\partial F / \partial u$ (see Chapter~\ref{chapter:adjoint-ode}). 
+In this scenario, the fully formed right hand side can be projected as outlined in ~\eqref{eqn:adjoint-system-expectation}.
+
+
+\subsubsection{Variance Operator}
+The variance is
+\begin{equation}
+  \begin{aligned}
+    \mathbb{V}[F(y,\cdot)] & = \mathbb{E}[F^2(y,\cdot)]  - \mathbb{E}[F(y,\cdot)]^2 \\
+    & = \sinner{\widehat{\psi}_{1}(y)}{F^2(y,\cdot)}_{{\rho^y}(y)}^{\mathcal{Y}} - {\sinner{\widehat{\psi}_{1}(y)}{F(y,\cdot)}_{{\rho^y}(y)}^{\mathcal{Y}}}^2 \\
+    & \approx \sum\limits_{q=1}^Q \underbrace{\alpha_q \widehat{\psi}_1(\pre{y}{\,q})}_{\mathrm{scalar}} \underbrace{{F^2(\pre{y}{q},\cdot)}}_{\mathrm{deterministic}} - \left[ \sum\limits_{q=1}^Q \underbrace{\alpha_q \widehat{\psi}_1(\pre{y}{\,q})}_{\mathrm{scalar}} \underbrace{{F(\pre{y}{q},\cdot)}}_{\mathrm{deterministic}} \right]^2\\
+    % & = \left( {F^2(\cdot)} \right)_{1} - 2  F(\cdot)  \left( {F(\cdot)} \right)_{1} \\
+  \end{aligned}
+\end{equation}
+The derivative of variance follows as
+\begin{equation}
+  \begin{aligned}
+    \td{\mathbb{V}[F(y,\cdot)]}{\xi} & = \td{\mathbb{E}[F^2(y,\cdot)]}{\xi} - 2 \mathbb{E}[F(y,\cdot)] \td{\mathbb{E}[F(y,\cdot)]}{\xi}
+  \end{aligned}
+\end{equation}
+where the first term
+\begin{equation}
+  \begin{aligned}
+    \td{\mathbb{E}[F^2(y,\cdot)]}{\xi} & =  \sinner{\widehat{\psi}_{1}(y)}{2 F(y,\cdot) \td{F(y,\cdot)}{\xi}}_{{\rho^y}(y)}^{\mathcal{Y}} \\
+    & \approx \sum\limits_{q=1}^Q \underbrace{ 2 \alpha_q \widehat{\psi}_{1}(\pre{y}{\,q})}_{\mathrm{scalar}} \underbrace{ F(\pre{y}{q},\cdot) \td{F(\pre{y}{q},\cdot)}{\xi} }_{\mathrm{deterministic}}\\
+  \end{aligned}
+\end{equation}
+The deterministic adjoint derivative of $F^2(\pre{y}{q},\cdot)$ is evaluated as
+\begin{equation}
+  \td{F^2(\pre{y}{q}, \cdot)}{\xi} = \pd{F^2(\pre{y}{q}, \cdot)}{\xi} + \phi^T (t, \pre{y}{q}) \pd{R(\pre{y}{q}, \cdot)}{\xi}.
+\end{equation}
+The stochastic adjoint states
+\begin{equation}
+  \begin{aligned}
+    \phi(t,y)  \approx \sum\limits_{i=1}^N \phi_{i}(t)\widehat{\psi_i}(y)
+  \end{aligned}
+\end{equation}
+are solved from the linear system
+\begin{equation}\label{eqn:adjoint-system-variance}
+  \begin{bmatrix}
+    {\mathcal{J}}_{1,\,1} & {\mathcal{J}}_{1,\,2} & \ldots & {\mathcal{J}}_{1,\,N} \\
+    {\mathcal{J}}_{2\,1} & {\mathcal{J}}_{2,\,2} & \ldots & {\mathcal{J}}_{2,\,N} \\
+    {\vdots}               & {\vdots}               & \ddots & {\vdots} \\
+    {\mathcal{J}}_{N,\,1} & {\mathcal{J}}_{N,\,2} & \ldots & {\mathcal{J}}_{N,\,N} \\
+  \end{bmatrix}^{T}
+  \begin{bmatrix}
+    \pre{\phi}{1} \\
+    \pre{\phi}{2} \\
+        {\vdots} \\
+        \pre{\phi}{N} \\
+  \end{bmatrix}
+  = -
+  \begin{bmatrix}
+    \pre{ \left( \partial{F^2(\cdot)}/\partial{u} \right)}{1} \\
+    \pre{ \left( \partial{F^2(\cdot)}/\partial{u} \right)}{2} \\
+        {\vdots} \\
+        \pre{ \left( \partial{F^2(\cdot)}/\partial{u} \right)}{N} \\
+  \end{bmatrix}
+\end{equation}
+The right hand side terms are formed by projecting deterministic terms as
+\begin{equation}
+  \begin{aligned}
+    \pre{ \left( \pd{F^2(y,\cdot)}{u} \right) }{i} &= \sinner{\widehat{\psi}_{1}(y)}{2F(y,\cdot)\pd{F(y,\cdot)}{u}}_{{\rho^y}(y)}^{\mathcal{Y}}  \\
+    & \approx \underbrace{2 \alpha_q \widehat{\psi}_1(\pre{y}{q})}_{\mathrm{scalar}} \underbrace{ F(\pre{y}{q},\cdot) \pd {F(\pre{y}{q},\cdot)}{u}}_{\mathrm{determinisic~rhs~at}~\pre{y}{q}} \\
+  \end{aligned}
+\end{equation}
+
+\subsubsection{Standard Deviation Operator}
+The standard deviation of a function of interest can be obtained from the variance
+\begin{equation}\label{eqn:std-dev-nonintrusive}
+    \mathbb{S}[F(y,\cdot)] = \sqrt{\mathbb{V}[F(y,\cdot)}.
+\end{equation}
+The derivative of standard deviation is
+\begin{equation}\label{eqn:std-dev-deriv-nonintrusive}
+  \begin{aligned}
+    \td{\mathbb{S}[F(y,\cdot)]}{\xi} & =  \frac{1}{2\,\sqrt{\mathbb{V}[F(y,\cdot)]}}  \cdot \td{\mathbb{V}[F(y,\cdot)]}{\xi} \\
+  \end{aligned}
+\end{equation}
+
+
+% semi-vs intrusive differences in principle abstraction
+
+
+
+
+
+
+
+
+
+
+%% \section{Semi-intrusive Galerkin Method}
+%% In principle, the Galerkin projection method constructs an extended system of equations and solves the larger system
+%% for the probabilistic physical state functions.
+%% \subsection{Probabilistic Moments and Derivatives}
+%% The mathematical relations for the evaluation of
+%% probabilistic moments and its derivatives are derived first.
+%% \paragraph*{(1) Expectation:}
+%% The expectation of a function of interest $F(y,\cdot)$ is
+%% \begin{equation}
+%%   \begin{aligned}
+%%     \mathbb{E}[F(y,\cdot)] & = \int_{{\mathcal{Y}}} \rho(y) F(y,\cdot) \,dy = \sinner{\widehat{\psi_1}(y)}{F(y,\cdot)}_{{\rho}(y)}^{\mathcal{Y}} \\
+%%     & \approx \inner{\widehat{\psi_1}(y)}{\sum\limits_{i=1}^N {}^{i}F(\cdot) \widehat{\psi_i}(y)}_{{\rho}(y)}^{\mathcal{Y}} \\
+%%     & = {}^{1}F \\
+%%   \end{aligned}
+%% \end{equation}
+%% We use the following three facts in the above derivation:
+%% \begin{enumerate}
+%% \item that the first basis entry $\widehat{\psi_1}(y) = 1$,
+%% \item the function of interest $F(y,\cdot)$ is expressed as a summation of finite number of terms in an orthogonal basis with $N$ basis functions
+%%   \begin{equation}
+%%     F(y,\cdot) \approx  \sum\limits_{i=1}^N {}^{i}F(\cdot)\widehat{\psi_i}(y)
+%%   \end{equation}
+%%   where ${}^{i}F$ are the decomposition coefficients of the function $F(y)$ on the basis entry $\widehat{\psi_i}(y)$, and
+%% \item the orthonormality of basis functions
+%% \end{enumerate}
+%% If for some reason (e.g. ordering of basis elements), the first basis entry is not 1, then the mean is the $k$-th decomposition coefficient $\pre{F(\cdot)}{k}$ given that $\widehat{\psi_k}(y)=1$.
+%% In a similar manner the derivative of expectation of the function is obtained as
+%% \begin{equation}
+%%   \begin{aligned}
+%%     \mathbb{E}\left[\td{F(y,\cdot)}{\xi}\right]
+%%     & = \sinner{\widehat{\psi_1}(y)}{\td{F(y,\cdot)}{\xi}}_{{\rho}(y)}^{\mathcal{Y}} \\
+%%     & \approx \inner{\widehat{\psi_1}(y)}{\sum\limits_{i=1}^N \pre{\td{F(\cdot)}{\xi}}{i} \widehat{\psi_i}(y)}_{{\rho}(y)}^{\mathcal{Y}} \\
+%%     & = \pre{\td{F(\cdot)}{\xi}}{1} \\
+%%   \end{aligned}
+%% \end{equation}
+%%
+%% \paragraph*{(2) Variance:}
+%% The variance is computed as
+%% \begin{equation}
+%%   \begin{aligned}
+%%     \mathbb{V}[F(y,\cdot)] & = \mathbb{E}[F(y,\cdot) \times F(y,\cdot)] & - &\quad \mathbb{E}[F(y,\cdot)] \times \mathbb{E}[F(y,\cdot)] \\
+%%     & = \sinner{F(y,\cdot)}{{F(y,\cdot)}}_{{\rho}(y)}^{\mathcal{Y}} & - & \left( \sinner{\widehat{\psi_1}(y)}{{F(y,\cdot)}}_{{\rho}(y)}^{\mathcal{Y}}\right)^2 \\
+%%     & = \sinner{\sum\limits_{i=1}^N \pre{{F(\cdot)}}{i}\widehat{\psi_i}(y)}{\sum\limits_{i=1}^N \pre{{F(\cdot)}}{i}\widehat{\psi_i}(y)}_{{\rho}(y)}^{\mathcal{Y}} & - & \left(\sinner{\widehat{\psi_1}(y)}{\sum\limits_{i=1}^N \pre{\td{F(\cdot)}{\xi}}{i} \widehat{\psi_i}(y)}_{{\rho}(y)}^{\mathcal{Y}} \right)^2\\
+%%     & = \pre{F(\cdot)}{1}^2 + \pre{F(\cdot)}{2}^2 + \pre{F(\cdot)}{3}^2 + \ldots + \pre{F(\cdot)}{N}^2  & - & \pre{F(\cdot)}{1}^2 \\
+%%     & = \sum\limits_{i=2}^N \pre{F(\cdot)}{i}^2
+%%   \end{aligned}
+%% \end{equation}
+%% The variance of derivative of function with respect to design variables are obtained in a similar manner as
+%% \begin{equation}
+%%   \begin{aligned}
+%%     \mathbb{V}\left[\td{F(y,\cdot)}{\xi}\right] & = \mathbb{E}\left[\td{F(y,\cdot)}{\xi} \times \td{F(y,\cdot)}{\xi}\right]  -  \mathbb{E}\left[\td{F(y,\cdot)}{\xi}\right] \times \mathbb{E}\left[\td{F(y,\cdot)}{\xi}\right] \\
+%%     & = \left(\pre{\td{F(\cdot)}{\xi}}{1}\right)^2 + \left(\pre{\td{F(\cdot)}{\xi}}{2}\right)^2 + \left(\pre{\td{F(\cdot)}{\xi}}{3}\right)^2 + \ldots + \left(\pre{\td{F(\cdot)}{\xi}}{N}\right)^2  -  \left(\pre{\td{F(\cdot)}{\xi}}{1}\right)^2 \\
+%%     & = \sum\limits_{i=2}^N \left(\pre{\td{F(\cdot)}{\xi}}{i}\right)^2
+%%   \end{aligned}
+%% \end{equation}
+%% \paragraph*{(3) Standard Deviation:}
+%% The computation of standard deviation is identical to nonintrusive method and follow equations~\eqref{eqn:std-dev-nonintrusive} and ~\eqref{eqn:std-dev-deriv-nonintrusive}.
+%% \subsubsection{Decomposition of Stochastic Functions of Interest}
+%% As derived above, the determination of decomposition coefficients $\pre{F(\cdot)}{i}$ and $\pre{\td{F(\cdot)}{\xi}}{i}$ allows us to evaluate the probabilistic moments and their corresponding design variable derivatives.
+%% The process of decomposing a probabilistic function in probabilistic space involves the projection of that function on to the probabilistic space.
+%% This projection is defined by means of inner products, and we use Gaussian quadrature rules to numerical approximate this inner product.
+%% This can be illustrated schematically as shown in Figure~\ref{fig:projection-function}, where repeated evaluations of the integrand facilitates the evaluation of inner products.
+%% \begin{figure}[h!]
+%%   \centering
+%%   \includegraphics[width=0.8\linewidth]{projection-function.pdf}
+%%   \caption{The decomposition of function of interest and its derivative to produce coefficient involves Gaussian quadrature.}
+%%   \label{fig:projection-function}
+%% \end{figure}
+%%
+%% \subsubsection{Determination of Stochastic States}
+%% Thus far, we abstracted the full dependence of the function of interest; that is $F(y,\cdot)$ is a short hand for $F(y(\xi),t, u(y(\xi),t),\dot{u}(y(\xi),t),\ddot{u}(y(\xi),t))$.
+%% The determination of unknown stochastic state functions $u(y(\xi))$, $\dot{u}(y(\xi))$ and $\ddot{u}(y(\xi))$ is of immediate concern, as it is a prerequisite for the evaluation of quantities of interest $F$ and $\td{F}{\xi}$.
+%% We begin the process with a hypothetical expansion form for the state functions:
+%% \begin{equation}\label{eqn:spectral-state-expansion-hypothesis}
+%%   \begin{aligned}
+%%     u(y,t)        & \approx \sum\limits_{i=1}^N {}^{i}u(t)\widehat{\psi_i}(y) \\
+%%     \dot{u}(y,t)  & \approx \sum\limits_{i=1}^N {}^{i}\dot{u}(t)\widehat{\psi_i}(y) \\
+%%     \ddot{u}(y,t) & \approx \sum\limits_{i=1}^N {}^{i}\ddot{u}(t)\widehat{\psi_i}(y) \\
+%%   \end{aligned}
+%% \end{equation}
+%% Due to global support nature of the basis functions $\widehat{\psi}(y)$ (by choice, for simplicity), we shall term~\eqref{eqn:spectral-state-expansion-hypothesis} as spectral expansion of probabilistic functions in orthonormal basis.
+%% Alternatively, if we define/construct $\widehat{\psi}(y)$ so as to have compact support, it will take a treatment similar to finite-element methodology.
+%% The local finite-element type expansions will function even when there are discontinuities in probabilistic domain.
+%% \paragraph*{(1)~Formation of Residual:}
+%% We solve the residual of governing equations to find the probabilistic state functions. Mathematically, we seek
+%% \begin{equation}
+%%   \begin{aligned}
+%%     R(y,t, u(y,t),\dot{u}(y,t),\ddot{u}(y,t)) = 0 \\
+%%     % R\left( y, t, \sum\limits_{i=1}^N {}^{i}u(t)\widehat{\psi_i}(y), \sum\limits_{i=1}^N {}^{i}\dot{u}(t)\widehat{\psi_i}(y), \sum\limits_{i=1}^N {}^{i}\ddot{u}(t)\widehat{\psi_i}(y) \right)
+%%   \end{aligned}
+%% \end{equation}
+%% We can project this residual onto the orthonormal basis function to determine the coefficients of decomposition of residual.
+%% The new coefficients of decomposition is referred to as stochastic residuals, $\pre{R}{i}$, that are defined using inner products and approximated using quadrature  as follows
+%% \begin{equation}
+%%   \begin{aligned}
+%%     {\mathcal{R}}_i :=  \pre{R}{i} & = \sinner{\widehat{\psi_i}(y)}{R(y,t, u(y,t),\dot{u}(y,t),\ddot{u}(y,t))}_{{\rho}(y)}^{\mathcal{Y}} \\
+%%     & \approx \sum_{q=1}^Q \alpha_q^y \times {\widehat{\psi_i}(\pre{y}{q})} \times {R(\pre{y}{q},t, u(\pre{y}{q},t),\dot{u}(\pre{y}{q},t),\ddot{u}(\pre{y}{q},t))} \\
+%%   \end{aligned}
+%% \end{equation}
+%% $\forall \, i = 1, \ldots, N$, and $Q$ is the number of quadrature points.
+%% The assembled stochastic residual vector takes the form:
+%% \begin{equation}\label{eqn:residual-projection-{physical}}
+%%   {\mathcal{R}} =
+%%   \begin{Bmatrix}
+%%     \pre{R}{1} \\
+%%     \pre{R}{2} \\
+%%     \vdots \\
+%%     \pre{R}{N}
+%%   \end{Bmatrix}
+%%   \approx
+%%   \begin{Bmatrix}
+%%     \sum_{q=1}^Q \alpha_q^y \times {\widehat{\psi_1}(\pre{y}{q})} \times {R(\pre{y}{q},t, u(\pre{y}{q},t),\dot{u}(\pre{y}{q},t),\ddot{u}(\pre{y}{q},t))} \\
+%%     \sum_{q=1}^Q \alpha_q^y \times {\widehat{\psi_2}(\pre{y}{q})} \times {R(\pre{y}{q},t, u(\pre{y}{q},t),\dot{u}(\pre{y}{q},t),\ddot{u}(\pre{y}{q},t))} \\
+%%     \vdots \\
+%%     \sum_{q=1}^Q \alpha_q^y \times {\widehat{\psi_N}(\pre{y}{q})} \times {R(\pre{y}{q},t, u(\pre{y}{q},t),\dot{u}(\pre{y}{q},t),\ddot{u}(\pre{y}{q},t))}\\
+%%   \end{Bmatrix}
+%% \end{equation}
+%% From~\eqref{eqn:residual-projection-{physical}},
+%% it can be noticed that the stochastic residual ${\mathcal{R}}$ can be assembled using repeated evaluations of the
+%% deterministic residual $R$ at quadrature nodes $\pre{y}{q}$. The formation of state functions at each quadrature node follows from~\eqref{eqn:spectral-state-expansion-hypothesis} as
+%% \begin{equation}\label{eqn:spectral-state-expansion-hypothesis-quadrature}
+%%   \begin{aligned}
+%%     u(\pre{y}{q},t)        & \approx \sum\limits_{i=1}^N {}^{i}u(t)\widehat{\psi_i}(\pre{y}{q}) \\
+%%     \dot{u}(\pre{y}{q},t)  & \approx \sum\limits_{i=1}^N {}^{i}\dot{u}(t)\widehat{\psi_i}(\pre{y}{q}) \\
+%%     \ddot{u}(\pre{y}{q},t) & \approx \sum\limits_{i=1}^N {}^{i}\ddot{u}(t)\widehat{\psi_i}(\pre{y}{q}) \\
+%%   \end{aligned}
+%% \end{equation}
+%% We need the vector of the stochastic coefficients $U(t) = [\pre{u(t)}{1},~\pre{u(t)}{2},\ldots,\pre{u(t)}{N}]$ to evaluate~\eqref{eqn:spectral-state-expansion-hypothesis-quadrature}.
+%% However, note that in an iterative solution process like Newton--Raphson to solve the nonlinear system, we start with random values (or zeros) for  the vector $U(t)$ and iterative update it with $\Delta U(t)$ till the residual goes to zero.
+%% Therefore, $\pre{u(t)}{i}$, $\pre{\dot{u}(t)}{i}$ and $\pre{\ddot{u}(t)}{i}$ is available are initial guess.
+%% \begin{figure}[h!]
+%%   \begin{subfigure}{0.49\textwidth}
+%%     \includegraphics[width=\linewidth]{projection-residual.pdf}
+%%     \caption{Projection of Residual}
+%%   \end{subfigure}
+%%   \begin{subfigure}{0.49\textwidth}
+%%     \includegraphics[width=\linewidth]{projection-jacobian.pdf}
+%%     \caption{Projection of Jacobian}
+%%   \end{subfigure}
+%%   \caption{The formation of stochastic Residual and Jacobian entries using inner products approximated using quadrature.}
+%%   \label{fig:project-residual-jacobian}
+%% \end{figure}
+%% \paragraph*{(2)~Formation of Jacobian:}
+%% The stochastic Jacobian matrix is assembled following the principle of repeated evaluations of deterministic Jacobian for each quadrature node.
+%% The $(i,j)-th$ entry of Jacobian is
+%% \begin{equation}
+%%   \begin{aligned}
+%%     {\mathcal{J}}_{i,\,j} & :=\pre{\td{R}{u}}{i,\,j} = \stinner{\widehat{\psi_i}(y)}{\td{R(y,t, u(y,t),\dot{u}(y,t),\ddot{u}(y,t))}{u}}{\widehat{\psi_j}(y)}_{{\rho}(y)}^{\mathcal{Y}} \\
+%%     & \approx \sum_{q=1}^Q \alpha_q^y \times {\widehat{\psi_i}(\pre{y}{q})} \times {\td{R(\pre{y}{q},t, u(\pre{y}{q},t),\dot{u}(\pre{y}{q},t),\ddot{u}(\pre{y}{q},t))}{u}} \times {\widehat{\psi_j}(\pre{y}{q})}\\
+%%   \end{aligned}
+%% \end{equation}
+%% $\forall \, (i,\,j) = 1, \ldots, N$, and $Q$ is the number of quadrature points. This gives us a stochastic Jacobian matrix taking the form
+%% \begin{equation}\label{eqn:residual-projection-{physical}}
+%%   {\mathcal{J}} := {\td{\mathcal{R}}{u}} =
+%%   \begin{bmatrix}
+%%     \pre{\td{R}{u}}{1,\,1} & \pre{\td{R}{u}}{1,\,2} & \ldots & \pre{\td{R}{u}}{1,\,N}\\
+%%     \pre{\td{R}{u}}{2,\,1} & \pre{\td{R}{u}}{2,\,2} & \ldots & \pre{\td{R}{u}}{2,\,N}\\
+%%     {\vdots}               & {\vdots}               & \ddots & {\vdots}              \\
+%%     \pre{\td{R}{u}}{N,\,1} & \pre{\td{R}{u}}{N,\,2} & \ldots & \pre{\td{R}{u}}{N,\,N}\\
+%%   \end{bmatrix}
+%% \end{equation}
+%% \begin{landscape}
+%% A graphical illustration of the process of assembly of stochastic residual and Jacobian that form the core of the
+%% nonlinear solution process is shown in Figure~\ref{fig:project-residual-jacobian}.
+%% \paragraph*{Summary:}
+%% Table~\ref{tab:summary-moments} summarizes the working relations used to compute the probabilistic moments and their derivatives of functions of interest.
+%% \begin{table}[h!]
+%%   \caption{Summary of relations used to evaluate probabilistic moments using sampling and projection methods.}
+%%   \centering
+%%   \scalebox{0.85}{
+%%   \begin{tabular}{l|l|l}
+%%     \toprule
+%%      {}      & Sampling & Projection \\
+%%      \midrule
+%%      $\mathbb{E}\left[{F(y,\cdot)}\right]$         & $\sum_{i=1}^M \alpha_i^y \times 1(y_i) \times F(y_i(\xi),\cdot)$ & $\pre{F(\cdot)}{1}$\\
+%%      $\mathbb{E}\left[\td{F(y,\cdot)}{\xi}\right]$ & $ \sum_{i=1}^M \alpha_i^y \times 1(y_i) \times \pd{F(y_i(\xi),\cdot)}{\xi}$  & $\pre{\td{F(\cdot)}{\xi}}{1}$ \\
+%%      \midrule
+%%      $\mathbb{V}\left[{F(y,\cdot)}\right]$         & $ \sum_{i=1}^M \alpha_i^y \times F^2(y_i(\xi),\cdot) - \left( \sum_{i=1}^M \alpha_i^y \times F(y_i(\xi),\cdot) \right)^2$ & $\sum\limits_{i=2}^N \pre{F(\cdot)}{i}^2$ \\
+%%      $\mathbb{V}\left[\td{F(y,\cdot)}{\xi}\right]$ & $ \sum_{i=1}^M \alpha_i^y \times 2F(y_i(\xi),\cdot)\times\pd{F(y(\xi),\cdot)}{\xi} - 2 \left(\sum_{i=1}^M \alpha_i^y \times F(y_i(\xi),\cdot) \right)   \times \left(\sum_{i=1}^M \alpha_i^y \times \pd{F(y(\xi),\cdot)}{\xi} \right)$ & $\sum\limits_{i=2}^N \left(\pre{\td{F(\cdot)}{\xi}}{i}\right)^2$ \\
+%%      \midrule
+%%      $\mathbb{S}\left[{F(y,\cdot)}\right]$         & $\sqrt{\mathbb{V}[F(y(\xi),\cdot)}$ & $\sqrt{\mathbb{V}[F(y(\xi),\cdot)}$ \\
+%%      $\mathbb{S}\left[\td{F(y,\cdot)}{\xi}\right]$ & $\frac{1}{2\sqrt{\mathbb{V}[F(y(\xi),\cdot)]}}  \times \pd{\mathbb{V}[F(y(\xi),\cdot)]}{\xi}$& $\frac{1}{2\sqrt{\mathbb{V}[F(y(\xi),\cdot)]}}  \times \pd{\mathbb{V}[F(y(\xi),\cdot)]}{\xi}$ \\
+%%     \bottomrule
+%%   \end{tabular}
+%%   }
+%%   \label{tab:summary-moments}
+%% \end{table}
+%% \end{landscape}
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%% \begin{figure}[ht]
+%%   \centering
+%%   \begin{subfigure}{0.32\textwidth}
+%%     \includegraphics[width=\linewidth]{projection.pdf}
+%%     \caption{}
+%%   \end{subfigure}
+%%   \begin{subfigure}{0.32\textwidth}
+%%     \includegraphics[width=\linewidth]{test.pdf}
+%%     \caption{}
+%%   \end{subfigure}
+%%   \caption{.}
+%%   \label{fig:}
+%% \end{figure}
+%%
+%% % sparsity of this jacobian matrix is studied in section
+%%
+%% \clearpage

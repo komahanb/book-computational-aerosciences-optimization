@@ -1,0 +1,1390 @@
+\chapter{Time Marching and Discrete-Adjoint For Second-Order Systems}
+\label{chapter:adjoint-ode}
+\paragraph*{Introduction.} This chapter presents numerical solution methods for the governing equations of flexible multibody dynamics using implicit time marching methods, as well as the development of associated discrete-adjoint equations.
+The implicit time marching methods considered are:
+\begin{enumerate}
+\item Newmark method~\cite{Fox1949,Newmark1959} (single-step),
+\item Backward Difference Formulas (BDF)~\cite{BDF:Curtiss,BDF:Henrici} (multistep),
+\item Adams--Bashforth--Moulton method (ABM)~\cite{Bashforth1883,Moulton1926} (multistep),
+\item Diagonally Implicit Runge--Kutta (DIRK)~\cite{Alexander1977,Cash1984DIRK} (multistage).
+\end{enumerate}
+Starting from a given set of initial conditions $\mb{q}_0$ and $\mb{\dot{q}}_{0}$, these time marching schemes use the state variable values from previous time steps to evaluate the subsequent values of state variables.
+The subscript, $k$, on the state variables refer to the corresponding time parameter value, ${t}_k$.
+In this work, a constant step size, $h= t_k - t_{k-1}$, is employed for time marching.
+The scalar coefficients of time marching denoted as $\alpha$, $\beta$ and $\gamma$ are used for forming linear approximations of the state variables at each time step.
+These coefficients are derived based on desired order of accuracy and stability requirements.
+
+\section{Governing Equations of Motion and Continuous Adjoint}
+In this section, we use variational principles to derive the governing equations for flexible multibody systems and continuous adjoint-based sensitivities. Our approach is to operate on a broader paradigm, until the contextual arguments are used to recover Euler-Lagrange and adjoint equations.
+
+\subsection{Variational Principle}
+We begin with Lagrangians that are function of the state variables and
+their first as well as second time derivatives. It is easy to see that
+$\mb{q}=\mb{q}(t)$ denotes a set of curves (paths, trajectories or
+functions) that the components of the state variables trace over time,
+and there are as many scalar curves as the number of state
+variables. Similarly, a Lagrangian can be seen as a curve in $3m+1$
+dimensional space spanned by $\mb{q}, \mb{\dot{q}}$, $\mb{\ddot{q}}$
+and $t$. The length ${\cal{A}}$ of the Lagrangian curve within the
+time interval $[t_0,t_f]$ is represented as a line integral along the
+curve
+\begin{equation}\label{eqn:action-functional}
+  {{\cal{A}}[\mb{\ddot{q}},\mb{\dot{q}},\mb{q}]} = \int_{t_0}^{t_f} \mb{\cal{L}}(\mb{\ddot{q}},\mb{\dot{q}},\mb{q}, t)~d{t}.
+\end{equation}
+Consider the following variations in state trajectories
+\begin{equation}\label{eqn:state-variations}
+  \begin{aligned}
+    \mb{q}(t) & \rightarrow \mb{q}(t) + \delta\mb{q}(t), \\
+    \mb{\dot{q}}(t) & \rightarrow \mb{\dot{q}}(t) + \delta \mb{\dot{q}}(t), \\
+    \mb{\ddot{q}}(t) & \rightarrow \mb{\ddot{q}}(t) + \delta \mb{\ddot{q}}(t), \\
+  \end{aligned}
+\end{equation}
+where $\delta\mb{q}(t),\delta \mb{\dot{q}}(t)$ and $\delta
+\mb{\ddot{q}}(t)$ are arbitrary changes to the corresponding original
+trajectories, that vanish at the end points $t_0$ and $t_f$. Thus,
+the varied paths have the boundary conditions that
+\begin{equation}\label{eqn:bc-variations}
+\delta{\mb{q}}(t_0) = \delta{\mb{q}}(t_f) = \delta{\mb{\dot{q}}}(t_0)
+= \delta{\mb{\dot{q}}}(t_f) = \delta{\mb{\ddot{q}}}(t_0) =
+\delta{\mb{\ddot{q}}}(t_f) =0.
+\end{equation}
+In order to study the effect of these
+varied paths on the length ${\cal{A}}$, we use Taylor's series
+expansion of the Lagrangian upto first-order terms as
+\begin{equation}\label{eqn:expanded-lagrangian}
+  \mb{\cal{L}} (\mb{\ddot{q}} +  \mb{\delta\ddot{q}}, \mb{\dot{q}} + \mb{\delta \dot{q}}, \mb{q} + \mb{\delta q}, t) \approx \mb{\cal{L}}(\mb{\ddot{q}},\mb{\dot{q}},\mb{q},t) + \f{\p \mb{\cal{L}}(\mb{\ddot{q}},\mb{\dot{q}},\mb{q},t)}{\p \mb{{q}}} \mb{\delta {q}}(t) + \f{\p \mb{\cal{L}}(\mb{\ddot{q}},\mb{\dot{q}},\mb{q},t)}{\p \mb{\dot{q}}} \mb{\delta \dot{q}}(t) + \f{\p \mb{\cal{L}}(\mb{\ddot{q}},\mb{\dot{q}},\mb{q},t) }{\p \mb{\ddot{q}}} \mb{\delta \ddot{q}}(t),
+\end{equation}
+and similarly the functional
+\begin{equation}\label{eqn:expanded-functional}
+  {\cal{A}} [\mb{\ddot{q}} + \mb{\delta \ddot{q}}, \mb{\dot{q}} + \mb{\delta \dot{q}}, \mb{q} + \mb{\delta q} ] \approx
+  {{\cal{A}}[\mb{\ddot{q}},\mb{\dot{q}},\mb{q}]} + \delta {\cal{A}}
+  [\mb{\ddot{q}},\mb{\dot{q}},\mb{q}].
+\end{equation}
+The higher-order terms in the expansion are omitted to keep the
+analysis simpler, although with an intent of mitigating the incurred
+truncation error by taking small perturbations in the neighborhood of
+the reference values of expansion.
+%
+The first variation of the functional ${\cal{A}}$ is
+\begin{equation}\label{eqn:first-variation}
+  \begin{aligned}
+    \delta{\cal{A}}
+    & = \int_{t_0}^{t_f} \mb{\cal{L}} (\mb{\ddot{q}} +  \mb{\delta\ddot{q}}, \mb{\dot{q}} + \mb{\delta \dot{q}}, \mb{q} + \mb{\delta q}, t)~dt -  \int_{t_0}^{t_f} \mb{\cal{L}}(\mb{\ddot{q}},\mb{\dot{q}},\mb{q}, t)~d{t} \\
+    & = \int_{t_0}^{t_f} \left( \pd{\mb{{\cal{L}}}}{\mb{\ddot{q}}} \mb{\delta \ddot{q}} + \pd{\mb{{\cal{L}}}}{\mb{\dot{q}}} \mb{\delta \dot{q}} + \pd{\mb{{\cal{L}}}}{\mb{q}} \mb{\delta{q}} \right) dt \\
+%    & = \left. \pd{\mb{{\cal{L}}}}{\mb{\ddot{q}}} \delta\mb{\dot{q}} \right|^{t_0}_{t_f}
+%    \left. + \left( \pd{\mb{{\cal{L}}}}{\mb{\dot{q}}}
+%    - \td{}{t} \left(\pd{\mb{{\cal{L}}}}{\mb{\ddot{q}}} \right) \right) \mb{\delta q} \right|^{t_0}_{t_f}
+%    + \int_{t_0}^{t_f} \left[  \tdt{}{t}  \left(\pd{\mb{{\cal{L}}}}{\mb{\ddot{q}}} \right) - \td{}{t} \left(\pd{\mb{{\cal{L}}}}{\mb{\dot{q}}} \right) + \pd{\mb{{\cal{L}}}}{\mb{q}} \right]  \mb{\delta q}~dt \\
+    & = \int_{t_0}^{t_f} \left[  \tdt{}{t}  \left(\pd{\mb{{\cal{L}}}}{\mb{\ddot{q}}} \right) - \td{}{t} \left(\pd{\mb{{\cal{L}}}}{\mb{\dot{q}}} \right) + \pd{\mb{{\cal{L}}}}{\mb{q}} \right] \mb{\delta q}~dt.
+  \end{aligned}
+\end{equation}
+Note that \emph{integration by parts} and boundary
+conditions~\eqref{eqn:bc-variations} are used in arriving at the above
+result.
+%
+We are interested in finding the \emph{critical curves}
+$\mb{q}(t),\mb{\dot{q}}(t)$ and $\mb{\ddot{q}}(t)$ of the functional
+${\cal{A}}$ that have the property of rendering the length ${\cal{A}}$
+unchanged to its first-order expansion in Taylor's series, when its
+arguments are perturbed to $\mb{q}(t) + \delta\mb{q}(t)$,
+\emph{etc}. In other words, we invoke the Hamilton's principle that
+the \emph{first variation} of functional, $\delta {\cal{A}}$,
+vanishes to zero for critical trajectories yielding
+\begin{equation}\label{eqn:euler-lagrange-higher-order}
+  \pd{\mb{{\cal{L}}}}{\mb{q}} - \td{}{t}  \left(\pd{\mb{{\cal{L}}}}{\mb{\dot{q}}} \right) + \tdt{}{t}  \left(\pd{\mb{{\cal{L}}}}{\mb{\ddot{q}}} \right) = 0.
+\end{equation}
+
+\subsection{Euler-Lagrange Equations}
+The Lagrangian functions pertaining to flexible-multibody dynamic
+systems are known to be functions of the state variables and their
+first time derivatives,
+\emph{i.e.,} $\mb{\cal{L}} = \mb{\cal{L}}(\mb{\dot{q}},\mb{{q}},t)$. By specializing
+~\eqref{eqn:euler-lagrange-higher-order} to such Lagrangians that are
+a function of kinetic and potential energies of the system,
+we recover the much revered \emph{Euler-Lagrange equations}
+\begin{equation}\label{eqn:euler-lagrange}
+  \pd{\mb{{\cal{L}}}}{\mb{q}}
+  - \td{}{t}  \left(  \pd{\mb{{\cal{L}}}}{\mb{\dot{q}}} \right) = 0
+\end{equation}
+The alternate form of Euler--Lagrange equations is obtained as
+\begin{equation}\label{eqn:euler-lagrange-alternate}
+\pd{\mb{{\cal{L}}}}{\mb{q}}
+  - \pd{\mb{{\cal{L}}}}{\mb{{q}}}\mb{\dot{q}}
+  - \pd{\mb{{\cal{L}}}}{\mb{\dot{q}}}\mb{\ddot{q}}
+  - \pd{}{t}  \left(  \pd{\mb{{\cal{L}}}}{\mb{\dot{q}}} \right)
+\end{equation}
+The above second-order differential equation~\eqref{eqn:euler-lagrange-alternate} is represented in
+abstract descriptor form as $\mb{R}(t,\xi,\mb{\ddot{q}},\mb{\dot{q}},\mb{q})$.  The
+unknown states variables and their time derivatives can be determined
+using numerical time marching from initial conditions specified at
+$t=t_0$. This process is commonly referred to as \emph{forward/state solution
+  mode} in the literature.
+
+\subsection{Continuous Adjoint}\label{cont_adjoint}
+We now turn our attention to the problem of finding the sensitivities of a functional of interest with respect to design variables $\mb{\xi}$, using Hamilton's principle.
+To derive the equations, we now form a Lagrangian by augmenting the functional of interest, with the inner product of the adjoint variables $\mb{\lambda}=\mb{\lambda}(t)$ and governing equations as follows
+%
+\begin{equation}
+  \label{eqn:lagrangian_continuous_adjoint}
+  \mb{\cal L}(t, \mb{\xi}, \mb{\ddot{q}},\mb{\dot{q}},\mb{q}) = F(t, \xi, \mb{\ddot{q}},\mb{\dot{q}},\mb{q}) + \mb{\lambda}(t,\xi)^T \mb{R}(t,\xi,\mb{\ddot{q}},\mb{\dot{q}},\mb{q}),
+\end{equation}
+The curve for $\lambda(t)$ is arbitrary except at $t=t_f$ where it
+vanishes \emph{i.e.,} $\lambda(t_f)=0$.  The Lagrangian
+\eqref{eqn:lagrangian_continuous_adjoint} can be evaluated only after
+the state variables are determined from the \emph{forward solution
+  mode} and we only know the value of $\lambda$ at the final time
+$t_f$. Therefore, the solution to the problem of determining the unknown
+adjoint variables starts at the final time $t_f$ and marching
+backwards in time towards the initial time $t_0$. This process is
+referred to as the \emph{reverse/adjoint solution mode} in the
+literature. The reversal of time coordinate amounts to transposition
+of linear algebra objects and flipping of signs of odd-time
+derivatives. It is convenient to introduce a dummy time variable
+$\tau$ whose coordinate direction is reversed. The result is the
+following governing equations for the adjoint problem
+\begin{equation}\label{eqn:euler-lagrange-higher-order-tau}
+  \pd{\mb{{\cal{L}}}^T}{\mb{q}} + \td{}{\tau}
+  \left(\pd{\mb{{\cal{L}}}^T}{\mb{\dot{q}}} \right) + \tdt{}{\tau}
+  \left(\pd{\mb{{\cal{L}}}^T}{\mb{\ddot{q}}} \right) = 0.
+\end{equation}
+Using the definition of adjoint
+Lagrangian~\eqref{eqn:lagrangian_continuous_adjoint}, we get
+\begin{equation}\label{eqn:fsdfsdfsd}
+  \pd{{F}}{\mb{q}}^T + \pd{\mb{{R}}}{\mb{q}}^T\lambda + \td{}{\tau}
+  \left( \pd{{F}}{\mb{\dot{q}}}^T +
+  \pd{\mb{{R}}}{\mb{\dot{q}}}^T \lambda \right) + \tdt{}{\tau} \left(
+  \pd{{F}}{\mb{\ddot{q}}}^T + \pd{\mb{{R}}}{\mb{\ddot{q}}}^T\lambda
+  \right) = 0.
+\end{equation}
+
+
+\subsection{Governing Equations of Motion}\label{sec:background-gov-eqn}
+The equations governing the motion of flexible multibody systems can be derived using a number of different methods~\citep{Bachau:Flexible-multibody-dynamics, Lanczos2015}.
+This work employs an approach based on the constrained Euler--Lagrange equations that leads to a system of differential algebraic equations (DAEs).
+The system of DAEs consists of both a set of differential equations and a set of algebraic constraints that restricts the kinematics using Lagrange multipliers.
+One advantage of using the Euler--Lagrange equations is that they can be numerically verified for consistency with the kinetic and potential energy expressions and the constraint equations using finite-difference or complex-step methods.
+The Lagrangian for the equations of motion is defined as
+\begin{equation}\label{eqn:lagrangian}
+ \mb{\cal{L}}(\mb{\dot{w}},\mb{{w}}) \triangleq T(\mb{\dot{w}},\mb{{w}}) - V(\mb{{w}})
+\end{equation}
+where $\mb{w}$ is a vector that contains the displacements and Euler parameters for rotation matrix parametrization, and $T(\mb{\dot{w}},\mb{{w}})$ and $V(\mb{w})$ are the kinetic and potential energy of the system, respectively.
+The kinetic energy and potential energies are computed as integrals over each finite element~\citep{Bachau:Flexible-multibody-dynamics, Dvorkin:1984:CMB,Bucalem:1993:HOM}.
+In this work, the kinematics of the flexible bodies are restricted through a set of holonomic constraints of the form $\mb{g}(\mb{w}) = 0$, where the extension to nonholonomic constraints is straightforward.
+The Jacobian of the kinematic constraints is $\mb{A} = \p \mb{g}/\p \mb{w}$.
+With these definitions, the governing equations of motion in second-order descriptor form are
+\begin{equation}\label{eqn:gov-descriptor-form}
+   \mb{R}(t, \xi, \mb{\ddot{q}},\mb{\dot{q}},\mb{q}) \triangleq
+  \begin{bmatrix}
+    \td{}{t}  \left( \pd{\mb{{\cal{L}}}}{\mb{\dot{w}}} \right) - \pd{\mb{{\cal{L}}}}{\mb{w}} - \mb{A}^{T} \mu \\[.35em]
+    \mb{g}(\mb{w})
+  \end{bmatrix} = 0.
+\end{equation}
+Here the vector $\mb{q} = (\mb{w},\; \mu)$ includes both the degrees of freedom $\mb{w}$ and the Lagrange multipliers $\mu$.
+Note that the vector of design variables, $\mb{\xi}$, is included to reflect the dependence of the system of equations on design variables.
+In the following sections, it will be necessary to compute the Jacobian of the governing equations with respect to the state variables and their derivatives.
+These Jacobian matrices always appear as a linear combinations of the form
+\begin{equation*}
+  \mb{J} = \overline{\gamma} \pd{\mb{R}}{\mb{\ddot{q}}} + \overline{\beta}\pd{\mb{R}}{\mb{\dot{q}}} + \overline{\alpha}\pd{\mb{R}}{\mb{q}},
+\end{equation*}
+where $\overline{\alpha}$, $\overline{\beta}$, and $\overline{\gamma}$ are scalar coefficients. The descriptor form~\eqref{eqn:gov-descriptor-form} provides the basis for different element types implemented in the framework based on the finite element method.
+The elements within the framework, at present, consist of rigid bodies, flexible quadratic beam elements employing a Timoshenko beam formulation, and flexible bi-quadratic shell elements employing a Reissner--Mindlin formulation.
+To avoid shear locking, the beam and shell elements employ a mixed interpolation of tensorial components (MITC) formulation~\citep{Dvorkin:1984:CMB,Bucalem:1993:HOM}.
+In addition, kinematic constraints are implemented within the same element hierarchy, including the lower kinematic pairs~\cite{Bachau:Flexible-multibody-dynamics, Kennedy:2016:SciTech}.
+
+
+\section{Newmark Method}\label{sec:newmark}
+The Newmark family of integrators are single-step methods that use state variable values and their time derivatives from the previous step.
+The pioneering work of this method were by \citet{Fox1949} and ~\citet{Newmark1959}.
+This method was originally developed for the numerical solution of problems in structural dynamics including linear elastic studies, dynamic loading and vibrations due to earthquake.
+It has subsequently found applications in flexible multibody dynamics over the years.
+%The coefficients of this methods are $\beta$ and $\gamma$, that assume the values listed in Table~\ref{tab:newmark-coeffs}, for different variants in the family.
+The order of accuracy, $p$, of the Newmark scheme depends on the choice of the coefficients, $\beta$ and $\gamma$, as listed in Table~\ref{tab:newmark-coeffs}.
+The Newmark method is now a part of Generalized-$\alpha$ class of methods presented by \citet{Chung1993:GeneralizedAlpha}.
+%
+\begin{table}[h]
+  \caption{The coefficients of Newmark family of methods and their
+    corresponding orders of accuracy.}
+  \centering
+  \begin{tabular}{ccccc}
+    \toprule
+    Method                         & $\beta$       & $\gamma$      & Order \\
+    \midrule
+    Implicit Fox-Goodwin~\cite{Fox1949}   & 1/12 & 1/2 & 3 \\
+    Implicit linear acceleration           & 1/6 & 1/2 & 2 \\
+    Implicit average constant acceleration & 1/4 & 1/2 & 2 \\
+    Implicit central difference            & 0              & 1/2 & 2 \\
+    Explicit               & 0              & 0             & 1 \\
+    \bottomrule
+  \end{tabular}
+  \label{tab:newmark-coeffs}
+\end{table}
+
+\subsection{Solution of the State Variables}\label{sec:nbg-forward}
+\subsubsection{State Approximation Hypothesis}
+The primary unknowns of the Newmark method are the second time derivatives of the state variables $\mb{\ddot{q}}_{k}$ at each time step $k$.
+The $p$-th order state approximations are:
+\begin{equation}
+  \label{eqn:newmark-state-approx}
+  \begin{aligned}
+    \mb{\dot{q}}_k & = \mb{\dot{q}}_{k-1} + (1-\gamma) h \mb{\ddot{q}}_{k-1} +  \gamma h \mb{\ddot{q}}_{k}  + {\cal{O}}(h^{p})  \\
+        {\mb{q}}_k & = \mb{q}_{k-1} + h \mb{\dot{q}}_{k-1} + \frac{1-2\beta}{2} h^2\mb{\ddot{q}}_{k-1} + \beta h^2 \mb{\ddot{q}}_k  + {\cal{O}}(h^{p}).
+  \end{aligned}
+\end{equation}
+The state approximations~\eqref{eqn:newmark-state-approx} are simply weighted linear combinations of state vector functions as illustrated in Figure~\ref{fig:newmark-state-approx}.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.99\textwidth]{nbg-state-approx.pdf}
+  \caption{Weighted linear combination of states yielding the velocity (left) and position (right) states for Newmark method
+    using state approximation hypothesis $\mb{S}_k$ and $\mb{T}_k$.}
+  \label{fig:newmark-state-approx}
+\end{figure}
+
+\subsubsection{Solution of the Nonlinear System}
+The nonlinear governing equations at each step,
+$\mb{R}_k(t_k, \xi, \mb{\ddot{q}}_k,\mb{\dot{q}}_k,\mb{q}_k)=0$, are
+ linearized with respect to $\mb{\ddot{q}}_k$ as
+follows
+\begin{equation} \label{eqn:newmark-linearization}
+  \left[ \f{\p \mb{R}_k}{\p \mb{\ddot{q}}_k} +
+    \gamma h  \f{\p \mb{R}_k}{\p \mb{\dot{q}}_k} + \beta h^2  \f{\p \mb{R}_k}{\p \mb{q}_k}
+     \right]\Delta \mb{\ddot{q}}_{k}
+  = - \mb{R}_k(t_k, \xi, \mb{\ddot{q}}_{k}, \mb{\dot{q}}_{k}, \mb{q}_{k}).
+\end{equation}
+The state variables and its first time derivatives (velocities) are approximated
+using Equation~\eqref{eqn:newmark-state-approx}, for an estimated
+value of the acceleration state variables (second time derivatives),
+at a known time, ${t}_k$. The linear
+system~\eqref{eqn:newmark-linearization} is then solved for the
+primary update $\Delta \mb{\ddot{q}}_{k}^{n}$ (incremental
+accelerations), at each iteration, $n$, of the nonlinear solution.
+The secondary and tertiary updates required for the state variables
+and their first time derivatives are readily obtained by scaling the
+acceleration update using the Newmark coefficients. The resulting
+update formulas are
+\begin{equation}\label{eqn:nemark-newton-update}
+  \begin{aligned}
+    \mb{\ddot{q}}_{k}^{n+1} & = \mb{\ddot{q}}_{k}^{n} + \Delta \mb{\ddot{q}}_{k}^{n}, \\
+    \mb{\dot{q}}_{k}^{n+1}  & = \mb{\dot{q}}_{k}^{n}  + \gamma h \Delta \mb{\ddot{q}}_{k}^{n}, \\
+        {\mb{q}}_{k}^{n+1}  & = {\mb{q}}_{k}^{n}      + \beta h^2 \Delta \mb{\ddot{q}}_{k}^{n}.
+  \end{aligned}
+\end{equation}
+%The use of Equation~\eqref{eqn:newmark-state-approx} for secondary and
+%tertiary updates is not recommended, as it necessitates more vector
+%operations for an equivalent outcome.
+The iterative updates to the state variables and their derivatives are
+continued until the governing equations are solved to the required
+tolerance.
+%The accuracy of
+%adjoint derivatives is contingent upon the accuracy of the solution to
+%the governing equations.
+The accuracy of adjoint derivatives rely on the accuracy of the solution of the governing equations.
+Therefore, it is important that the discrete nonlinear system~\eqref{eqn:newmark-linearization} is solved to a tight tolerance.
+
+\subsection{Solution of the Adjoint Variables}\label{sec:newmark-reverse}
+\subsubsection{Formation of the Lagrangian} \label{sec:newmark-rep-eqn}
+%The governing equations and functional of interest follow the same treatment discussed for the BDF method.
+The state approximations of the Newmark time marching scheme given in Equation~\eqref{eqn:newmark-state-approx} are reformulated as following residuals
+\begin{equation}
+\begin{aligned}
+\mb{S}_k & =    \mb{\dot{q}}_{k-1} + (1-\gamma) h \mb{\ddot{q}}_{k-1} +  \gamma h \mb{\ddot{q}}_{k} - \mb{\dot{q}}_k, \\
+\mb{T}_k & =    \mb{q}_{k-1} + h \mb{\dot{q}}_{k-1} + \frac{1-2\beta}{2} h^2\mb{\ddot{q}}_{k-1} + \beta h^2 \mb{\ddot{q}}_k -{\mb{q}}_k.
+\end{aligned}
+\end{equation}
+%
+The adjoint variables, $\mb{\lambda}_k$, $\mb{\psi}_k$ and $\mb{\phi}_k$ are introduced as respective unknown weights, to the governing equations, $\mb{R}_k$, the state approximation equations, $\mb{S}_k$, and $\mb{T}_k$, arising from the Newmark scheme, for each time step, $k$.
+The Lagrangian is formed as the following linear combination of functions from the span of $\ddot{q}(t,\xi) \otimes \dot{q}(t,\xi) \otimes {q}(t,\xi) \otimes \xi \otimes t$:
+\begin{equation}
+  {\cal{L}} = \sum_{k=0}^N h {F}_k + \sum_{k=0}^N h \mb{\lambda}_k^T \mb{R}_k
+  +  \sum_{k=0}^N \mb{\psi}_k^T \mb{S}_k +  \sum_{k=0}^N\mb{\phi}_k^T \mb{T}_k.
+\end{equation}
+The central idea is to represent the functional, ${F}_k$, as a linear combination of the other equations, and identify trajectories $\mb{\phi}(t,\xi)$, $\mb{\psi}(t,\xi)$ and $\mb{\lambda}(t,\xi)$ that are invariant to perturbations in $\mb{q}(t,\xi)$, $\mb{\dot{q}}(t,\xi)$ and $\mb{\ddot{q}}(t,\xi)$, respectively.
+An illustration of the formation of Lagrangian for Newmark method  is shown in Figure~\ref{fig:newmark-lagrangian}.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.99\textwidth]{nbg-lagrangian.pdf}
+  \caption{The weighted linear combinations of \textit{equations} with corresponding \textit{adjoint variables} forming the Lagrangian for Newmark method.}
+  \label{fig:newmark-lagrangian}
+\end{figure}
+\subsubsection{The Adjoint Equations}
+The system of equations to solve for the adjoint variables at each time step is obtained from the stationary points of the Lagrangian with respect the state variables and their time derivatives.
+The number of partial derivative terms that exist in the adjoint system of equations, can be graphically determined from Figure~\ref{fig:newmark-lagrangian}, based on the occurrences of $\mb{q}_k$, $\mb{\dot{q}}_k$ and $\mb{\ddot{q}}_k$ as inputs to equations ${F}$, $\mb{R}$, $\mb{S}$ and $\mb{T}$, at different time steps; see Table~\ref{tab:newmark-adjoint-tally} for a list of number of terms in the adjoint system of equations.
+\begin{table}
+  \caption{The number of terms in the adjoint system of equations for Newmark family of integrators.}
+  \centering
+  \begin{tabular}{cccccc}
+    \toprule
+        {} & $\mb{T}$ & $\mb{S}$ & $\mb{R}$ & F & Total \\
+        \midrule
+        $\mb{\phi}_k$    & 2    &     &   1    &   1    & 4      \\
+        $\mb{\psi}_k$    & 1    & 2   &   2    &   2    & 7      \\
+        $\mb{\lambda}_k$ & 2    & 2   &   5    &   5    & 14     \\
+        \bottomrule
+  \end{tabular}
+  \label{tab:newmark-adjoint-tally}
+\end{table}
+
+\paragraph*{\underline{1. Equation for $\mb{\phi}_k$:}}
+Setting $\partial{\cal{L}}/\partial{\mb{{q}}_{k}} = 0$ yields
+\begin{equation}\label{eqn:newmark-phi1}
+  \begin{aligned}
+    \pd{\mb{T}_{k}}{\mb{q}_{k}}^T \mb{\phi}_k +
+    \pd{\mb{T}_{k+1}}{\mb{q}_{k}}^T \mb{\phi}_{k+1}
+    + h
+      \pd{\mb{R}_{k+1}}{\mb{q}_{k}}^T \mb{\lambda}_{k+1}
+    + h
+    \pd{{F}_{k+1}}{\mb{q}_{k}}^T
+    = 0.
+  \end{aligned}
+\end{equation}
+Further simplifications result in
+\begin{equation}\label{eqn:newmark-phi2}
+  \begin{aligned}
+    \mb{\phi}_k = \mb{\phi}_{k+1}
+    + h \left[ \pd{\mb{R}_{k+1}}{\mb{q}_{k+1}} \right]^T \mb{\lambda}_{k+1} +  h \left\{\pd{{F}_{k+1}}{\mb{q}_{k+1}} \right\}^T .
+  \end{aligned}
+\end{equation}
+It can be noticed that the four terms of
+Equation~\eqref{eqn:newmark-phi2} correspond to the occurrences of the
+primal variable $\mb{q}_k$ as inputs to equations during forward solution
+ history.
+
+\paragraph*{\underline{2. Equation for $\mb{\psi}_k$:}}
+Using $\partial{\cal{L}}/\partial{\mb{\dot{q}}_{k}} = 0$:
+\begin{equation}\label{eqn:newmark-psi1}
+  \begin{aligned}
+    \pd{\mb{S}_k}{\mb{\dot{q}}_k}^T \mb{\psi}_k +
+    \pd{\mb{S}_{k+1}}{\mb{\dot{q}}_k}^T  \mb{\psi}_{k+1} +
+    \pd{\mb{T}_{k+1}}{\mb{\dot{q}}_k}^T \mb{\phi}_{k+1}
+    + h \pd{\mb{R}_{k+1}}{\mb{\dot{q}}_{k}}^T \mb{\lambda}_{k+1}
+    + h  \pd{{F}_{k+1}}{\mb{\dot{q}}_{k}}^T = 0.
+  \end{aligned}
+\end{equation}
+This simplifies to
+\begin{equation}\label{eqn:newmark-psi2}
+  \begin{aligned}
+    \mb{\psi}_k = \mb{\psi}_{k+1} + h \mb{\phi}_{k+1} + h \left[ \pd{\mb{R}_{k+1}}{\mb{\dot{q}}_{k+1}} + h
+      \pd{\mb{R}_{k+1}}{\mb{q}_{k+1}} \right]^T \mb{\lambda}_{k+1} + h \left\{
+    \pd{{F}_{k+1}}{\mb{\dot{q}}_{k+1}} + h \pd{{F}_{k+1}}{\mb{q}_{k+1}}
+    \right\}^T.
+  \end{aligned}
+\end{equation}
+The seven terms in Equation~\eqref{eqn:newmark-psi2} represent and
+accumulate contributions from residuals/equations that were affected by
+$\mb{\dot{q}}_k$ during the forward mode.
+
+\paragraph*{\underline{3. Equation for $\mb{\lambda}_k$:}}
+Setting $\partial{\cal{L}}/\partial{\mb{\ddot{q}}_{k}} = 0$ yields the
+equation to solve for the adjoint variable, $\mb{\lambda}_k$,
+\begin{equation}\label{eqn:newmark-lambda1}
+\begin{aligned}
+     h \sum_{i=0}^{1}  \pd{\mb{R}_{k+i}}{\mb{\ddot{q}}_k}^T \mb{\lambda}_{k+i}
+    + h \sum_{i=0}^{1} \pd{{F}_{k+i}}{\mb{\ddot{q}}_k}^T
+    + \sum_{i=0}^{1}  \pd{\mb{S}_{k+i}}{\mb{\ddot{q}}_k}^T \mb{\psi}_{k+i}
+    + \sum_{i=0}^{1} \pd{\mb{T}_{k+i}}{\mb{\ddot{q}}_k}^T \mb{\phi}_{k+i} = 0.
+  \end{aligned}
+\end{equation}
+%%
+%%\begin{equation}\label{eqn:newmark-lambda1}
+%%\left.
+%%  \begin{aligned}
+%%    &h  \pd{\mb{R}_k}{\mb{\ddot{q}}_k}^T \mb{\lambda}_k
+%%    + h \left\{ \pd{{F}_k}{\mb{\ddot{q}}_k} \right\}^T
+%%    + \pd{\mb{S}_k}{\mb{\ddot{q}}_k}^T \mb{\psi}_k
+%%    + \pd{\mb{T}_k}{\mb{\ddot{q}}_k}^T \mb{\phi}_k + \\
+%%    & h \pd{\mb{R}_{k+1}}{\mb{\ddot{q}}_{k}}^T  \mb{\lambda}_{k+1}
+%%    + h \left\{\pd{{F}_{k+1}}{\mb{\ddot{q}}_{k}} \right\}^T
+%%    + \pd{\mb{S}_{k+1}}{\mb{\ddot{q}}_k}^T \mb{\psi}_{k+1}
+%%    + \pd{\mb{T}_{k+1}}{\mb{\ddot{q}}_k}^T \mb{\phi}_{k+1}
+%%  \end{aligned}\right\}=0.
+%%\end{equation}
+Rearranging the terms results in the following linear system for $\mb{\lambda}_k$
+\begin{equation}\label{eqn:newmark-lambda2}
+  \begin{aligned}
+    \left[ \pd{\mb{R}_k}{\mb{\ddot{q}}_k} + \gamma h \pd{\mb{R}_k}{\mb{\dot{q}}_k} + \beta h^2 \pd{\mb{R}_k}{\mb{q}_k} \right]^T \mb{\lambda}_k
+   = &- \left\{ \pd{{F}_k}{\mb{\ddot{q}}_k} + \gamma h \pd{{F}_k}{\mb{\dot{q}}_k} + \beta h^2 \pd{{F}_k}{\mb{q}_k} \right\}^T \\
+    & -  \frac{1}{h}\left\{  \gamma h  \mb{\psi}_k + \beta h^2   \mb{\phi}_k \right\}^T\\
+    & -  \left[ (1-\gamma) h \pd{\mb{R}_{k+1}}{\mb{\dot{q}}_{k+1}}  + \frac{1-2\beta}{2} h^2 \pd{\mb{R}_{k+1}}{\mb{q}_{k+1}} \right]^T\mb{\lambda}_{k+1} \\
+    & -  \left\{ (1-\gamma) h \pd{{F}_{k+1}}{\mb{\mb{\dot{q}}}_{k+1}} + \frac{1-2\beta}{2} h^2 \pd{{F}_{k+1}}{\mb{q}_{k+1}} \right\}^T \\
+    & -  \frac{1}{h} \left\{ (1-\gamma) h \mb{\psi}_{k+1} + \frac{1-2\beta}{2} h^2 \mb{\phi}_{k+1} \right\}^T.
+  \end{aligned}
+\end{equation}
+The fourteen terms in~\eqref{eqn:newmark-lambda2} can be graphically interpreted in Figure~\ref{fig:newmark-lagrangian}, as occurrences of the primal state variable $\mb{\ddot{q}}_k$ as inputs argument to equations in the time history.
+\subsubsection{Evaluation of Total Derivative:}
+The determination of adjoint variables $\lambda(t,\xi)$, $\phi(t,\xi)$ and $\psi(t,\xi)$ allows evaluating the total derivative of the function of interest with respect to the design variables $\xi$ as
+\begin{equation}
+  \dfrac{d f}{d \mb{\xi}} =
+  \sum_{k=0}^N h \pd{{F}_k}{\mb{\xi}} +
+  \sum_{k=0}^N h \mb{\lambda}_k^T \pd{\mb{R}_k}{\mb{\xi}} +
+  \sum_{k=0}^N \mb{\psi}_k^T \pd{\mb{S}_k}{\mb{\xi}}  +
+  \sum_{k=0}^N \mb{\phi}_k^T \pd{\mb{T}_k}{\mb{\xi}}.
+\end{equation}
+Since, the state approximation equations $\mb{S}_k$ and $\mb{T}_k$ are
+independent of the design variables, $\mb{\xi}$,  it follows that
+\begin{equation}\label{eqn:bdf-total-derivative}
+  \dfrac{d f}{d \mb{\xi}} =
+  \sum_{k=0}^N h \pd{{F}_k}{\mb{\xi}} +
+  \sum_{k=0}^N h \mb{\lambda}_k^T \pd{\mb{R}_k}{\mb{\xi}}.
+\end{equation}
+This total derivative is numerically verified on a test problem with 12 different performance metrics of interest using the complex-step method (see Figure~\ref{fig:nbg-grad-verify}).
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.65\textwidth]{nbg-grad-verify.pdf}
+  \caption{Complex-step verification of the Newmark adjoint scheme for 12 different functions of interest with various perturbation step sizes.}
+  \label{fig:nbg-grad-verify}
+\end{figure}
+%We can equivalently scale the equation with $1/h^2$ and represent as follows,
+%\begin{equation}
+%  \begin{aligned}
+%    \left[ \frac{1}{h^2} \pd{R_k}{\ddot{q}_k} + \gamma \frac{1}{h} \pd{R_k}{\dot{q}_k} + \beta \pd{R_k}{{q}_k} \right]^T \lambda_k = &- \left\{ \frac{1}{h^2}  \pd{f_k}{\ddot{q}_k} + \gamma \frac{1}{h} \pd{f_k}{\dot{q}_k} + \beta \pd{f_k}{{q}_k} \right\}^T \\
+%    & -  \frac{1}{h}\left\{  \gamma \frac{1}{h}  \psi_k + \beta   \phi_k \right\}^T\\
+%    & -  \left\{ (1-\gamma) \frac{1}{h} \pd{f_{k+1}}{\dot{q}_{k+1}} + \frac{1-2\beta}{2} \pd{f_{k+1}}{{q}_{k+1}} \right\}^T \\
+%    & -  \left[ (1-\gamma) \frac{1}{h} \pd{R_{k+1}}{\dot{q}_{k+1}} + \frac{1-2\beta}{2} \pd{R_{k+1}}{{q}_{k+1}} \right]^T\lambda_{k+1} \\
+%    & -  \frac{1}{h} \left\{ (1-\gamma) \frac{1}{h} \psi_{k+1} + \frac{1-2\beta}{2} \phi_{k+1} \right\}^T.
+%  \end{aligned}
+%\end{equation}
+%
+
+\section{Backward Difference Formulas (BDF)}\label{sec:bdf}
+The BDF method was first proposed by Curtiss~\cite{BDF:Curtiss} and Henrici~\cite{BDF:Henrici}.
+The BDF method is an implicit multistep method based on finite differences: the higher-order difference operators are obtained by repetitive application of the first-order difference operator.
+As a result, the first-derivative approximation requires state variable values at $p+1$ points, while the second derivative approximation requires state variables at $2p+1$ points, where $p$ is the order of accuracy.
+The BDF method is suitable for the solution of stiff ODEs and DAEs and several solution packages, such as \texttt{ODEPACK/LSODE}~\cite{ODEPACK}, and \texttt{DASSL}~\cite{Brenan1995}, employ this method.
+ For a BDF method
+that uses constant step size $h$ the interpolation weights are shown in
+Table~\ref{tab:bdf_coefficients}.
+\subsection{Solution of the State Variables}\label{sec:bdf-forward}
+\begin{table}[h]
+  \caption{BDF interpolation weights up to an approximation order of six.}
+  \centering
+  \scalebox{1.0}{
+    \begin{tabular}{c|ccccccc}
+      \toprule
+      Order $p$ & $\alpha_{p0}$ & $\alpha_{p1}$ & $\alpha_{p2}$ & $\alpha_{p3}$ & $\alpha_{p4}$ & $\alpha_{p5}$ & $\alpha_{p6}$ \\
+      \midrule
+      1  & 1      & -1 &      &       &      &      & \\
+      2  & 3/2    & -2 & 1/2  &       &      &      & \\
+      3  & 11/6   & -3 & 3/2  & -1/3  &      &      & \\
+      4  & 25/12  & -4 & 3    & -4/3  & 1/4  &      & \\
+      5  & 137/60 & -5 & 5    & -10/3 & 5/4 & -1/5 & \\
+      6  & 49/20  & -6 & 15/2 & -20/3 & 15/4 & -6/5 & 1/6 \\
+      \bottomrule
+    \end{tabular}
+  }
+  \label{tab:bdf_coefficients}
+\end{table}
+
+
+\subsubsection{State Approximation Hypothesis}
+The primary unknowns of the BDF time marching scheme are the state variables $\mb{q}_{k}$ at each time step $k$.
+The first and second time derivatives of the state variables $\mb{\dot{q}}_{k}$ and $\mb{\ddot{q}}_{k}$ are obtained using
+\begin{equation}
+  \label{eqn:bdf-state-approx}
+  \begin{aligned}
+    \mb{\dot{q}}_{k}  & = \sum_{i=0}^{p}  \f{\alpha_{i}}{h}  \mb{q}_{k-i} + {\cal{O}}(h^{p}), \\
+    \mb{\ddot{q}}_{k} & = \sum_{i=0}^{2p} \f{\beta_{i}}{h^2} \mb{q}_{k-i}  + {\cal{O}}(h^{p}).
+  \end{aligned}
+\end{equation}
+The coefficients $\alpha_{i}$ and $\beta_{i}$ depend on the order of approximation, $p$.
+The first and second time derivatives of the state variables are linear combinations of the state variables scaled with BDF coefficients, as illustrated in Figure~\ref{fig:bdf-state-approx}.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{bdf-state-approx.pdf}
+  \caption{A weighted linear combination of the state variables with scaled BDF coefficients yielding the first (left) and second time derivatives of state variables (right). These relations are respectively labeled as the state approximation equations $\mb{S}_k$ and $\mb{T}_k$.}
+  \label{fig:bdf-state-approx}
+\end{figure}
+
+\subsubsection{Solution of the Nonlinear System}
+Once the time derivatives of states have been approximated using Equation~\eqref{eqn:bdf-state-approx}, the implicit system of nonlinear equations at $k-$th time step becomes
+%
+\begin{equation} \label{eqn:bdf-nonlinear-eqn}
+\mb{R}_k({t}_{k}, \mb{\xi}, \mb{\ddot{q}}_k,\mb{\dot{q}}_k,\mb{q}_k)=0.
+\end{equation}
+%
+This nonlinear system of equations is solved iteratively using Newton's method.
+The iterative updates to the unknown variables are obtained by solving a linearization of the governing equations with respect to the primary unknowns $\mb{q}_{k}$ as follows
+\begin{equation} \label{eqn:bdf-linearization}
+  \left[ \f{\beta_{0}}{h^2} \f{\p \mb{R}_k}{\p \mb{\ddot{q}}_k} +
+    \f{\alpha_{0}}{h} \f{\p \mb{R}_k}{\p \mb{\dot{q}}_k} + \f{\p \mb{R}_k}{\p \mb{q}_k}
+     \right]\Delta \mb{q}_{k}
+  = - \mb{R}_k({t}_{k}, \mb{\xi}, \mb{\ddot{q}}_{k}, \mb{\dot{q}}_{k}, \mb{q}_{k}).
+\end{equation}
+The secondary and tertiary updates to the first and second time derivatives of the state variables are readily obtained by scaling the state variable update $\Delta \mb{q}_{k}$ using the BDF coefficients, at each iteration $n$ of the nonlinear solution.
+The resulting update formulas to the state variables are
+\begin{equation}\label{eqn:bdf-newton-update}
+  \begin{aligned}
+    \mb{q}_{k}^{n+1} & = \mb{q}_{k}^{n} + \Delta \mb{q}_{k}^{n}, \\
+    \mb{\dot{q}}_{k}^{n+1}  & = \mb{\dot{q}}_{k}^{n} + \f{\alpha_{0}}{h} \Delta \mb{q}_{k}^{n}, \\
+    \mb{\ddot{q}}_{k}^{n+1} & = \mb{\ddot{q}}_{k}^{n} + \f{\beta_{0}}{h^2} \Delta \mb{q}_{k}^{n}.
+  \end{aligned}
+\end{equation}
+The use of the secondary and tertiary updates in Equation~\eqref{eqn:bdf-newton-update} is preferred since the original backwards difference formulas~\eqref{eqn:bdf-state-approx} typically require more vector operations.
+The iterative updates to the state variables and their first and second time derivatives are continued until the governing equations are solved to a specified tolerance.
+The accuracy of adjoint derivatives rely on the accuracy of the solution of the governing equations.
+Therefore it is important that the discrete nonlinear system~\eqref{eqn:bdf-nonlinear-eqn} is solved to a tight tolerance.
+
+\subsection{Solution of the Adjoint Variables}\label{sec:bdf-reverse}
+\subsubsection{Formation of the Lagrangian} \label{sec:bdf-rep-eqn}
+The adjoint equations are derived using a Lagrangian formulation. The time integral of the functional of interest is discretized as follows,
+\begin{equation}
+  f(\mb{\xi}) = \int_0^T {F}\left(t, \xi, \mb{\ddot{q}}, \mb{\dot{q}}, \mb{q}\right)~\mathrm{d}t \approx \sum_{k=0}^N h {F}_k\left( {t}_k ,\mb{\xi}, \mb{\ddot{q}}_{k},  \mb{\dot{q}}_{k}, \mb{q}_{k} \right).
+\end{equation}
+The inner product of the governing equations with the adjoint variables, $\mb{\lambda}$, is approximated as follows
+\begin{equation}
+  \int_0^T \mb{\lambda}^{T} \mb{R}(t, \xi, \mb{\ddot{q}}, \mb{\dot{q}}, \mb{q})~\mathrm{d}t \approx \sum_{k=0}^N h \mb{\lambda}_{k}^{T} \mb{R}_k(t_k, \xi, \mb{\ddot{q}}_{k}, \mb{\dot{q}}_{k}, \mb{q}_{k}).
+\end{equation}
+%
+The state approximation residuals of the BDF method are introduced as follows
+\begin{equation}
+\begin{aligned}
+\mb{S}_k & =  \sum_{i=0}^{p}  \f{\alpha_{i}}{h}   \mb{q}_{k-i} - \mb{\dot{q}}_{k},\\
+\mb{T}_k & = \sum_{i=0}^{2p}  \f{\beta_{i}}{h^2}  \mb{q}_{k-i}  - \mb{\ddot{q}}_{k}.
+\end{aligned}
+\end{equation}
+The adjoint variables $\mb{\psi}_k$ and $\mb{\phi}_k$ are associated
+with state approximation residuals $\mb{S}_{k}$ and $\mb{T}_{k}$,
+respectively.
+%
+With these definitions, the Lagrangian is defined as the following linear
+combination:
+\begin{equation}\label{eqn:bdf-lagrangian}
+  {\cal{L}} = \sum_{k=0}^N h {F}_k + \sum_{k=0}^N h \mb{\lambda}_k^T \mb{R}_k
+  +  \sum_{k=0}^N \mb{\psi}_k^T \mb{S}_k +  \sum_{k=0}^N\mb{\phi}_k^T \mb{T}_k.
+\end{equation}
+The adjoint variables $\mb{\lambda}_k$, $\mb{\psi}_k$ and
+$\mb{\phi}_k$, are the unknown weights in the linear
+combination~\eqref{eqn:bdf-lagrangian}. Once they are determined the
+total derivative is readily available as a linear combination
+involving the same weights.
+%
+The formation of Lagrangian is illustrated in
+Figure~\ref{fig:bdf-lagrangian} along with corresponding inputs to the
+equations $\mb{R}_k$, $\mb{S}_k$, $\mb{T}_k$ and ${F}_k$. The
+similarity in inputs to the governing equations $\mb{R}_k$, and the
+functional, ${F}_k$ are due to their identical mathematical forms.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.99\textwidth]{bdf-lagrangian.pdf}
+  \caption{A graphical illustration of the weighted linear combination of
+    equations with corresponding adjoint variables forming the
+    Lagrangian for the BDF method.}
+  \label{fig:bdf-lagrangian}
+\end{figure}
+
+\subsubsection{The Adjoint Equations:}
+The system of equations to solve for the adjoint variables is obtained
+from the stationary points of the Lagrangian with respect to the state
+variables and their first and second time derivatives at each time
+step.  The number of terms in the adjoint system of equations as
+a function of the order of BDF method is listed in Table~\ref{tab:bdf-adjoint-tally}.
+\begin{table}
+  \caption{The number of terms in the adjoint system of equations for $p$-th order BDF method.}
+  \centering
+  \begin{tabular}{cccccc}
+    \toprule
+        {} & $\mb{T}$ & $\mb{S}$ & $\mb{R}$ & F & Total \\
+        \midrule
+        $\mb{\phi}_k$    & 1    &     &        &        & 1      \\
+        $\mb{\psi}_k$    &      & 1   &        &        & 1      \\
+        $\mb{\lambda}_k$ & $2p+1$ & $p+1$ & $3p+3$ & $3p+3$ & $9p+8$ \\
+        \bottomrule
+  \end{tabular}
+  \label{tab:bdf-adjoint-tally}
+\end{table}
+
+\paragraph*{\underline{1. Equation for $\mb{\phi}_k$:}}
+The equations to solve for $\mb{\phi}_k$ are obtained using
+$\partial{\cal{L}}/\partial{\mb{\ddot{q}}_{k}} = 0$. It follows that
+$\f {\p \mb{T}_k}{\p \mb{\ddot{q}}_k}^T\mb{\phi}_k = 0$, which
+simplifies further to $\mb{\phi}_k = 0.$
+
+\paragraph*{\underline{2. Equation for $\mb{\psi}_k$:}}
+The equations to solve for $\mb{\psi}_k$ are obtained using
+$\partial{\cal{L}}/\partial{\mb{\dot{q}}_{k}} = 0$. It follows that
+$\f {\p \mb{S}_k}{\p \mb{\dot{q}}_k}^T\mb{\psi}_k = 0$, which
+simplifies to $ \mb{\psi}_k = 0.$
+
+\paragraph*{\underline{3. Equation for $\mb{\lambda}_k$:}}
+The set of equations to solve for $\mb{\lambda}_k$ are obtained using
+$\partial{\cal{L}}/\partial{\mb{{q}}_{k}} = 0$. It follows that
+\begin{align}\label{eqn-bdf-lambda1}
+  0 &= \begin{aligned}[t]
+    &h\left[
+      \f{\beta_{0}}{h^2} \f{\p \mb{R}_k}{\p \mb{\ddot{q}}_k} +
+      \f{\alpha_{0}}{h} \f{\p \mb{R}_k}{\p \mb{\dot{q}}_k} +
+      \f{\p \mb{R}_k}{\p \mb{q}_k}
+      \right]^T
+    \mb{\lambda}_{k}
+    +
+    h\sum_{i=1}^{p} \f{\alpha_{i}}{h} \f{ \p \mb{R}_{k+i} }{ \p \mb{\dot{q}}_{k+i} }^T  \mb{\lambda}_{k+i}
+    +
+    h\sum_{i=1}^{2p} \f{\beta_{i}}{h^2} \f{ \p \mb{R}_{k+i} }{ \p \mb{\ddot{q}}_{k+i} }^T   \mb{\lambda}_{k+i}
+    \\
+    &+h\left\{
+    \f{\beta_{0}}{h^2} \f{\p {F}_k}{\p \mb{\ddot{q}}_k} +
+    \f{\alpha_{0}}{h} \f{\p {F}_k}{\p \mb{\dot{q}}_k} +
+    \f{\p {F}_k}{\p \mb{q}_k}
+    \right\}^T
+    +
+    h\sum_{i=1}^{p} \f{\alpha_{i}}{h} \f{ \p {F}_{k+i} }{ \p \mb{\dot{q}}_{k+i} }^T
+    +
+    h\sum_{i=1}^{2p} \f{\beta_{i}}{h^2} \f{ \p {F}_{k+i} }{ \p \mb{\ddot{q}}_{k+i} }^T
+    \\
+    &+\sum_{i=0}^{p} \f{\alpha_{i}}{h} \mb{\psi}_{k+i}
+    +
+    \sum_{i=0}^{2p} \f{\beta_{i}}{h^2} \mb{\phi}_{k+i}
+  \end{aligned}
+\end{align}
+The $9p+8$ terms in Equation~\eqref{eqn-bdf-lambda1} arise from the
+occurrences of the states, $\mb{q}_k$, as arguments to
+equations at different time steps, as illustrated in
+Figure~\ref{fig:bdf-lagrangian}.  The contributions due to
+$\mb{\psi}_k$ and $\mb{\phi}_k$ are zero, which eliminates $3p+2$
+terms. Finally, rearranging the terms and dividing by $h$ yields the following
+linear system to solve for $\mb{\lambda}_k$:
+\begin{align}\label{eqn-bdf-lambda2}
+%  \boxed{
+    \begin{aligned}[t]
+      \left[
+        \f{\beta_{0}}{h^2} \f{\p \mb{R}_k}{\p \mb{\ddot{q}}_k} +
+        \f{\alpha_{0}}{h} \f{\p \mb{R}_k}{\p \mb{\dot{q}}_k} +
+        \f{\p \mb{R}_k}{\p \mb{q}_k}
+        \right]^T
+      \mb{\lambda}_{k}
+      = & -\left\{
+      \f{\beta_{0}}{h^2} \f{\p {F}_k}{\p \mb{\ddot{q}}_k} +
+      \f{\alpha_{0}}{h} \f{\p {F}_k}{\p \mb{\dot{q}}_k} +
+      \f{\p {F}_k}{\p \mb{q}_k}
+      \right\}^T \\
+      & -
+      \sum_{i=1}^{p} \f{\alpha_{i}}{h} \f{ \p \mb{R}_{k+i} }{ \p \mb{\dot{q}}_{k+i} }^T  \mb{\lambda}_{k+i}
+      -
+      \sum_{i=1}^{2p} \f{\beta_{i}}{h^2} \f{ \p \mb{R}_{k+i} }{ \p \mb{\ddot{q}}_{k+i} }^T   \mb{\lambda}_{k+i}\\
+      &-
+      \sum_{i=1}^{p} \f{\alpha_{i}}{h} \f{ \p {F}_{k+i} }{ \p \mb{\dot{q}}_{k+i} }^T
+      -
+      \sum_{i=1}^{2p} \f{\beta_{i}}{h^2} \f{ \p {F}_{k+i} }{ \p \mb{\ddot{q}}_{k+i} }^T,
+    \end{aligned}
+ % }
+\end{align}
+with $6p+6$ terms.
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.48\linewidth}
+    \includegraphics[width=\textwidth]{bdf1-grad-verify.pdf}
+    \caption{first-order}
+  \end{subfigure}
+  \begin{subfigure}{0.48\linewidth}
+    \includegraphics[width=\textwidth]{bdf2-grad-verify.pdf}
+    \caption{second-order}
+  \end{subfigure}
+  \begin{subfigure}{0.48\linewidth}
+    \includegraphics[width=\textwidth]{bdf3-grad-verify.pdf}
+    \caption{third-order}
+  \end{subfigure}
+  \caption{Complex-step verification of the BDF adjoint scheme for 12
+    different functions of interest with various perturbation step sizes.}
+  \label{fig:bdf-grad-verify}
+\end{figure}
+
+\subsubsection{Evaluation of Total Derivative:} Once the adjoint variables
+have been determined, the total derivative of the functional of
+interest with respect to the design variables, $\mb{\xi}$, is the
+following linear combination:
+\begin{equation}
+  \dfrac{d f}{d \mb{\xi}} =
+  \sum_{k=0}^N h \pd{{F}_k}{\mb{\xi}} +
+  \sum_{k=0}^N h \mb{\lambda}_k^T \pd{\mb{R}_k}{\mb{\xi}} +
+  \sum_{k=0}^N \mb{\psi}_k^T \pd{\mb{S}_k}{\mb{\xi}}  +
+  \sum_{k=0}^N \mb{\phi}_k^T \pd{\mb{T}_k}{\mb{\xi}}.
+\end{equation}
+Since, the state approximation equations $\mb{S}_k$ and $\mb{T}_k$ are
+independent of the design variables, $\mb{\xi}$,  it follows that
+\begin{equation}\label{eqn:bdf-total-derivative}
+  \dfrac{d f}{d \mb{\xi}} =
+  \sum_{k=0}^N h \pd{{F}_k}{\mb{\xi}} +
+  \sum_{k=0}^N h \mb{\lambda}_k^T \pd{\mb{R}_k}{\mb{\xi}}.
+\end{equation}
+This total derivative is numerically verified on a test problem using
+complex-step method (see Figure~\ref{fig:bdf-grad-verify}).
+
+\section{Adams--Bashforth--Moulton}\label{sec:adams}
+The Adams--Bashforth--Moulton (see~\citet{Bashforth1883} and \citet{Moulton1926}) family of linear multistep methods use the past solution values to construct the solution at current step.
+The ABM methods are based on numerical integration of the polynomial that interpolates solution values.
+The number of values used to construct the solution determines the order of accuracy and stability of the method.
+The ABM method is a part of packages such as \texttt{EPISODE}~\cite{Byrne1975} and \texttt{LSODE}~\cite{ODEPACK}, and has been applied to solve stiff problems.
+The interpolation coefficients of the implicit ABM method for constant step size $h$ are shown in Table~\ref{tab:adams_coefficients}.
+%The ABM method is a popular alternative to Runge--Kutta method when the evaluation of governing equations are very expensive.
+\begin{table}[h]
+  \caption{Implicit ABM coefficients upto an approximation order of six.}
+  \centering
+  \scalebox{1.0}{
+    \begin{tabular}{c|cccccc}
+      \toprule
+      Order $p$ & $\alpha_{p0}$ & $\alpha_{p1}$ & $\alpha_{p2}$ & $\alpha_{p3}$ & $\alpha_{p4}$ & $\alpha_{p5}$  \\
+      \midrule
+      1  & 1      &  &      &       &      &       \\
+      2  & 1/2    & 1/2 &   &       &      &       \\
+      3  & 5/12   & 8/12 & -1/12    &   &      &       \\
+      4  & 9/24   & 19/24 & -5/24    & 1/24  &   &       \\
+      5  & 251/720 & 646/720 & -264/720  & 106/720 & -19/720 &   \\
+      6  & 475/1440  & 1427/1440 & -798/1440 & 482/1440 & -173/1440 & 27/1440 \\
+      \bottomrule
+    \end{tabular}
+  }
+  \label{tab:adams_coefficients}
+\end{table}
+
+%There are several implementation issues to discuss, including (i)
+%starting values, (ii) iteration for implicit methods, (iii) error
+%estimation, (iv) step-size variation, and (iv) method order
+%variation.
+
+\subsection{Solution of the State Variables}\label{sec:adams-forward}
+\subsubsection{State Approximation Hypothesis}
+The primary unknowns of the ABM family of methods are the acceleration state variables $\mb{\ddot{q}}_{k}$ at each time step $k$.
+The first time derivative of state variables,
+$\mb{\dot{q}}_{k}$, are obtained by numerical integration of the
+second time derivative of states as follows
+\begin{equation}
+  \label{eqn:adams-velocity-state-approx}
+  \begin{aligned}
+    \mb{\dot{q}}_k & = \mb{\dot{q}}_{k-1} +  \sum_{i=0}^{p-1} h \alpha_i \mb{\ddot{q}}_{k-i} + {\cal{O}}(h^{p}).
+  \end{aligned}
+\end{equation}
+The state variables, $\mb{q}_k$, are obtained by numerical integration
+of the first time derivative of states as follows
+\begin{equation}
+  \label{eqn:adams-position-state-approx}
+  \begin{aligned}
+    \mb{q}_k & = \mb{q}_{k-1} +  \sum_{i=0}^{p-1} h \alpha_i \mb{\dot{q}}_{k-i} + {\cal{O}}(h^{p}).
+%     & = \mb{q}_{k-1} + h\alpha_0\mb{\dot{q}}_k + \sum_{i=1}^{p-1} h \alpha_i \mb{\dot{q}}_{k-i} + {\cal{O}}(h^{p})\\
+%     & = \mb{q}_{k-1} + h\alpha_0 \left( \mb{\dot{q}}_{k-1}
+%    +  \sum_{i=0}^{p-1} h \alpha_i \mb{\ddot{q}}_{k-i}\right)
+%    +  \sum_{i=1}^{p-1} h \alpha_i \mb{\dot{q}}_{k-i} + {\cal{O}}(h^{p})
+  \end{aligned}
+\end{equation}
+The schematic representation of the ABM state approximations is shown
+in Figure~\ref{fig:adams-state-approx}.
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.99\textwidth]{adams-state-approx.pdf}
+  \caption{A weighted linear combination of state variables with
+    scaled ABM coefficients yielding the first time derivative of
+    states (left) and the state variables (right).}
+  \label{fig:adams-state-approx}
+\end{figure}
+
+\subsubsection{Solution of the Nonlinear System:}
+The system of governing equations
+$\mb{R}_k({t}_k, \mb{\xi}, \mb{\ddot{q}}_k,\mb{\dot{q}}_k,\mb{q}_k)=0$
+is linearized with respect to the primary unknown variable
+$\mb{\ddot{q}}_k$ of the ABM time marching scheme at each time step $k$  as follows:
+\begin{equation} \label{eqn:adams-linearization}
+  \left[ \f{\p \mb{R}_k}{\p \mb{\ddot{q}}_k} +
+    h\alpha_0  \f{\p \mb{R}_k}{\p \mb{\dot{q}}_k} + h^2\alpha_0^2  \f{\p \mb{R}_k}{\p \mb{q}_k}
+     \right]\Delta \mb{\ddot{q}}_{k}
+  = - \mb{R}_k({t}_k, \mb{\xi}, \mb{\ddot{q}}_{k}, \mb{\dot{q}}_{k}, \mb{q}_{k}).
+\end{equation}
+The state variables and the first time derivatives are approximated using Equations~\eqref{eqn:adams-position-state-approx} and~\eqref{eqn:adams-velocity-state-approx}, for an estimated value of $\mb{\ddot{q}}_k$.
+The linearization of the governing equations~\eqref{eqn:adams-linearization} is then solved for the primary update $\Delta \mb{\ddot{q}}_{k}^{n}$, at each iteration, $n$, of the nonlinear solution.
+The secondary updates to state variables are readily obtained by scaling the primary update using the ABM coefficients.
+The resulting update formulas to the state variables and their time derivatives are
+\begin{equation}\label{eqn:adams-newton-update}
+  \begin{aligned}
+    \mb{\ddot{q}}_{k}^{n+1} & = \mb{\ddot{q}}_{k}^{n} + \Delta \mb{\ddot{q}}_{k}^{n}, \\
+    \mb{\dot{q}}_{k}^{n+1}  & = \mb{\dot{q}}_{k}^{n}  +  h\alpha_0 \Delta \mb{\ddot{q}}_{k}^{n}, \\
+       {\mb{q}}_{k}^{n+1}  & = {\mb{q}}_{k}^{n}      + h^2\alpha_0^2 \Delta \mb{\ddot{q}}_{k}^{n}.
+  \end{aligned}
+\end{equation}
+The iterative updates to the state variables and their time derivatives are continued until the governing equations are solved to required tolerance.
+
+\subsection{Solution of the Adjoint Variables}\label{sec:adams2-reverse}
+\subsubsection{Formation of the Lagrangian}\label{sec:adams2-rep-eqn}
+The governing equations and functional of interest follow same
+treatment discussed previously for other methods. The state
+approximations of the ABM time marching scheme given in
+equations~\eqref{eqn:adams-velocity-state-approx}
+and~\eqref{eqn:adams-position-state-approx} are expressed as the
+following residuals
+\begin{equation}
+  \begin{aligned}
+    \mb{S}_k & =  \mb{\dot{q}}_{k-1}  + h \sum_{i=0}^{p-1} \alpha_i \mb{\ddot{q}}_{k-i} - \mb{\dot{q}_k},\\
+    \mb{T}_k & =  \mb{q}_{k-1} + h\alpha_0 \left( \mb{\dot{q}}_{k-1}
+    +  \sum_{i=0}^{p-1} h \alpha_i \mb{\ddot{q}}_{k-i}\right)
+    +  \sum_{i=1}^{p-1} h \alpha_i \mb{\dot{q}}_{k-i}
+    - {\mb{q}}_k.
+  \end{aligned}
+\end{equation}
+The term $h\alpha_0\mb{\dot{q}}_k$ is expanded out in terms of the
+primary unknown $\mb{\ddot{q}}_k$ for eliminating the coupling of adjoint
+equations within each time step.
+The adjoint variables $\mb{\lambda}_k$, $\mb{\psi}_k$ and $\mb{\phi}_k$ are introduced as respective unknown weights, to the governing equations, $\mb{R}_k$, the state approximation equations, $\mb{S}_k$, and $\mb{T}_k$, arising from the ABM scheme, for each time step, $k$.
+The geometric intuition in forming the Lagrangian is as follows.
+All four functions $F_k$, $R_k$, $S_k$ and $T_k$ lie within the span of $\ddot{q}(t,\xi) \otimes \dot{q}(t,\xi) \otimes {q}(t,\xi) \otimes \xi \otimes t$. The goal is to represent the function of interest $F_k$ as a linear combination of other functions $R_k$, $S_k$ and $T_k$ from the same subspace by associating weights $\lambda_k$, $\psi_k$ and $\phi_k$.
+The Lagrangian is written as
+\begin{equation}
+  {\cal{L}} = \sum_{k=0}^N h {F}_k + \sum_{k=0}^N h \mb{\lambda}_k^T \mb{R}_k
+  +  \sum_{k=0}^N \mb{\psi}_k^T \mb{S}_k +  \sum_{k=0}^N\mb{\phi}_k^T \mb{T}_k.
+\end{equation}
+%
+The formation of the Lagrangian for the ABM method is illustrated in
+Figure~\ref{fig:abm2-lagrangian}.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.99\textwidth]{abm2-lagrangian.pdf}
+  \caption{A weighted linear combination of \textit{equations}
+    with corresponding \textit{adjoint variables} forming the Lagrangian
+    for ABM method.}
+  \label{fig:abm2-lagrangian}
+\end{figure}
+The number of terms that occur in the adjoint system of equations for
+each adjoint variable (see Table~\ref{tab:adams2-adjoint-tally}) can
+be determined graphically from Figure~\ref{fig:abm2-lagrangian}.
+
+%The equations are vectors in the vector-space of
+%functions. The vector objects $\mb{R}_k$, $\mb{S}_k$ and $\mb{T}_k$
+%ought to be a spannning set of the vector space for a possible
+%representation of $\mb{F}_k$ as a linear combination, \emph{i.e.,} the
+%determinant of the transformation Jacobian must not vanish. The
+%determination of unknown adjoint variables allows writing the
+%\textit{derivatives of these vectors} with respect to the design
+%variables, $\mb{\xi}$, as a linear combination too, involving the
+%\textit{same weights}, at each time step, $k$.
+
+\subsubsection{The Adjoint Equations:}
+The system of equations to solve for the adjoint variables is obtained
+from the stationary points of the Lagrangian with respect to the
+position, velocity and acceleration state variables, at each time
+step, $k$.
+\begin{table}
+  \caption{Table listing the number of terms in the adjoint system of
+    equations for ABM method.}
+  \centering
+  \begin{tabular}{cccccc}
+    \toprule
+        {} & $\mb{T}$ & $\mb{S}$ & $\mb{R}$ & F & Total \\
+        \midrule
+        $\mb{\phi}_k$    & 2    &     &   1    &   1    & 4      \\
+        $\mb{\psi}_k$    & p    &  2  &   p+1  &   p+1  & 3p+4   \\
+        $\mb{\lambda}_k$ & p    &  p  &  2p+1  &  2p+1  & 6p+2   \\
+        \bottomrule
+  \end{tabular}
+  \label{tab:adams2-adjoint-tally}
+\end{table}
+
+\paragraph*{\underline{1. Equation for $\mb{\phi}_k$:}}
+Setting $\partial{\cal{L}}/\partial{\mb{{q}}_{k}} = 0$ yields
+\begin{equation}\label{eqn:adams2-phi1}
+  \begin{aligned}
+    \pd{\mb{T}_{k}}{\mb{q}_{k}}^T \mb{\phi}_k +
+    \pd{\mb{T}_{k+1}}{\mb{q}_{k}}^T \mb{\phi}_{k+1}
+    + h \pd{\mb{R}_{k+1}}{\mb{q}_{k}}^T \mb{\lambda}_{k+1}
+    + h \pd{{F}_{k+1}}{\mb{q}_{k}}^T
+    = 0.
+  \end{aligned}
+\end{equation}
+This simplifies to
+\begin{equation}\label{eqn:adams2-phi2}
+  \begin{aligned}
+    \mb{\phi}_k = \mb{\phi}_{k+1}
+    + h \left[ \pd{\mb{R}_{k+1}}{\mb{q}_{k+1}} \right]^T \mb{\lambda}_{k+1}
+    +  h \left\{\pd{{F}_{k+1}}{\mb{q}_{k+1}} \right\}^T .
+  \end{aligned}
+\end{equation}
+
+\paragraph*{\underline{2. Equation for $\mb{\psi}_k$:}}
+Setting $\partial{\cal{L}}/\partial{\mb{\dot{q}}_{k}} = 0$ yields
+\begin{equation}\label{eqn:adams2-psi1}
+  \begin{aligned}
+    \pd{\mb{S}_k}{\mb{\dot{q}}_k}^T \mb{\psi}_k +
+    \pd{\mb{S}_{k+1}}{\mb{\dot{q}}_k}^T  \mb{\psi}_{k+1} +
+    \sum_{i=1}^{p-1} \pd{\mb{T}_{k+i}}{\mb{\dot{q}}_{k}}^T \mb{\phi}_{k+i}
+    + h  \sum_{i=1}^{p-1} \pd{\mb{R}_{k+i}}{\mb{\dot{q}}_{k}}^T \mb{\lambda}_{k+i}
+    + h  \sum_{i=1}^{p-1} \pd{{F}_{k+i}}{\mb{\dot{q}}_{k}}^T = 0.
+  \end{aligned}
+\end{equation}
+%Applying the chain rule of differentiation,
+%\begin{equation}\label{eqn:adams-psi2}
+%  \begin{aligned}
+%    \left[ \pd{\mb{S}_k}{\mb{\dot{q}}_{k+1}} \pd{\mb{\dot{q}}_{k+1}}{\mb{\dot{q}}_k} \right]^T \mb{\psi}_k +
+%    \left[  \pd{\mb{S}_{k+1}}{\mb{\dot{q}}_{k+1}  }\pd{\mb{\dot{q}}_{k+1}}{\mb{\dot{q}}_k} \right]^T  \mb{\psi}_{k+1}
+%    & +\sum_{i=0}^{p-1} \left[ \pd{\mb{T}_{k+i}}{\mb{\dot{q}}_{k}} \pd{\mb{\dot{q}}_{k+1}}{\mb{\dot{q}}_k} \right]^T \mb{\phi}_{k+i} \\
+%    &+ h \sum_{i=0}^{p-1}  \left[\pd{\mb{R}_{k+i}}{\mb{\dot{q}}_{k+1}} \pd{\mb{\dot{q}}_{k+1}}{\mb{\dot{q}}_k} \right]^T \mb{\lambda}_{k+i}\\
+%    & + h \sum_{i=0}^{p-1}   \left\{\pd{{F}_{k+i}}{\mb{\dot{q}}_{k+1}}\pd{\mb{\dot{q}}_{k+1}}{\mb{\dot{q}}_k}
+%    \right\}^T
+%  \end{aligned} = 0.
+%\end{equation}
+Further simplifications result in the adjoint variable, $\mb{\psi}_k$,
+as a linear combination:
+\begin{equation}\label{eqn:adams2-psi3}
+  \begin{aligned}
+    \mb{\psi}_k  =
+    \mb{\psi}_{k+1}
+    & + h  \alpha_0 \mb{\phi}_{k+1}
+    + h  \left[  \pd{\mb{R}_{k+1}}{\mb{\dot{q}}_{k+1}} + h\alpha_0 \pd{\mb{R}_{k+1}}{\mb{q}_{k+1}} \right]^T \mb{\lambda}_{k+1}
+    + h  \left\{ \pd{{F}_{k+1}}{\mb{\dot{q}}_{k+1}} + h\alpha_0 \pd{{F}_{k+1}}{\mb{q}_{k+1}} \right\}^T \\
+    & + h \sum_{i=1}^{p-1} \alpha_i \mb{\phi}_{k+i}
+     + h \sum_{i=1}^{p-1} \left[ h\alpha_i \pd{\mb{R}_{k+i}}{\mb{q}_{k+i}} \right]^T \mb{\lambda}_{k+i}
+    + h \sum_{i=1}^{p-1} \left\{ h\alpha_i \pd{{F}_{k+i}}{\mb{q}_{k+i}} \right\}^T.
+  \end{aligned}
+\end{equation}
+\paragraph*{\underline{3. Equation for $\mb{\lambda}_k$:}}
+Setting $\partial{\cal{L}}/\partial{\mb{\ddot{q}}_{k}} = 0$ yields the
+equation to solve for the adjoint variable, $\mb{\lambda}_k$,
+\begin{equation}\label{eqn:adams2-lambda1}
+\begin{aligned}
+     h \sum_{i=0}^{p-1}  \pd{\mb{R}_{k+i}}{\mb{\ddot{q}}_k}^T \mb{\lambda}_{k+i}
+    + h \sum_{i=0}^{p-1} \pd{{F}_{k+i}}{\mb{\ddot{q}}_k}^T
+    + \sum_{i=0}^{p-1}  \pd{\mb{S}_{k+i}}{\mb{\ddot{q}}_k}^T \mb{\psi}_{k+i}
+    + \sum_{i=0}^{p-1}  \pd{\mb{T}_{k+i}}{\mb{\ddot{q}}_k}^T \mb{\phi}_{k+i} = 0.
+  \end{aligned}
+\end{equation}
+%Applying the chain rule of differentiation,
+%\begin{equation}\nonumber
+%\begin{aligned}
+%     h \sum_{i=0}^{p-1} \left[  \pd{\mb{R}_{k+i}}{\mb{\ddot{q}}_{k+i}}
+%       \pd{\mb{\ddot{q}}_{k+i}}{\mb{{q}}_k} \right]^T \mb{\lambda}_{k+i}
+%    + h \sum_{i=0}^{p-1} \left\{ \pd{{F}_{k+i}}{\mb{\ddot{q}}_k } \pd{\mb{\ddot{q}}_{k+i}}{\mb{{q}}_k} \right\}^T
+%    + \sum_{i=0}^{p-1} \left( \left[ \pd{\mb{S}_{k+i}}{\mb{\ddot{q}}_k} \pd{\mb{\ddot{q}}_{k+i}}{\mb{{q}}_k} \right]^T \mb{\psi}_{k+i}
+%    +  \left[ \pd{\mb{T}_{k+i}}{\mb{\ddot{q}}_k} \pd{\mb{\ddot{q}}_{k+i}}{\mb{{q}}_k} \right]^T \mb{\phi}_{k+i} \right) = 0
+%  \end{aligned}
+%\end{equation}
+Expanding the derivative terms, separating out current and previous
+determined terms, dividing by $h$ and rearranging for the unknown
+adjoint variable $\mb{\lambda}_k$ results in the following linear
+system:
+\begin{equation}\label{eqn:adams2-lambda2}
+  \begin{aligned}
+    \left[ \pd{\mb{R}_k}{\mb{\ddot{q}}_k} +  h\alpha_0 \pd{\mb{R}_k}{\mb{\dot{q}}_k} + h^2\alpha_0^2 \pd{\mb{R}_k}{\mb{q}_k} \right]^T \mb{\lambda}_k
+   = &- \left\{ \pd{{F}_k}{\mb{\ddot{q}}_k} + h\alpha_0 \pd{{F}_k}{\mb{\dot{q}}_k} + h^2\alpha_0^2 \pd{{F}_k}{\mb{q}_k} \right\}^T \\
+    & - \frac{1}{h}\left\{  h\alpha_0  \mb{\psi}_k +  h^2\alpha_0^2 \mb{\phi}_k \right\}\\
+    & - \sum_{i=1}^{p-1}  \left[ h\alpha_i \pd{\mb{R}_{k+i}}{\mb{\dot{q}}_{k+i}}  + h\alpha_0 h\alpha_i  \pd{\mb{R}_{k+i}}{\mb{q}_{k+i}} \right]^T\mb{\lambda}_{k+i} \\
+    & - \sum_{i=1}^{p-1} \left\{ h\alpha_i \pd{{F}_{k+i}}{\mb{\mb{\dot{q}}}_{k+i}} + h\alpha_0 h\alpha_i \pd{{F}_{k+i}}{\mb{q}_{k+i}} \right\}^T \\
+    & - \frac{1}{h} \sum_{i=1}^{p-1} \left\{ h\alpha_i \mb{\psi}_{k+i} +  h\alpha_0 h\alpha_i \mb{\phi}_{k+i} \right\}.
+  \end{aligned}
+\end{equation}
+The partial derivative terms in the linear system correspond to the
+occurrences of $\mb{\ddot{q}}_k$ as inputs to equations $\mb{R}$,
+$\mb{S}$, $\mb{T}$ and ${F}$ in the time history, as illustrated in
+Figure~\ref{fig:abm2-lagrangian}.
+The determination of adjoint variables allows
+evaluating the total derivative of the functional of interest with
+respect to the design variables, using
+Equation~\eqref{eqn:bdf-total-derivative}.
+See Figure~\ref{fig:abm-grad-verify} for numerical verification of the total derivative using complex-step method on a simple test problem.
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.48\linewidth}
+    \includegraphics[width=\textwidth]{abm1-grad-verify.pdf}
+    \caption{first-order}
+  \end{subfigure}
+  \begin{subfigure}{0.48\linewidth}
+    \includegraphics[width=\textwidth]{abm2-grad-verify.pdf}
+    \caption{second-order}
+  \end{subfigure}
+  \caption{Complex-step verification of the ABM adjoint scheme for 12
+    different functions of interest with various perturbation step sizes.}
+  \label{fig:abm-grad-verify}
+\end{figure}
+
+%The dual (adjoint) variable $\mb{\lambda}_k$ accumulates the
+%contributions of the corresponding primal variable, $\mb{\ddot{q}}_k$
+%in the forward solution mode.
+
+\section{Diagonally Implicit Runge--Kutta}\label{sec:dirk}
+Runge--Kutta methods belong to the class of multistage methods for solving differential equations.
+They are termed as multistage methods as they require solutions at intermediate stages to progress from step $t_{k-1}$ to $t_k$.
+Butcher~\cite{Butcher1964IRK} extended explicit Runge--Kutta method to Implicit Runge--Kutta (IRK) method, and furthermore Alexander~\cite{Alexander1977} and Cash~\cite{Cash1984DIRK} developed Diagonally Implicit Runge--Kutta (DIRK) method.
+The coefficients that define the DIRK method are arranged in a tabular format as shown in Table~\ref{tab:butcher_tableau_dirk}, and is commonly referred to as the Butcher's tableau.
+\begin{table}[h!]
+  \caption{Butcher's tableau of DIRK coefficients.}
+  \centering
+  \scalebox{1.0}{
+    \begin{tabular}{c|cccc|c}
+      \toprule
+      Stage & $\beta_1$     & $\beta_2$   & $\cdots$ & $\beta_s$    &          \\
+      \midrule
+      1     & $\alpha_{11}$ & 0            & 0        & 0            & $\tau_1$ \\
+      2     & $\alpha_{21}$ & $\alpha_{22}$ & 0        & 0            & $\tau_2$ \\
+      & $\vdots$     & $\vdots$     & $\ddots$ & 0            & $\vdots$ \\
+      s     & $\alpha_{s1}$ & $\alpha_{s2}$ & $\cdots$ & $\alpha_{ss}$ & $\tau_s$ \\
+      \bottomrule
+    \end{tabular}
+  }
+  \label{tab:butcher_tableau_dirk}
+\end{table}
+The lower triangular nature of the tableau enables the successive
+solution of the nonlinear governing equations at each stage.
+Note that the tableau fully populated in the case of an IRK scheme, resulting in full coupling among all stages.
+Due to the availability of \emph{one-stage-second-order}, \emph{two-stage-third-order} and \emph{three-stage-fourth-order} DIRK methods developed by Alexander~\cite{Alexander1977}, it is preferred to IRK methods.
+
+\subsection{Solution of the State Variables}\label{sec:dirk-forward}
+The development of DIRK scheme for second-order descriptor systems and the corresponding time dependent discrete-adjoint are discussed next.
+\subsubsection{Stage Approximations Hypothesis}\label{sec:dirk-stage-approx}
+The governing equations are solved at intermediate time steps,
+${t}_{ki}$, referred to as the \emph{stages}. The intermediate stage
+state variables and their first and second time derivatives are
+denoted as $\mb{u}_{ki}$, $\mb{\dot{u}}_{ki}$ and
+$\mb{\ddot{u}}_{ki}$, respectively. The stage state approximation
+  relations are
+\begin{equation}\label{eqn:dirk-stage-approx}
+  \begin{aligned}
+    \mb{\dot{u}}_{ki} & = \mb{\dot{q}}_{k-1} + h \sum_{j=1}^i \alpha_{ij} \mb{\ddot{u}}_{kj}, \\
+    \mb{u}_{ki} & = \mb{q}_{k-1} + h \sum_{j=1}^i \alpha_{ij} \mb{\dot{u}}_{kj}.
+  \end{aligned}
+\end{equation}
+The indices $i$ and $j$ to refer to row and column of the
+coefficients in the Butcher's tableau shown in
+Table~\ref{tab:butcher_tableau_dirk}. The schematic representation of the
+intermediate stage approximations is shown in
+Figure~\ref{fig:dirk-stage-approx}.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.99\textwidth]{dirk-stage-approx.pdf}
+  \caption{The intermediate stage state variables of DIRK are formed as a
+    linear combination.}
+  \label{fig:dirk-stage-approx}
+\end{figure}
+
+\subsubsection{State Approximation Hypothesis}\label{sec:dirk-state-approx}
+ The state variables at time, $t_k$, are expressed as follows
+\begin{equation}\label{eqn:dirk-state-approx}
+  \begin{aligned}
+    \mb{\ddot{q}}_{k} &= \sum_{i=1}^s \beta_i \mb{\ddot{u}}_{ki}, \\
+    \mb{\dot{q}}_{k}  &= \mb{\dot{q}}_{k-1} + h \sum_{i=1}^s \beta_i \mb{\ddot{u}}_{ki},  \\
+    \mb{q}_{k} &= \mb{q}_{k-1} + h \sum_{i=1}^s \beta_i \mb{\dot{u}}_{ki}
+  \end{aligned}
+\end{equation}
+and is illustrated in Figure~\ref{fig:dirk-state-approx}.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.99\textwidth]{dirk-state-approx.pdf}
+  \caption{The state variables and their time derivatives at $k$-{th} time step formed as a
+    linear combination.}
+  \label{fig:dirk-state-approx}
+\end{figure}
+
+\subsubsection{Solution of the Nonlinear System}
+The nonlinear system of equations to be solved, at each stage, $i$, and
+time step, $k$, is
+$\mb{R}_{ki}({t}_{ki}, \mb{\xi}, \mb{\ddot{u}}_{ki},\mb{\dot{u}}_{ki},\mb{u}_{ki})=0$.
+This can be solved in a manner similar to Newmark and ABM methods
+discussed previously. The key difference here is that
+the nonlinear system is solved at $s$-intermediate stages for each
+time step. The linearized form of the nonlinear system to be
+solved repeatedly at each stage is,
+\begin{equation}
+  \left[\pd{\mb{R}_{ki}}{\mb{\ddot{u}}_{ki}} + h \alpha_{ii}
+    \pd{\mb{R}_{ki}}{\mb{\dot{u}}_{ki}} + h^2 \alpha_{ii}^2
+    \pd{\mb{R}_{ki}}{\mb{u}_{ki}}\right]
+  \Delta\mb{\ddot{u}}_{ki} = -\mb{R}_{ki}({t}_{ki}, \mb{\xi}, \mb{\ddot{u}}_{ki},\mb{\dot{u}}_{ki},\mb{u}_{ki}).
+\end{equation}
+The update formulas for the stage state variables are
+\begin{equation}
+  \label{newton_update2}
+  \begin{aligned}
+    \mb{\ddot{u}}_{ki}^{n+1} & = \mb{\ddot{u}}_{ki}^{n} +
+    \Delta\mb{\ddot{u}}_{ki}^{n}, \\
+    \mb{\dot{u}}_{ki}^{n+1} & = \mb{\dot{u}}_{ki}^n + h \alpha_{ii}
+    \Delta\mb{\ddot{u}}_{ki}^n, \\
+    \mb{{u}}_{ki}^{n+1} & = \mb{{u}}_{ki}^n + h^2 \alpha_{ii}^2
+    \Delta\mb{\ddot{u}}_{ki}^n. \\
+  \end{aligned}
+\end{equation}
+The iterative updates to the stage state variables and derivatives
+continue until the governing equations are solved to the required
+tolerance.
+
+\subsection{Solution of the Adjoint Variables}\label{sec:dirk-reverse}
+\subsubsection{Formation of the Lagrangian:} \label{sec:dirk-rep-eqn}
+The state approximations of DIRK time marching scheme given in
+Equation~\eqref{eqn:dirk-state-approx} are reformulated as the
+following residuals
+\begin{equation}
+\begin{aligned}
+  \mb{S}_k & =  \mb{\dot{q}}_{k-1} + h \sum_{i=1}^s \beta_i \mb{\ddot{u}}_{ki} - \mb{\dot{q}}_{k},  \\
+  \mb{T}_k & =  \mb{q}_{k-1} + h \sum_{i=1}^s \beta_i \mb{\dot{u}}_{ki} - \mb{q}_{k}.
+\end{aligned}
+\end{equation}
+The adjoint variables $\mb{\lambda}_{ki}$, $\mb{\psi}_k$ and
+$\mb{\phi}_k$ are associated with the governing equations at each
+stage, $\mb{R}_{ki}$, and the state approximation equations, $\mb{S}_k$,
+and $\mb{T}_k$, arising from the DIRK scheme, for each time step,
+$k$. The Lagrangian is written as
+\begin{equation}\label{eqn:dirk-lagrangian2}
+  {\cal{L}} = \sum_{k=0}^N h \sum_{i=1}^s \beta_i {F}_{ki} + \sum_{k=0}^N h \sum_{i=1}^s \beta_i\mb{\lambda}_{ki}^T \mb{R}_{ki}
+  +  \sum_{k=0}^N \mb{\psi}_k^T \mb{S}_k +  \sum_{k=0}^N\mb{\phi}_k^T \mb{T}_k.
+\end{equation}
+The governing equations and functions of interest follow slightly
+different treatment for DIRK since it is a multistage method.
+Note that $h$ arises from the discretization of the continuous
+integral into $N$ time intervals and $\beta_i$ arises from the
+discretization of each time interval into $s$ stages.  The formation
+of the Lagrangian is schematically shown in
+Figure~\ref{fig:dirk-lagrangian}.
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.99\textwidth]{dirk-lagrangian.pdf}
+  \caption{A weighted linear combination of \textit{equations}
+    with corresponding \textit{adjoint variables} forming the Lagrangian
+    for DIRK method.}
+  \label{fig:dirk-lagrangian}
+\end{figure}
+The number of terms that occur in the adjoint system of equations for
+each adjoint variable can be determined graphically from
+Figure~\ref{fig:dirk-lagrangian} and is listed in
+Table~\ref{tab:dirk-adjoint-tally}.
+The number of terms listed in Table~\ref{tab:dirk-adjoint-tally} can
+be seen to exist in the following adjoint system of equations.
+\begin{table}
+  \caption{Table listing the number of terms in the adjoint system of
+    equations for DIRK method.}
+  \centering
+  \begin{tabular}{cccccc}
+    \toprule
+        {} & $\mb{T}$ & $\mb{S}$ & $\mb{R}$ & F & Total \\
+        \midrule
+        $\mb{\phi}_k$    & 2     &   & s  & s  & 2+2s   \\
+        $\mb{\psi}_k$    & s     & 2 & 2s & 2s & 2+5s   \\
+        $\mb{\lambda}_k$ & s-i+1 & 1 & 2(s-i)+1  & 2(s-i)+1  & 5(s-i)+1 \\
+        \bottomrule
+  \end{tabular}
+  \label{tab:dirk-adjoint-tally}
+\end{table}
+
+\paragraph*{\underline{1. Equation for $\mb{\phi}_k$:}}
+Setting $\partial{\cal{L}}/\partial{\mb{{q}}_{k}} = 0$ yields
+\begin{equation}\label{eqn:dirk-phi1}
+  \begin{aligned}
+    \pd{\mb{T}_{k}}{\mb{q}_{k}}^T \mb{\phi}_k +
+    \pd{\mb{T}_{k+1}}{\mb{q}_{k}}^T \mb{\phi}_{k+1}
+    + h \sum_{i=1}^s \beta_i \pd{\mb{R}_{k+1,i}}{\mb{q}_{k}}^T \mb{\lambda}_{k+1,i}
+    + h \sum_{i=1}^s \beta_i \pd{{F}_{k+1,i}}{\mb{q}_{k}}^T
+    = 0.
+  \end{aligned}
+\end{equation}
+This simplifies to
+\begin{equation}\label{eqn:dirk-phi2}
+  \mb{\phi}_k = \mb{\phi}_{k+1}
+  + h \sum_{i=1}^s \beta_i \pd{\mb{R}_{k+1,i}}{\mb{u}_{k+1,i}}^T \mb{\lambda}_{k+1,i}
+  + h \sum_{i=1}^s \beta_i \pd{{F}_{k+1,i}}{\mb{u}_{k+1,i}}^T.
+\end{equation}
+
+\paragraph*{\underline{2. Equation for $\mb{\psi}_k$:}}
+Setting $\partial{\cal{L}}/\partial{\mb{\dot{q}}_{k}} = 0$ yields
+\begin{equation}\label{eqn:dirk-psi1}
+  \begin{aligned}
+    \pd{\mb{S}_k}{\mb{\dot{q}}_k}^T \mb{\psi}_k +
+    \pd{\mb{S}_{k+1}}{\mb{\dot{q}}_k}^T  \mb{\psi}_{k+1} +
+    \sum_{i=1}^{s} \beta_i \pd{\mb{T}_{k+1}}{\mb{\dot{q}}_{k}}^T \mb{\phi}_{k+1}
+    + h  \sum_{i=1}^{s} \beta_i \pd{\mb{R}_{k+1,i}}{\mb{\dot{q}}_{k}}^T \mb{\lambda}_{k+1,i}
+    + h  \sum_{i=1}^{s} \beta_i \pd{{F}_{k+1,i}}{\mb{\dot{q}}_{k}}^T = 0.
+  \end{aligned}
+\end{equation}
+This becomes
+\begin{equation}\label{eqn:dirk-psi2}
+  \begin{aligned}
+    \mb{\psi}_k =  \mb{\psi}_{k+1} + h\sum_{i=1}^s \beta_i
+    \mb{\phi}_{k+1} & + h \sum_{i=1}^s\beta_i
+    \left[\pd{\mb{R}_{k+1,i}}{\mb{\dot{u}}_{k+1,i}} +  h \sum_{j=1}^i
+      \alpha_{ij} \pd{\mb{R}_{k+1,i}}{\mb{u}_{k+1,i}} \right]^T
+    \mb{\lambda}_{k+1,i} \\ & + h \sum_{i=1}^s\beta_i
+    \left\{\pd{{F}_{k+1,i}}{\mb{\dot{u}}_{k+1,i}} + h \sum_{j=1}^i
+      \alpha_{ij} \pd{{F}_{k+1,i}}{\mb{u}_{k+1,i}} \right\}^T.
+  \end{aligned}
+\end{equation}
+Using the properties of DIRK coefficients: $\sum_{i=1}^s \beta_i = 1$ and
+$\sum_{j=1}^i \alpha_{ij} = \tau_i$,
+\begin{equation}\label{eqn:dirk-psi3}
+  \begin{aligned}
+    \mb{\psi}_k = \mb{\psi}_{k+1} + h \phi_{k+1} & + h \sum_{i=1}^s\beta_i  \left[\pd{\mb{R}_{k+1,i}}{\mb{\dot{u}}_{k+1,i}} + h\tau_i\pd{\mb{R}_{k+1,i}}{\mb{u}_{k+1,i}} \right]^T \mb{\lambda}_{k+1,i}  \\
+    & + h \sum_{i=1}^s\beta_i \left\{\pd{{F}_{k+1,i}}{\mb{\dot{u}}_{k+1,i}} +h\tau_i
+    \pd{{F}_{k+1,i}}{\mb{u}_{k+1,i}} \right\}^T.
+  \end{aligned}
+\end{equation}
+\paragraph*{\underline{3. Equation for $\mb{\lambda}_{ki}$:}}
+Taking $\partial{\cal{L}}/\partial{\mb{\ddot{u}}_{ki}}$ = 0 yields
+\begin{equation}
+ h \sum_{j=i}^s  \beta_j \pd{\mb{R}_{kj}}{\mb{\ddot{u}}_{ki}}^T \mb{\lambda}_{kj} +
+ h \sum_{j=i}^s \beta_j \pd{{F}_{kj}}{\mb{\ddot{u}}_{ki}}^T +
+ \pd{\mb{S}_k}{\mb{\ddot{u}}_{ki}}^T \mb{\psi}_k +
+ \pd{\mb{T}_k}{\mb{\ddot{u}}_{ki}}^T \mb{\phi}_k = 0.
+\end{equation}
+Applying chain rule and expanding the terms results in
+\begin{equation}
+  \begin{aligned}
+    0 & =  h\beta_i \pd{\mb{R}_{ki}}{\mb{\ddot{u}}_{ki}} + h \sum_{j=i+1}^s \beta_j \left[ h\alpha_{ji} \pd{\mb{R}_{kj}}{\mb{\dot{u}}_{kj}}
+      + h^2 \sum_{p=i}^j \alpha_{jp}\alpha_{pi}
+      \pd{\mb{R}_{kj}}{\mb{u}_{kj}} \right]^T \mb{\lambda}_{kj} \\
+    & + h\beta_i \pd{{F}_{ki}}{\mb{\ddot{u}}_{ki}} + h \sum_{j=i+1}^s \beta_j \left\{ h\alpha_{ji} \pd{{F}_{kj}}{\mb{\dot{u}}_{kj}}
+      + h^2 \sum_{p=i}^j \alpha_{jp}\alpha_{pi}
+      \pd{{F}_{kj}}{\mb{u}_{kj}} \right\}^T \\
+      & + h \beta_i \mb{\psi}_{k} \quad + \left( h \sum_{j=i}^s \beta_j h \alpha_{ji}\right) \mb{\phi}_{k}.
+  \end{aligned}
+\end{equation}
+Dividing by $h$ and rearranging for the unknown adjoint variable
+$\mb{\lambda}_{ki}$ results in the following linear system
+\begin{equation}
+  \begin{aligned}
+    \beta_i \left[ \pd{\mb{R}_{ki}}{\mb{\ddot{u}}_{ki}} + h\alpha_{ii} \pd{\mb{R}_{ki}}{\mb{\dot{u}}_{ki}} + h^2 \alpha_{ii}^2 \pd{\mb{R}_{ki}}{\mb{u}_{ki}} \right]^T \mb{\lambda}_{ki} = & - \beta_i \left[ \pd{{F}_{ki}}{\mb{\ddot{u}}_{ki}} + h^2\alpha_{ii}^2 \pd{{F}_{ki}}{\mb{\dot{u}}_{ki}} + h^2\alpha_{ii}^2 \pd{{F}_{ki}}{\mb{u}_{ki}} \right]^T \\
+    & - \sum_{j=i+1}^s \beta_j \left[ h\alpha_{ji} \pd{\mb{R}_{kj}}{\mb{\dot{u}}_{kj}}
+      + h^2 \sum_{p=i}^j \alpha_{jp}\alpha_{pi}
+      \pd{\mb{R}_{kj}}{\mb{u}_{kj}} \right]^T \mb{\lambda}_{kj} \\
+    & - \sum_{j=i+1}^s \beta_j \left\{ h\alpha_{ji} \pd{{F}_{kj}}{\mb{\dot{u}}_{kj}}
+    + h^2 \sum_{p=i}^j \alpha_{jp}\alpha_{pi}
+    \pd{{F}_{kj}}{\mb{u}_{kj}} \right\}^T\\
+    & - \beta_i \mb{\psi}_{k} - \left( \sum_{j=i}^s \beta_j h \alpha_{ji} \right) \mb{\phi}_{k}.
+  \end{aligned}
+\end{equation}
+%
+%\paragraph{Evaluation of Total Derivative:}
+The total derivative is computed in an analogous manner to other
+methods as follows
+\begin{equation}\label{eqn:dirk-total-derivative}
+  \dfrac{d {F}}{d \mb{\xi}} =
+  \sum_{k=0}^N h \sum_{i=1}^s \beta_i \pd{{F}_{ki}}{\mb{\xi}} +
+  \sum_{k=0}^N h \sum_{i=1}^s \beta_i \mb{\lambda}_{ki}^T \pd{\mb{R}_{ki}}{\mb{\xi}}.
+\end{equation}
+The numerical verification of total derivative computed using adjoint method~\eqref{eqn:dirk-total-derivative}
+using complex-step method is shown in Figure~\ref{fig:dirk-grad-verify}.
+\begin{figure}[!h]
+  \centering
+  \begin{subfigure}{0.45\linewidth}
+    \includegraphics[width=\textwidth]{dirk2-grad-verify.pdf}
+    \caption{second-order (one stage)}
+  \end{subfigure}
+  \begin{subfigure}{0.45\linewidth}
+    \includegraphics[width=\textwidth]{dirk3-grad-verify.pdf}
+    \caption{third-order (two stages)}
+  \end{subfigure}
+  \begin{subfigure}{0.45\linewidth}
+    \includegraphics[width=\textwidth]{dirk4-grad-verify.pdf}
+    \caption{fourth-order (three stages)}
+  \end{subfigure}
+    \caption{Complex-step verification of the DIRK adjoint scheme for 12
+    different functions of interest with various perturbation step sizes.}
+  \label{fig:dirk-grad-verify}
+\end{figure}
+
+\section{Implementation of the Adjoint Method}\label{sec:adjoint-implementation}
+
+General flexible multibody dynamics simulation tools contain a large library of flexible and rigid elements, joints, dampers, and a wide variety of kinematic constraints that can be used to model multibody systems.
+The implementation of the discrete adjoint imposes additional requirements on each component of the simulation.
+These additional requirements must be handled carefully in order to maintain an efficient and accurate adjoint implementation.
+This section presents the organization and implementation of the proposed adjoint sensitivities, that is designed to be modular and extensible to facilitate an expanding library of flexible and rigid elements in TACS~\citep{Kennedy:2014:TACS}.
+The adjoint equations derived in this chapter contain:
+\begin{enumerate}
+\item The derivatives of the \emph{function} of interest and the \emph{governing equations} with respect to the \emph{state variables},
+\item The derivatives of the \emph{function} of interest and the \emph{governing equations} with respect to the \emph{design variables}, and
+\item The products of the \emph{adjoint variables} with the derivatives the \emph{governing equations} respect to the \emph{state variables}.
+\end{enumerate}
+These three primary terms are implemented using a library that contains four interfaces: \texttt{Element}, \texttt{Function}, \texttt{Assembler} and \texttt{Integrator}.
+The organization and relationships between these four interfaces are shown in Figure~\ref{fig:adjoint-routines}.
+This organization allows for the separation of functionality that enables the underlying element and function library to be extended without having to change the adjoint implementation.
+The functionality of these interfaces are explained in the remainder of this section.
+
+\begin{figure}[htb]
+  \centering
+  \includegraphics[width=0.99\linewidth]{classdiagram.pdf}
+  \caption{Class diagram illustrating the architecture of adjoint-based gradient implementation.}
+  \label{fig:adjoint-routines}
+\end{figure}
+
+\subsection{Element Interface}
+The element library contains beam, shell, and rigid-body elements as well as kinematic constraints including the lower kinematic pairs.
+These elements implement a common \texttt{Element} interface by providing specific implementations for the abstract prototypes based on the governing equations of motion.
+This interface contains two routines required for the adjoint implementation:
+\begin{enumerate}
+  \item The computation of element-wise Jacobian matrices that are used by the \texttt{Assembler} to evaluate the global transpose Jacobian in the linear adjoint system.
+  \item The evaluation of the derivative of element-wise product of the residuals and the adjoint variables with respect to the design variables. This routine is used to evaluate the total derivative.
+\end{enumerate}
+As new elements are added to the multibody dynamics library, they are required to implement these two routines so that they can be seamlessly merged in the existing framework.
+
+\subsection{Function Interface}
+
+The \texttt{Function} interface contains similar prototypes as the \texttt{Element} interface.
+The interface provides the derivatives of function of interests for design optimization which include two primary function-level routines:
+\begin{enumerate}
+\item The evaluation of the element-wise derivative of the functional integrand with respect to the state variables and their time derivatives.
+\item The element-wise computation of the derivative of the functional integrand with respect to the design variables, required for the total derivative.
+\end{enumerate}
+The functions are evaluated over all or a subset of elements in the domain.
+%For example, when evaluating the the KS functional to estimate the maximum stress~\eqref{eqn:ks-von-mises-functional}, the rigid elements in the simulation model can be omitted.
+
+\subsection{Assembler Interface}
+
+The \texttt{Assembler} interface is designed to operate on a collection of \texttt{Element} and \texttt{Function} instances.
+The routines provided in this interface assemble the partial derivative terms necessary for sensitivity analysis and place them in global matrices and vectors.
+These operations depend only on the prototypes defined in \texttt{Element} and \texttt{Function} interfaces, rather than on the specific implementations of element and function types.
+This dependency of the \texttt{Assembler} on \texttt{Element} and \texttt{Function} interfaces is shown in Figure~\ref{fig:adjoint-routines}.
+
+\subsubsection{Solving the Adjoint Equations}
+The first set of \texttt{Assembler} routines are required for the solution of the adjoint equations. %~\eqref{eqn:dirk-phi2},~\eqref{eqn:dirk-psi2}, and~\eqref{eqn:dirk-lambda}.
+These functions compute the transpose Jacobian-vector product of the governing equations with respect to the state variables
+\begin{equation}\label{eqn:drdq}
+  \mb{\chi} \leftarrow \mb{\chi} + \left[
+    \gamma \pd{\mb{R}}{\mb{\ddot{q}}} +
+    \beta \pd{\mb{R}}{\mb{\dot{q}}} +
+    \alpha \pd{\mb{R}}{\mb{q}} \right]^T\mb{\chi},
+\end{equation}
+and the derivative of the functional integrand with respect to state variables
+\begin{equation}\label{eqn:dfdq}
+  \mb{\chi} \leftarrow \mb{\chi} + \left[ \gamma \pd{{F}}{\mb{\ddot{q}}} + \beta \pd{{F}}{\mb{\dot{q}}} + \alpha \pd{{F}}{\mb{q}} \right].
+\end{equation}
+Here $\mb{\chi}$ is a place-holder for a state vector determined from the context of the adjoint equations.
+The inputs to these routines are scalar constants for each partial derivative ($\alpha$, $\beta$, and $\gamma$) and the state variables, $\mb{q}$, and their time derivatives, $\mb{\dot{q}}$, and $\mb{\ddot{q}}$.
+The state variables and their time derivatives are stored to disk during the solution phase and reloaded when marching backwards in time during the adjoint solution process.
+This reduces the amount of memory required when the number of time steps is large.
+The routines~\eqref{eqn:drdq} and~\eqref{eqn:dfdq} are used frequently in the discrete adjoint implementations.
+%The number of invocations of each routine for an $s$-stage DIRK adjoint implementation is listed in Table~\ref{tab:dirk-adjoint-tally}.
+%Both the number of calls at each stage $i$ and the total number of calls per time step are tabulated.
+%% \begin{table}
+%%   \centering
+%%   \caption{Number of transpose Jacobian-vector products and functional integrand derivative computations required to form the right-hand-sides in the corresponding adjoint equations.}
+%%   \label{tab:dirk-adjoint-tally}
+%%   \begin{tabular}{lcc}
+%%     \toprule
+%%         & $\left[\p \mb{R}/\p \mb{q}\right]^{T} \mb{\chi}$
+%%         & $\p F/\p \mb{q}$ \\
+%%         \midrule
+%%         Equation~\eqref{eqn:dirk-phi2} for $\mb{\phi}_k$      & s  & s \\
+%%         Equation~\eqref{eqn:dirk-psi2} for $\mb{\psi}_k$      & 2s & 2s \\
+%%         Equation~\eqref{eqn:dirk-lambda} for $\mb{\lambda}_{ki}$ & 2(s-i)+1  & 2(s-i)+1 \\
+%%         \midrule
+%%         Total per time step & 4s + s(s+1)/2 & 4s + s(s+1)/2 \\
+%%         \bottomrule
+%%   \end{tabular}
+%% \end{table}
+%%
+\subsubsection{Evaluating the Total Derivative}
+
+The second set of assembly-level routines are needed to evaluate the total derivative of the functional of interest.
+These routines compute the product of the adjoint variables with the derivative of the governing equations with respect to design variables
+\begin{equation}\label{eqn:drdx}
+  \mb{\chi} \leftarrow \mb{\chi} + \alpha \pd{\mb{R}}{\mb{\xi}}^T \mb{\chi},
+\end{equation}
+and the derivative of the functional integrand with respect to design variables
+\begin{equation}\label{eqn:dfdx}
+  \mb{\chi} \leftarrow \mb{\chi} + \alpha \pd{{F}}{\mb{\xi}}^T.
+\end{equation}
+Here the inputs consist of a scalar $\alpha$, the design variables $\mb{\xi}$, and the state variables, $\mb{q}$, and their time derivatives, $\mb{\dot{q}}$, and $\mb{\ddot{q}}$.
+The output for both of these routines is a vector with the same dimension as the design variable vector.
+The routines~\eqref{eqn:drdx} and~\eqref{eqn:dfdx} are used once at each stage to accumulate the contributions to the total derivative.
+
+\subsection{Integrator Interface}
+
+The class implementing the \texttt{Integrator} interface completes the evaluation the adjoint variables and the computation of the total derivative and provides it to the optimizer.
+The \texttt{Integrator} interface contains an instance of \texttt{Assembler}, which enables it to evaluate the partial derivative terms from the governing equations and the functions of interest, and scale them with the appropriate coefficients, as dictated by the adjoint equations.
+Note that the \texttt{Integrator} does not interact directly with \texttt{Element} and \texttt{Function} interfaces, but instead uses the \texttt{Assembler} interface, as shown in Figure~\ref{fig:adjoint-routines}.
+This class contains routines that implement DIRK specific operations and is used repeatedly in a time loop starting from the final time step and ending at the initial time step.
+The \texttt{Assembler} set of routines used by the \texttt{Integrator} are designed to work for any adjoint method corresponding to other time marching schemes such as Backwards Difference Formula, Adams-Bashforth-Moulton, or Newmark's method.
+The implementation of other time-integration methods requires only a new implementation of the Integrator interface.
+%The authors have used utilized these proposed routines extensively for other discrete adjoint implementations~\cite{Boopathy:2017:SciTech}.
+
+\paragraph*{Summary.} In this chapter, the mathematical details of implicit solution process of initial value problems arising from time dependent systems is discussed.
+The state approximation hypothesis supplied by the time marching method, is used in conjunction with a generalized Newton--Raphson iteration scheme to solve the implicit nonlinear system.
+The discrete adjoint equations used to obtain semianalytical sensitivities of functions of interest are presented.
+In the spirit of generality, the equations are presented for a general order of accuracy $p$ and the abstraction of equations as $R(t, \xi, \ddot{q}, \dot{q}, {q})$ and $F(t, \xi, \ddot{q}, \dot{q}, {q})$.
+This allows the application of the derived equations for any time dependent physical system fitting the mathematical form, and solved using multistep/multistage time marching method of $p$-th order of accuracy with a constant step size $h$.
+Finally, the implementation details of time dependent adjoint equations in a modular manner is presented.

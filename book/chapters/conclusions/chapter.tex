@@ -1,0 +1,198 @@
+\chapter{Contributions and Future Work}\label{chapter:conclusions}
+\setlength{\epigraphwidth}{0.55\textwidth}
+\epigraph{\textit{{Equations Are Art inside a Mathematician's Brain.}}}{\textit{Unknown Admirers}}
+\noindent In this Chapter, we summarize the contributions of the thesis and outline future research directions.
+
+% \section{Conclusions}
+
+%The stochastic Galerkin projection method offers an efficient approach to propagate uncertainties through complex, nonlinear simulations.
+%However, challenges can arise when implementing SGM and the adjoint method for OUU.
+%In this paper, we demonstrated a framework for SGM based on the deterministic finite-element code TACS.
+%This framework leverages existing deterministic element implementations to provide the terms needed for analysis and adjoint-based gradient evaluation.
+%The main idea of the proposed semi-intrusive technique is to project the deterministic element residuals, Jacobians, boundary conditions, and adjoint terms on to the probabilistic space prior to assembly of the stochastic finite element system, assuming the deterministic implementations to be black-box.
+%The mean and variance of the implemented SGM were compared to the mean and variance computed using sampling methods to demonstrate the accuracy of SGM.
+%The accuracy of the adjoint method was verified using complex-step methods.
+%Future work will consider the application of the proposed framework to OUU problems.
+
+\section{Summary of Contributions}
+We developed an optimization under uncertainty framework featuring 
+\begin{itemize}
+\item the analysis of time dependent physics using implicit time marching methods,
+\item time dependent discrete adjoint based gradient evaluation, and 
+\item the propagation of uncertainties using Galerkin projection and sampling.
+\end{itemize}
+We envisioned and structured the stochastic analysis capabilities as an extension of deterministic design capabilities, and therefore separated the treatment of probabilistic domain. 
+The structuring of packages that form the developed UQ-OUU framework is shown in Figure~\ref{fig:packages-uq-ouu-framework}.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.65\linewidth]{semi-intrusive-architecture.pdf}
+  \caption{The open source software packages that are a part of the developed UQ-OUU framework.}
+  \label{fig:packages-uq-ouu-framework}
+\end{figure}
+The time marching capabilities and adjoint method was implemented in the \texttt{TACS} finite element framework~\footnote{\href{https://github.com/gjkennedy/tacs}{https://github.com/gjkennedy/tacs}}. 
+The evaluation of orthonormal basis and quadrature needed for stochastic projection and sampling are implemented as a separate package \texttt{PSPACE}~\footnote{\href{https://github.com/komahanb/pspace}{https://github.com/komahanb/pspace}}.
+The Stochastic TACS framework \texttt{STACS}\footnote{\href{https://github.com/komahanb/stacs}{https://github.com/komahanb/stacs}} is an object-oriented extension of the TACS finite element framework providing implementations of \texttt{Element} and \texttt{Function} interfaces needed for stochastic finite element computations.
+The source code of \texttt{PSPACE} and \texttt{STACS} are written in \texttt{Fortran/C++} and wrapped in \texttt{Python}.
+The detailed technical contributions within this framework is outlined in the remainder of this section.
+\subsection{Implicit Time Marching Methods in Natural Form}
+The governing equations of flexible multibody dynamics are a set of second-order differential algebraic equations. 
+We enhanced the existing implicit time marching methods such as Newmark, Runge--Kutta, Backward difference formulas, and Adams--Bashforth--Moulton method for flexible multibody dynamics, and in general for second-order differential equations.
+These techniques were developed based on the second-order form of equations with an abstract representation of the residuals as $R(t,\xi,u(t,\xi),\dot{u}(t,\xi),\ddot{u}(t,\xi))$, paving way for a unified implementation within the TACS framework, as well as applicability for other time dependent physics.
+
+\subsection{Time Dependent Discrete Adjoint Formulation}
+Using abstractions of the governing equations $R(t,\xi,u(t,\xi),\dot{u}(t,\xi),\ddot{u}(t,\xi))$ and the metrics of interest $F(t,\xi,u(t,\xi),\dot{u}(t,\xi),\ddot{u}(t,\xi))$, 
+we derived the time dependent discrete-adjoint equations. These mathematical developments were numerically verified using the complex-step method.
+The abstract mathematical developments of the implicit time marching methods and their corresponding adjoint formulations, facilitated the modular and extensible programming implementation within the TACS framework.
+
+\subsection{Semi-intrusive Stochastic Galerkin Projection}
+Stochastic Galerkin projection techniques are used to propagate uncertainties through simulations governed by differential equations.
+The stochastic Galerkin methods are often challenging to implement within existing deterministic finite-element libraries as they require extensive source code modifications.
+In this work, we presented a semi-intrusive stochastic Galerkin methodology that enables us to reuse existing deterministic finite-element implementations to perform projection in the probabilistic domain.
+Furthermore, the proposed semi-intrusive method enables the use of deterministic adjoint capabilities for setting up the stochastic adjoint equations.
+The principal idea is to project the deterministic quantities such as residuals, Jacobians, boundary conditions, and adjoint terms on to the probabilistic space, prior to assembly of the stochastic finite element or adjoint system, while assuming the deterministic implementations to be black-box.
+In order for the proposed method to work, the deterministic implementations must be able to recompute deterministic quantities for different values of probabilistically modeled parameters. % and recompute deterministic quantities. % to enable quadrature in the stochastic space.
+The proposed semi-intrusive stochastic Galerkin approach is demonstrated within the assembly and solution architecture of TACS -- a finite-element framework with adjoint-based gradient evaluation methods, with problems from flexible multibody dynamics.
+
+\subsection{Flexible Multibody Dynamics Applications}
+The mathematical techniques and algorithms developed in this work are demonstrated using a wide range of problems from simple ODE models to complex flexible multibody systems.
+The rotorcraft hub dynamics was analyzed by modeling the full control chain containing translational and rotational actuators, swash plates and blades.
+The adjoint gradient based optimization demonstration was carried out using this model.
+We demonstrated the semi-intrusive UQ-OUU capabilities on the mechanism modeled after the \textit{Canadarm}. 
+It was shown the in the presence of uncertainties in payloads, the system experiences stresses that have a large variability. 
+We showed that UQ can be a great tool in assessing the risk associated with such operating conditions.
+
+\section{Future Work}
+The suggestions for future work are outlined as follows. 
+Some of these suggestions are exciting theoretical/mathematical endeavors while others are applications of the developed capabilities for OUU of aeromechanical systems.
+
+\subsection{Mathematical Formalisms of Implicit Time Marching and Sensitivity Analysis}
+%The goal here is to extend the developments based on second-order form to a form based on $n$-th order equations and the inclusion of direct
+%sensitivity analysis. 
+\begin{itemize}
+
+\item In areas of mathematical physics such as chaotic dynamics, the governing equations contain as high as sixth-order derivatives in time (see ~\citet{Chaos:Chlouverakis2006}).
+  In this context, the development of time marching methods based on abstract natural forms is of interest.
+  %, and one does not need an equivalent set of first-order equations to solve the system
+  In this case, we would be considering a system of $d$-th order nonlinear ordinary differential equations in time $t$ written in abstract implicit form
+  \begin{equation} \label{eqn:continous-ode-higher-order}
+    \R(\q^{(d)}(t), \ldots , \q^{(1)}(t), \q^{(0)}(t), t ) = \zerovec,
+  \end{equation}
+  where $\q^{(j)}(t) := \frac{d^j\q(t)}{dt^j} \,\,\forall j = 0,\ldots, d$ are the field variables and their time derivatives.
+  The implicit solution techniques in natural form can be developed by ``generalizing'' the Newton--Raphson iterative procedure described in Chapter~\ref{chapter:adjoint-ode}.
+
+\item The development of time dependent \underline{direct sensitivity
+  analysis} equations in the context of Newmark, BDF, ABM and
+  Runge--Kutta, and perhaps other methods is an interesting endeavor
+  to understand the full spectrum of semianalytical methods for
+  sensitivity analysis along with the adjoint counterparts.  An
+  open-source implementation of implicit time marching methods and
+  corresponding semianalytical sensitivity analysis formulations, can
+  be a useful tool for the scientific community.
+
+\item The extension of the time dependent adjoint and direct sensitivity analysis equations to higher-order equations~\eqref{eqn:continous-ode-higher-order}, can provide great intuitions on the mathematical structure. 
+  In this thesis, graphical illustrations of the adjoint equations in Chapter~\ref{chapter:adjoint-ode} were presented to elucidate the intricate structure of adjoint equations.
+
+\end{itemize}
+
+\subsection{Semi-intrusive Uncertainty Propagation for Finite Volume Frameworks}
+The use of mathematical abstraction for derivations, often, allows great flexibility in using them in areas formerly unintended.
+The abstract development of stochastic Galerkin projection equations facilitates the direct application of the semi-intrusive technique to problems using \underline{the finite volume method (FVM)}
+ for the treatment of spatial derivatives.
+Recall that \emph{cells} are the fundamental units of FVM computations, and \emph{elements} are the fundamental units of FEM framework.
+As outlined in Section~\ref{sec:stochastic-architecture}, the methods can be extended to cell-wise computations performed with FVM. 
+In this case, we ought to proceed with the following interpretation of residual as cell-wise residuals.
+%We discussed the formation of stochastic Jacobian matrices in detail with emphasis on optimizing quadrature evaluations alongside the sparsity and symmetry considerations.
+%The application of the semi-intrusive approach for stochastic finite volume frameworks (FVM) is straight-forward and intuitive.
+%In the case of stochastic finite volume method, we should work with cell-wise residuals and Jacobians, as opposed to element-wise residuals and Jacobians in the context of FEM.
+\begin{equation}
+  \label{eqn:residual-projection-fvm}
+  \begin{gathered}
+    \sinner{\widehat{\psi}_i^y(\vec{y})}{\vec{R}^c\left(t, \vec{y}, \vec{u}^c(t,\vec{y}), \vec{\dot{u}}^c(t,\vec{y}\right), \vec{\ddot{u}^c(t,\vec{y}))}_{\rho^y(\vec{y})}^{\cal{Y}} }
+      % \int\limits_{{\cal{Y}}} \rho^y(\vec{y})
+      % \widehat{\psi}_i^y(\vec{y}) {\vec{R}^c\left(t, \vec{y}, \vec{u}^c(t,\vec{y}), \vec{\dot{u}}^c(t,\vec{y}), \vec{\ddot{u}}^c(t,\vec{y})\right)}\mathrm{d}\vec{y} \\
+    \\ \approx \\
+    \sum_{q=1}^Q \alpha_q \widehat{\psi}_i^y(\pre{y}{q}) \underbrace{\vec{R}^c\left(t, \pre{y}{q}, \vec{u}^c(t,\pre{y}{q}), \vec{\dot{u}}^c(t,\pre{y}{q}), \vec{\ddot{u}}^c(t,\pre{y}{q})\right)}_{\text{cell-wise~deterministic~residuals~for~$y_q$}}
+    \end{gathered}
+\end{equation}
+Again, one has the alternative of projecting system-wide assembled residuals, if it is simpler to implement.
+
+\subsection{Algebraic Multigrid for Stochastic Galerkin Computations}
+The stochastic Galerkin Jacobian matrices are shown to have interesting sparsity patterns arising from the nonlinearity of problem parameters dependent on random variables.  
+The investigation of  algebraic multigrid (AMG) techniques for partial differential equations has received good attention~\cite{AMGReview:STUBEN2001281}. 
+This naturally guides us to investigate AMG techniques to accelerate the solution process to bigger linear systems in the context of stochastic PDEs.
+The implementation of AMG can be simplified, due the simpler implicit construction of stochastic Jacobians from deterministic Jacobians.
+
+% \input{amg}
+
+\subsection{Topology Optimization Under Uncertainty}
+The application of OUU methods in the context of topology optimization is receiving attention among researchers~\cite{
+  TopologyOUU-Vishwanathan2020,
+  TopologyOUU-Richarson2016,
+  TopologyOUU-Wang2019,
+  TopologyOUU-De2019,
+  TopologyOUU-Keshavarzzadeh2017,
+  TopologyOUU-Zhang2017, 
+  TopologyOUU-Kim2013,
+  TopologyOUU-Chen2012,
+  TopologyOUU-Tootkaboni2012,
+  TopologyOUU-Guest2008, 
+  TopologyOUU-Maute2014}.
+\citet{TopologyOUU-Maute2014} mentions the importance of considering probabilistic variations in material properties, geometry, boundary conditions to produce robust and reliable designs.
+\citet{TopologyOUU-Guest2008} considers the uncertainties in loading conditions for topology optimization.
+The expectation and variance of compliance are used as the objective by \citet{TopologyOUU-Kim2013}.
+The works in the literature use nonintrusive sampling based methods or simpler assessments for quantifying the effect of uncertainties.
+The lack of published works on stochastic Galerkin projection based topology optimization, serves to affirm the difficulty in the development of such frameworks, that is, the intrusiveness is a big hurdle for the adaptation of SGM as preferred method for UQ applications.
+The semi-intrusive technique for stochastic Galerkin projection aligns well with addressing this difficulty and can serve as an easier to implement method on top of deterministic frameworks for topology optimization.
+
+\subsection{Multidisciplinary Optimization Under Uncertainty}
+The incorporation of UQ techniques within multidisciplinary analysis and optimization (MDAO) has been noted as one of the key interests in the \emph{NASA's Vision for 2030}~\cite{nasa-vision-2030}.
+The application of the semi-intrusive projection technique to existing deterministic tools, can enable an easier integration of UQ into MDAO frameworks.
+We recall that the requirement for the semi-intrusive technique is that the deterministic tools ought to have the flexibility to update problem parameters that are modeled as random.
+%The enhancement of deterministic physics tools with adjoint to perform UQ, by following the semi-intrusive projection technique can help an easier integration of UQ in MDAO systems.
+
+%From a mathematically abstract perspective, the multidisciplinary design optimization under uncertainty is a subject that emerges from the span of spatial, temporal and stochastic (design) parameter spaces (see Figure~\ref{fig:vision}). 
+%There are numerous theoretical, algorithmic and computational challenges arising from these areas, and my ultimate goal is to advance the state-of-the-art of computational methods for physics-based design optimization, with applications to aeromechanical and biological systems.
+
+%% 
+%% \paragraph*{Conclusion.}
+%% I present a visionary road-map are structuring of areas of mine in
+%% Figure~\ref{} for mathematical computing based on
+%% 
+%% We conclude this thesis with a hope that this work helps the
+%% scientific community in taking a step towards, the next-generation
+%% methods of mathematical computing to perform design and optimization
+%% of engineering systems~\ref{fig:vision}.
+%% \begin{figure}[h!]
+%%   \centering
+%%   \includegraphics[width=\linewidth]{research-areas-combined.png}
+%%   \caption{.}
+%%   \label{fig:vision}
+%% \end{figure}
+%% intend perform design and optimization of engineering system with inclusive analyses in probabilistic-space-time using computational
+%% 
+%% 
+%% \paragraph*{Demonstration with TACS-TMR Framework:}
+%% We outline a simple demonstration of uncertainty quantification using SGM performed with the TACS--TMR framework for topology optimization. 
+%% We consider the case of a solid element used to setup topology optimization of cantilever beam, where the material density is dependent on normally distributed random variable $\rho:= \rho(y)$ where $y\sim{\mathcal{N}}(\mu=2600.0,\sigma=500.0)$.
+%% Table~\ref{tab:topopt-preliminary-studies} shows the expectation of compliance and the error in adjoint derivatives compared to finite-differences for different number of terms in orthonormal basis set.
+%% \begin{table}[h!]
+%%   \smallskip
+%%   \caption{The expectation of compliance $C(\xi)$ and its derivative verified
+%%     using finite differences (FD) for increasing number of terms in the
+%%     orthogonal basis set for stochastic Galerkin projection.}
+%%   \centering \scalebox{1}{
+%%     \begin{tabular}{c|ccc}
+%%       \toprule
+%%           {Number of basis terms} & $\mathbb{E}[C(\xi)]$ & $d{\mathbb{E}[F]}/d{\xi}$ & Estimated FD Error \\
+%%           \midrule
+%%           \bottomrule
+%%     \end{tabular}
+%%   }
+%%   \label{tab:topopt-preliminary-studies}
+%% \end{table}
+%% 
+%The probabilistic moments and their design variable derivatives are
+%computed using projection and verified using finite-differences using
+%a step size of \kb{$10^{-8}$}, and the results are tabulated in
+%Table~\ref{}
+ 

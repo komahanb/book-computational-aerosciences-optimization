@@ -1,0 +1,60 @@
+%\begin{appendices}
+\appendix
+\numberwithin{table}{chapter}
+\renewcommand{\thechapter}{\Alph{chapter}} 
+\chapter{\uppercase{Finite Element Procedure for Three-bar Truss Analysis}}
+\label{appendix:3bar}
+
+The finite element procedure adopted for obtaining the nodal displacements ($u_x$ and $u_y$) as well as the elemental stresses ($\sigma_1$, $\sigma_2$, and $\sigma_3$) for the three-bar truss problem (see section~\ref{truss}) is discussed here.
+The structure is assumed to have three elements with two degrees of freedom at each node (\ie~ a two-dimensional truss analysis). The element connectivity information is given in Table~\ref{tab:connectivity}.
+\begin{table}[H]
+\centering
+\caption{Connectivity of elements.}
+\label{tab:connectivity}
+\begin{tabular}{cccccc}
+\hline\hline
+Element & \mc{2}{Node} &Element length  & $\lambda_e=\cos(\phi_e)$ & $\mu_e=\sin(\phi_e)$\\
+\cline{2-3} % horizontal lines connecting cols. 2-3, 5-6
+{}& ${i}$ & $j$ &$l_e$  & & \\
+\hline
+1 &1 & 4 & $L_1={H}/{\sin(\phi_1)}$  & $\cos(\phi_1)$   &  $\sin(\phi_1)$  \\ 
+2 &2 & 4 & $L_2={H}/{\sin(\phi_2)}$  & $\cos(\phi_2)$   & $\sin(\phi_2)$ \\ 
+3 &3 & 4 & $L_3={H}/{\sin(\phi_3)}$  & $\cos(\phi_3)$   &  $\sin(\phi_3)$\\ 
+\hline
+\end{tabular} 
+\end{table}
+%\begin{landscape}
+\noindent The stiffness matrix of the $e$-th element in global coordinate system is given by,
+\bea\label{eq:stiff}
+\begin{split}
+\kmat_e & =\frac{E_eA_e}{L_e}\left[\begin{array}[h!]{rrrr} 
+    {\lambda_e}^2 & \lambda_e\mu_e  & {-\lambda_e}^2 &  -\lambda_e\mu_e \\ 
+    \lambda_e\mu_e &  {\mu_e}^2 &-\lambda_e\mu_e &- {\mu_e}^2\\
+   - {\lambda_e}^2& -\lambda_e\mu_e &  {\lambda_e}^2 & \lambda_e\mu_e \\
+    -\lambda_e\mu_e & - {\mu_e}^2 &\lambda_e\mu_e & {\mu_e}^2\end{array}\right].
+\end{split}
+\eea
+\\
+The individual stiffness matrices of each element: $\kmat_1$, $\kmat_2$, and $\kmat_3$ are obtained using Eq.~(\ref{eq:stiff}) and Table~\ref{tab:connectivity}. The elemental stiffness matrices are assembled to form the global stiffness matrix $\bm{K}$ of size $8 \times 8$ (not shown here). 
+After applying the boundary conditions (i.e. $x$- and $y$-displacements at nodes $1$, $2$ and $3$ are zero) and performing elimination,  a simplified linear system  is obtained: 
+$\bm{K}\bm{Q}=\bm{F}$, where $\bm{Q}=\left\{\begin{array}[h!]{rr}Q_{4x}\\ Q_{4y} \end{array}\right\}$, $\bm{F}=\left\{\begin{array}[h!]{rr}F_{4x}\\ F_{4y} \end{array}\right\}$ and $\bm{K}=\left[\begin{array}[h!]{rr}
+\frac{E_1A_1}{L_1}{{\lambda_1}^2} +  \frac{E_2A_2}{L_2}{{\lambda_2}^2} + \frac{E_3A_3}{L_3}{{\lambda_3}^2}  &  \frac{E_1A_1}{L_1}{{\lambda_1}{\mu_1}} +  \frac{E_2A_2}{L_2}{{\lambda_2}{\mu_2}} + \frac{E_3A_3}{L_3}{{\lambda_3}{\mu_3}}\\
+\frac{E_1A_1}{L_1}{{\lambda_1}{\mu_1}} +  \frac{E_2A_2}{L_2}{{\lambda_2}{\mu_2}} + \frac{E_3A_3}{L_3}{{\lambda_3}{\mu_3}} &   \frac{E_1A_1}{L_1}{{\mu_1}^2} +  \frac{E_2A_2}{L_2}{{\mu_2}^2} + \frac{E_3A_3}{L_3}{{\mu_3}^2}
+\end{array}\right]$.\\\\
+The x- and y-displacements at node $4$ are given by, $\bm{Q}=\bm{K}^{-1}\bm{F}$.
+Once the nodal displacements are found, the stresses in element $i-j$ can be calculated using:
+\bea\label{stresseq}
+\sigma_e = \frac{E_e}{L_e}\left\{\begin{array}[h!]{cccc} -\lambda_e & -\mu_e & \lambda_e & \mu_e \end{array}\right\}~\left\{\begin{array}[h!]{rrrr} Q_{ix} \\ Q_{iy} \\ Q_{jx} \\ Q_{jy} \end{array}\right\}.
+\eea
+Using Eq.~\eqref{stresseq} and Table~\ref{tab:connectivity}, expressions for the stresses acting on each element can be obtained:
+\bea\label{eq:stresses}
+\begin{split}
+  \sigma_1 &= \frac{E_1}{L_1}\left\{\begin{array}[h!]{cccc} -\lambda_1 & -\mu_1 & \lambda_1 & \mu_1 \end{array}\right\}~\left\{\begin{array}[h!]{rrrr} 0 \\ 0 \\ Q_{4x} \\ Q_{4y} \end{array}\right\}=\frac{E_1}{L_1}\left(Q_{4x}\lambda_1 + Q_{4y}\mu_1\right),\\
+  \sigma_2 &= \frac{E_2}{L_2}\left\{\begin{array}[h!]{cccc} -\lambda_2 & -\mu_2 & \lambda_2 & \mu_2 \end{array}\right\}~\left\{\begin{array}[h!]{rrrr} 0 \\ 0 \\ Q_{4x} \\ Q_{4y} \end{array}\right\}=\frac{E_2}{L_2}\left(Q_{4x}\lambda_2 + Q_{4y}\mu_2\right),\\
+  \sigma_3 &= \frac{E_3}{L_3}\left\{\begin{array}[h!]{cccc} -\lambda_3 & -\mu_3 & \lambda_3 & \mu_3 \end{array}\right\}~\left\{\begin{array}[h!]{rrrr} 0 \\ 0 \\ Q_{4x} \\ Q_{4y} \end{array}\right\}=\frac{E_3}{L_3}\left(Q_{4x}\lambda_3 + Q_{4y}\mu_3\right).
+\end{split}
+\eea
+The constraints (for the optimization problem) can be evaluated by substituting Eq~(\ref{eq:stresses}) into Eq.~(\ref{eq:3bardet}). The gradients of the constraints and objective function with respect to the design variables are obtained via differentiation with Maple. 
+
+
+%\end{appendices}

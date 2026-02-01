@@ -1,0 +1,215 @@
+\subsection{Study of Stochastic Projection Matrices}\label{sec-jacobian-sparsity}
+In this section, we are interested in studying the pattern of non-zero entries of the Jacobian matrices arising in stochastic computations. By knowing the nonzero patterns apriori or real-time allows one to efficiently perform stochastic numerical computations. 
+The study of sparsity of stochastic Galerkin matrices is reported in works such as \citet{2010:Ernst:SGM}. 
+Apart from deducing conditions on when the coefficients are nonzero, we also study the numerical aspects such as the minimum possible number of quadrature points for optimal evaluation of inner products.
+
+\subsubsection{Entries of the Jacobian Matrix}
+Let $\vv{y} = [y_1, y_2, \ldots, y_N]$ be a vector of random variables. 
+If we decompose one of the basis entry, say $\psi_i(\vv{y})$, with respect to another basis entry, say $\psi_j(\vv{y})$, we get the decomposition coefficient as either one (when $i=j$) or zero (when $i\neq j$) owing to the orthonormality of basis functions by construction. 
+However, if we project a function, say $h(\vv{y}) = f(\vv{y}) \times \psi_j(\vv{y})$, on one of the basis functions $\psi_i(\vv{y})$, we shall get \underline{a scalar} as the decomposition coefficient, depending on the actual form of the function $f(\vv{y})$. 
+We use the term Jacobian to refer to the two-dimensional arrangement of decomposition coefficients $\cal{J}$ (a second-order tensor) indexed by an ordered tuple $(i,j)$.  
+Formally, the (i,j)-th entry of Jacobian matrix results from the inner product (projection) defined as
+\begin{equation}\label{eqn:jacobian-entry-defn}
+  \begin{aligned}
+    {\cal{J}}_{ij}
+     = \stinner{\psi_i(\vv{y})}{f(\vv{y})}{\psi_j(\vv{y})}_{\rho(\vv{y})}^{\cal{Y}} 
+     = \int_{{\cal{Y}}} {\psi_i(\vv{y})}{f(\vv{y})}{\psi_j(\vv{y})} {\rho(\vv{y})} d\vv{y} 
+     \approx \sum\limits_{q=1}^{Q} \alpha_q {{\psi_i(\pre{y}{q})}{f(\pre{y}{q})}{\psi_j(\pre{y}{q})}}.
+  \end{aligned}
+\end{equation}
+Here $Q$ is the total number of multivariate quadrature points and $\alpha_q$ are the associated weights.
+The sparsity of Jacobian matrix ${\cal{J}}$ depends on the functional form of $f(y)$ as it can be a polynomial function like $y^2-y$, or a trigonometric like $\sin(y)$, or a rational function like $1/(1+y^2)$. 
+Although $f(\vv{y})$ may assume any functional form as mentioned
+above, for the type of partial differential equations of engineering
+relevance and of interest in this work, $f(\vv{y})$ takes simple
+polynomial forms and is a placeholder for coefficients of the partial
+differential equation.
+
+\begin{table}[h]
+  \caption{Functional forms and corresponding variable-wise degrees.}
+  \centering
+  \scalebox{1.0}{
+    \begin{tabular}{c|c|c}
+      \toprule
+      No. & Functional form of $f(\vv{y})$ & Variable-wise degree \\
+      \midrule
+      1 & $y_1$ & $[1,0,0]$ \\
+      2 & $y_1 y_2$ & $[1,1,0]$ \\
+      3 & $y_2^3$ & $[0,3,0]$ \\
+      4 & $y_1^2y_2^2 + 3 y_1^3y_3 + 4 y_2 $ & [3,2,1] \\
+      5 & $y_1 y_3 + \sin(y_1)$ & $[\infty,0,1]$ \\
+      6 & $y_1 y_2 + \cos(y_1, y_3)$ & $[\infty,1,\infty]$ \\
+      7 & $y_1 y_2 + \exp(y_1, y_3)$ & $[\infty,1,\infty]$ \\
+      \bottomrule
+    \end{tabular}
+  }
+  \label{tab:degree-of-polynomials-example}
+\end{table}
+
+\subsubsection{Degree of Integrand and Quadrature Points}
+%We list a few
+%polynomial functions in three variables and corresponding degrees for
+%each variable.  Let
+%\begin{itemize}
+%\item $\vv{d}(\psi_i) = [d_1({\psi_i}), d_2({\psi_i}), \ldots, d_N({\psi_i})]$
+%be a vector of degrees of variables forming the basis element
+%$\psi_i(\vv{y})$
+%\item $\vv{d}(\psi_j) = [d_1({\psi_j}), d_2({\psi_j}), \ldots,
+%  d_N({\psi_j})]$ be a vector of degrees of variables forming the
+%  basis element $\psi_j(\vv{y})$
+%  \item  $\vv{d}(f) =
+%[d_1(f), d_2(f), \ldots, d_N(f)]$ be a maximum of vector of degrees of
+%maximum variables forming the function
+%\end{itemize}
+Consider a function of three variables $f(y_1,y_2,y_3)$ to assume forms listed in Table~\ref{tab:degree-of-polynomials-example} with corresponding variable-wise degrees $[d_1,d_2,d_3]$. 
+Recall that for polynomial function in more than one variable, the degree of a term is the sum of exponents of the variables. 
+The total degree of the polynomial is the maximum of the term-wise degrees. 
+However, instead of total highest degree, we work with variable-wise highest degrees that facilitates constructing quadrature rules based on the actual degree of the variable thereby reducing the number of evaluations of $f(\vv{y})$.
+%% 
+%% Consider three polynomial functions $A(\vv{y})$, $B(\vv{y})$ and $C(\vv{y})$ whose of variablewise degrees are $d_A$, $d_B$, and $d_C$. 
+%% The rules relating the degree of polynomial and basic arithmetic operations are tabulated in Table~\ref{tab:degree-vs-operations}.
+%% \begin{table}[H]
+%%   \caption{Degree of operand for different mathematical operations.}
+%%   \centering \scalebox{1.0}{
+%%     \begin{tabular}{l|l}
+%%       \toprule
+%%       Operation & Variablewise degree \\
+%%       \midrule
+%%       Multiplication       &  $\vv{d}(P \times Q \times R) = d_P + d_Q + d_R $ \\
+%%       Addition/Subtraction &  $\vv{d}(P \pm Q \pm R) \le \max(d_P, d_Q, d_R) $\\
+%%       Composition          & $\vv{d}(P \circ Q \circ R) = d_P \times d_Q \times d_R $ \\
+%%       \bottomrule
+%%     \end{tabular}
+%%   }
+%%   \label{tab:degree-vs-operations}
+%% \end{table}
+%% Note that the rule for multiplication is applicable in determining the polynomial degree of the integrand $g(\vv{y}) = \underbrace{\psi_i(\vv{y})}_{A(y)} \times \underbrace{f(\vv{y})}_{B(y)} \times \underbrace{\psi_j(\vv{y})}_{C(y)}$ in the definition of Jacobian matrix entries from Equation~\eqref{eqn:jacobian-entry-defn}.
+%% 
+%This is representative of the scenario that the stochastic PDE has three random variables. 
+Recall that the number of quadrature points required to integrate a function of degree $d$ is $Q = 2(d) - 1$. 
+Based on this rule, Table~\ref{tab:points-and-degrees} lists the number of points and the polynomials that are exactly integrated.
+%% This termwise degree of integrand is obtained as
+%% \begin{equation}
+%%   \vv{n} = \vv{1} + \frac{\vv{d}(\psi_i) + \vv{d}(f) + \vv{d}(\psi_j)}{2}.
+%% \end{equation}
+%% Once the variablewise degree of the integrand $g(\vv{y})$ is obtained,
+%% one can formulate multivariate quadrature based on the number of
+%% Gaussian points along each dimension (variable) as
+%% \begin{equation}
+%%   Q = \prod\limits_{i=1}^{num~vars}~Q_{i}
+%% \end{equation}
+
+\begin{table}[h]
+  \caption{Degree of operand for different mathematical operations.}
+  \centering \scalebox{1.0}{
+    \begin{tabular}{c|l}
+      \toprule
+      number of quadrature points & polynomials $P_i(y)$ \\
+      \midrule
+      1 &  $P_0,P_1$ \\
+      2 &  $P_0,P_1,P_2,P_3$ \\
+      3 &  $P_0,P_1,P_2,P_3,P_4,P_5$ \\
+      \bottomrule
+    \end{tabular}
+  }
+  \label{tab:points-and-degrees}
+\end{table}
+
+\subsubsection{Sparsity for Tensor and Complete Polynomial Spaces}
+Let us analyze the sparsity patterns resulting from basis selection using tensor-product rule and basis selection using complete polynomial rule, on a variety of stateless Jacobian functions.
+The number of primary off-diagonal bands depend on the nonlinearity of the function $f(y)$. 
+%We find that there are as many off-diagonal bands as the polynomial degree of the random variable. 
+
+\paragraph*{Uncoupled Sparsity}
+From Figure~\ref{fig:y1_2} we see that there are two primary off-diagonal  bands which in the exponent on the first-random variable.
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}{0.4\textwidth}
+    \includegraphics[width=\linewidth]{sparsity-y1^2-neuu-tensor.pdf}
+    \caption{tensor basis}
+  \end{subfigure}
+  \begin{subfigure}{0.4\textwidth}
+    \includegraphics[width=\linewidth]{sparsity-y1^2-neuu-complete.pdf}
+    \caption{complete basis}
+  \end{subfigure}
+  \caption{Jacobian of decomposition for $f(y) = y_1^2$ for $d_1=2,d_2=0,d_3=0,d_4=0$.}
+  \label{fig:y1_2}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.4\textwidth}
+    \includegraphics[width=\linewidth]{sparsity-y3^4-neuu-tensor.pdf}
+    \caption{tensor basis}
+  \end{subfigure}
+  \begin{subfigure}{0.4\textwidth}
+    \includegraphics[width=\linewidth]{sparsity-y3^4-neuu-complete.pdf}
+    \caption{complete basis}
+  \end{subfigure}
+  \caption{Jacobian of decomposition for $f(y) = y_3^4$ for $d_1=0,d_2=0,d_3=4,d_4=0$.}
+  \label{fig:y3_4}
+\end{figure}
+From Figure~\ref{fig:y3_4} we see that there are four primary off-diagonal bands which in the exponent on the third-random variable.
+
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.4\textwidth}
+    \includegraphics[width=\linewidth]{sparsity-y1+y2+y3-neuu-tensor.pdf}
+    \caption{tensor basis}
+  \end{subfigure}
+  \begin{subfigure}{0.4\textwidth}
+    \includegraphics[width=\linewidth]{sparsity-y1+y2+y3-neuu-complete.pdf}
+    \caption{complete basis}
+  \end{subfigure}
+  \caption{Jacobian of decomposition for $f(y) = y_1+y_2+y_3$ for $d_1=1,d_2=1,d_3=1,d_4=0$.}
+  \label{fig:}
+\end{figure}
+
+\paragraph*{Coupled Sparsity}
+When there is a coupling among probabilistic dimensions (variables), for example $y_1y_2$ (not $y_1 + y_2$), we observe secondary bands.
+Figures~\ref{fig:y1y2}, ~\ref{fig:y1y2y3} and ~\ref{fig:y1y2y3y4}
+illustrate the presence of secondary bands resulting from coupling
+between probabilistic dimensions.
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.4\textwidth}
+    \includegraphics[width=\linewidth]{sparsity-y1y2-neuu-tensor.pdf}
+    \caption{tensor basis}
+  \end{subfigure}
+  \begin{subfigure}{0.4\textwidth}
+    \includegraphics[width=\linewidth]{sparsity-y1y2-neuu-complete.pdf}
+    \caption{complete basis}
+  \end{subfigure}
+  \caption{Jacobian of decomposition for $f(y) = y_1y_2$ for $d_1=1,d_2=1,d_3=0,d_4=0$.}
+  \label{fig:y1y2}
+\end{figure}
+
+
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.4\textwidth}
+    \includegraphics[width=\linewidth]{sparsity-y1y2y3-neuu-tensor.pdf}
+    \caption{tensor basis}
+  \end{subfigure}
+  \begin{subfigure}{0.4\textwidth}
+    \includegraphics[width=\linewidth]{sparsity-y1y2y3-neuu-complete.pdf}
+    \caption{complete basis}
+  \end{subfigure}
+  \caption{Jacobian of decomposition for $f(y) = y_1y_2y_3$ for $d_1=1,d_2=1,d_3=1,d_4=0$.}
+  \label{fig:y1y2y3}
+\end{figure}
+
+
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}{0.40\textwidth}
+    \includegraphics[width=\linewidth]{sparsity-y1y2y3y4-neuu-tensor.pdf}
+    \caption{tensor basis}
+  \end{subfigure}
+  \begin{subfigure}{0.40\textwidth}
+    \includegraphics[width=\linewidth]{sparsity-y1y2y3y4-neuu-complete.pdf}
+    \caption{complete basis}
+  \end{subfigure}
+  \caption{Jacobian of decomposition for $f(y) = y_1 y_2 y_3 y_4$ for $d_1=1,d_2=1,d_3=1,d_4=1$.}
+  \label{fig:y1y2y3y4}
+\end{figure}
