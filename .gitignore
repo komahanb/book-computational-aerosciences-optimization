@@ -1,1 +1,13 @@
-*~
+# auto-generated PDF conversions of EPS figures
+*-eps-converted-to.pdf
+
+# generated chapter list
+build/
+
+# latex temporaries
+*.aux
+*.bbl
+*.log
+*.blg
+*.nlo
+*.out
