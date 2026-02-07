@@ -10,6 +10,14 @@ In other words, it is my journey across **probabilistic--space--time (PST)**.
 
 ![casopt](book/assets/casopt.svg)
 
+## Previewing the Book
+
+The compiled PDF is not committed to the repository. To grab the latest build:
+
+1. Open the **Actions** tab on GitHub.
+2. Select the most recent **Build Book PDF** workflow run.
+3. Download the `book-pdf` artifact to preview the generated `book.pdf`.
+
 ## Citation
 
 If you use benefit from my work, please consider citing for enhanced visibility.
