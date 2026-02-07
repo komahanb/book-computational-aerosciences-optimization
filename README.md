@@ -1,51 +1,34 @@
-# COMPUTATIONAL AEROSCIENCES
-
-The book is written for graduate students, researchers, and practitioners in aerospace engineering, applied mathematics, and scientific computing.
+# COMPUTATIONAL AEROSCIENCES AND OPTIMIZATION
 
 ---
 
-## Repository Structure
+The book is written for individuals interested in a broad class of problems governed by the **mathematical principle of optimization**, as it manifests across structures and patterns in **probability, space** and **time**.  In other words, it is my journey across **probabilistic--space--time (PST)**. 
 
-```text
-computational-aerosciences/
-|
-├── book/          # Book text, figures, and references
-├── code/          # Reference implementations and examples
-├── CITATION.cff   # Citation metadata (see below)
-├── LICENSE_TEXT_CC_BY_4.0
-├── LICENSE_CODE_BSD_3
-└── README.md
-```
+>  For since the fabric of the universe is most perfect and the work of a most wise Creator, nothing at all takes place in the universe in which some rule of maximum or minimum does not appear.
+>
+> Leonard Euler [1707-1783]
+
+![casopt](book/assets/casopt.svg)
 
 ## Citation
 
-If you use this work in academic or industrial research, **please cite it.**
+If you use benefit from my work, please consider citing for enhanced visibility.
 
-This repository includes a CITATION.cff file at the root level.
-GitHub automatically detects this file and provides a **"Cite this repository"** option, enabling citation in BibTeX, APA, and other formats.
+```
+@book{komahan::boopathy::pst,
+  title     = {Computational Aerosciences and Optimization},
+  author    = {Boopathy, Komahan},
+  year      = {2026},
+  publisher = {Open Access Monograph},
+  url       = {https://github.com/komahanb/computational-aerosciences},
+  doi       = {pending}
+}
 
-The `CITATION.cff' file is the **authoritative citation record** for this project and should be used when referencing the book or associated software.
-
-## License
-
-This repository uses a dual-license model, appropriate for open scientific books with accompanying software:
-
-    - Text, figures, and equations:
-    	Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0)
-    	You are free to share and adapt the material with proper attribution.
-    
-    - Source code:
-    	Licensed under the BSD 3-Clause License
-    	Permissive and compatible with academic, industrial, and government use.
-
-See the corresponding license files for full terms.
-
-## Status
-
-This project is under active development.
-Content, structure, and implementations may evolve as the book matures.
+This book is work in progress -- and will remain so. 
+```
 
 ## Author
 
 Komahan Boopathy, Ph.D.
+கோமகன் பூபதி
 [https://komahanb.github.io/](https://komahanb.github.io/)
