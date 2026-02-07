@@ -22,10 +22,10 @@ jobs:
           sudo apt-get install -y texlive-full make python3
 
       - name: Build book
-        run: make
+        run: make -C book
 
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
         with:
           name: book-pdf
-          path: book.pdf
+          path: casopt.pdf
