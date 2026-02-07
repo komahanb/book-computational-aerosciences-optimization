@@ -20,7 +20,7 @@ If you use benefit from my work, please consider citing for enhanced visibility.
   author    = {Boopathy, Komahan},
   year      = {2026},
   publisher = {Open Access Monograph},
-  url       = {https://github.com/komahanb/computational-aerosciences},
+  url       = {https://github.com/komahanb/book-computational-aerosciences-optimization},
   doi       = {pending}
 }
 ```
