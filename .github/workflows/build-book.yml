@@ -28,4 +28,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: book-pdf
-          path: casopt.pdf
+          path: book.pdf
